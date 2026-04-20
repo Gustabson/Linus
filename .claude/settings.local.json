@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git --yes)",
+      "Bash(npm init *)",
+      "Bash(sed -i 's/\"name\": \"Git Edu\"/\"name\": \"edu-platform\"/' package.json)",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const m = require\\('@prisma/adapter-pg'\\); console.log\\(Object.keys\\(m\\)\\)\")",
+      "Bash(psql --version)",
+      "Bash(pg_isready)",
+      "Bash(docker --version)",
+      "Bash(sudo apt-get *)",
+      "Bash(sudo -u postgres psql -c \"CREATE USER edu_user WITH PASSWORD 'edu_pass' CREATEDB;\")",
+      "Bash(sudo -u postgres psql -c \"CREATE DATABASE edu_platform OWNER edu_user;\")",
+      "Bash(DATABASE_URL=\"postgresql://edu_user:edu_pass@localhost:5432/edu_platform\" npx prisma db push)",
+      "Read(//tmp/**)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_QryaNJwqn9R4@ep-small-frog-acthkzfj.sa-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma db push)"
+    ]
+  }
+}
