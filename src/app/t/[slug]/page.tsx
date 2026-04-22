@@ -31,7 +31,7 @@ export default async function TreePage({
           owner: { select: { name: true, image: true } },
           _count: { select: { forks: true, likes: true } },
         },
-        orderBy: { likes: { _count: "desc" } },
+        orderBy: { createdAt: "desc" },
       },
       documents: {
         include: {

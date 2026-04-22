@@ -44,24 +44,19 @@ export default async function ExplorarPage({
       owner: { select: { id: true, name: true, username: true, image: true } },
       _count: { select: { forks: true, likes: true, documents: true } },
     },
-    orderBy:
-      sort === "likes" ? { likes: { _count: "desc" } }
-      : sort === "forks" ? { forks: { _count: "desc" } }
-      : sort === "new" ? { createdAt: "desc" }
-      : sort === "kernel" ? { createdAt: "asc" }
-      : { createdAt: "desc" }, // trending = recent + popular (simplified)
+    orderBy: { createdAt: "desc" },
     take: 60,
   });
 
-  // For trending: sort by combined score in memory
-  const sorted =
-    sort === "trending"
-      ? [...trees].sort(
-          (a, b) =>
-            b._count.likes * 2 + b._count.forks * 3 -
-            (a._count.likes * 2 + a._count.forks * 3)
-        )
-      : trees;
+  // Sort in memory — avoids Prisma relational orderBy issues
+  const sorted = [...trees].sort((a, b) => {
+    if (sort === "likes") return b._count.likes - a._count.likes;
+    if (sort === "forks") return b._count.forks - a._count.forks;
+    if (sort === "new") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (sort === "kernel") return (b.isKernel ? 1 : 0) - (a.isKernel ? 1 : 0);
+    // trending = weighted score
+    return (b._count.likes * 2 + b._count.forks * 3) - (a._count.likes * 2 + a._count.forks * 3);
+  });
 
   return (
     <div className="space-y-6">
