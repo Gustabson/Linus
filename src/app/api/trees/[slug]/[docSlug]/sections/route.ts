@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeLedgerEntry } from "@/lib/ledger";
 import { createHash } from "crypto";
-import { $Enums } from "@prisma/client";
 
 export async function PATCH(
   req: NextRequest,
@@ -75,9 +74,11 @@ export async function PATCH(
             }))
             .concat([
               {
-                sectionType: sectionType as $Enums.SectionType,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                sectionType: sectionType as any,
                 sectionOrder: ["PHILOSOPHY","BEHAVIOR","EXERCISES","PROBLEMS","ANTI_BULLYING","ECONOMY","SCIENTIFIC_METHOD","ETHICS","ASSESSMENT","RESOURCES"].indexOf(sectionType),
-                difficultyLevel: (difficultyLevel ?? "BEGINNER") as $Enums.DifficultyLevel,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                difficultyLevel: (difficultyLevel ?? "BEGINNER") as any,
                 ageRangeMin: ageRangeMin ?? null,
                 ageRangeMax: ageRangeMax ?? null,
                 gradeLevel: null,

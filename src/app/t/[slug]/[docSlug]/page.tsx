@@ -4,7 +4,6 @@ export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { SECTION_ORDER, formatDate } from "@/lib/utils";
-import { $Enums } from "@prisma/client";
 import Link from "next/link";
 import { ChevronRight, Clock, Users, Shield } from "lucide-react";
 import { DocumentEditor } from "@/components/editor/DocumentEditor";
@@ -98,7 +97,8 @@ export default async function DocumentPage({
         docSlug={docSlug}
         versionId={latestVersion?.id ?? null}
         sectionsMap={Object.fromEntries(
-          SECTION_ORDER.map((type) => [type, sectionsMap.get(type as $Enums.SectionType) ?? null])
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          SECTION_ORDER.map((type) => [type, sectionsMap.get(type as any) ?? null])
         )}
         isOwner={isOwner}
         isAuthenticated={!!session}
