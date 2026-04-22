@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
-  const { title, description, language, visibility } = await req.json();
+  const { title, description, language, visibility, isKernel } = await req.json();
 
   if (!title?.trim()) {
     return NextResponse.json({ error: "El título es requerido" }, { status: 400 });
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       description: description?.trim() || null,
       language: language ?? "es",
       visibility: (visibility as TreeVisibility) ?? "PUBLIC",
-      isKernel: false,
+      isKernel: isKernel === true,
       forkDepth: 0,
       ownerId: session.user.id,
     },

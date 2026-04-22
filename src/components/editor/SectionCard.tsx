@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, CheckCircle, Circle, Save } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle, Circle, Save, Quote } from "lucide-react";
 import { SECTION_LABELS, SECTION_DESCRIPTIONS, cn } from "@/lib/utils";
 import { SectionEditor } from "./SectionEditor";
 import { SectionMetaFields } from "./SectionMetaFields";
@@ -16,6 +16,7 @@ interface SectionCardProps {
   isAuthenticated: boolean;
   onToggle: () => void;
   onSave: (sectionType: string, content: object, meta: Record<string, string | number | null>) => Promise<void>;
+  onQuote?: (text: string, sectionType: string) => void;
 }
 
 export function SectionCard({
@@ -27,6 +28,7 @@ export function SectionCard({
   isAuthenticated,
   onToggle,
   onSave,
+  onQuote,
 }: SectionCardProps) {
   const [content, setContent] = useState<object | null>(null);
   const [meta, setMeta] = useState<Record<string, string | number | null>>({});
@@ -118,6 +120,31 @@ export function SectionCard({
               >
                 <Save className="w-4 h-4" />
                 {saving ? "Guardando..." : saved ? "¡Guardado!" : "Guardar"}
+              </button>
+            </div>
+          )}
+
+          {/* Quote button for authenticated non-owners */}
+          {!isOwner && isAuthenticated && onQuote && section?.richTextContent && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  // Extract plain text from TipTap JSON
+                  const extractText = (node: Record<string, unknown>): string => {
+                    if (node.type === "text") return (node.text as string) ?? "";
+                    if (Array.isArray(node.content)) {
+                      return (node.content as Record<string, unknown>[]).map(extractText).join(" ");
+                    }
+                    return "";
+                  };
+                  const text = extractText(section.richTextContent as Record<string, unknown>).trim().slice(0, 300);
+                  if (text) onQuote(text, sectionType);
+                }}
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-green-700 border border-gray-200 hover:border-green-300 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <Quote className="w-3 h-3" />
+                Citar y comentar
               </button>
             </div>
           )}

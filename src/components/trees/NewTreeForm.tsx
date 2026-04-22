@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Cpu } from "lucide-react";
 
 export function NewTreeForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isKernel, setIsKernel] = useState(false);
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -23,6 +24,7 @@ export function NewTreeForm() {
         description: data.get("description"),
         language: data.get("language"),
         visibility: data.get("visibility"),
+        isKernel,
       }),
     });
 
@@ -87,6 +89,30 @@ export function NewTreeForm() {
           </select>
         </div>
       </div>
+
+      {/* Kernel toggle */}
+      <button
+        type="button"
+        onClick={() => setIsKernel(!isKernel)}
+        className={`w-full flex items-start gap-4 p-4 rounded-xl border-2 text-left transition-all ${
+          isKernel
+            ? "border-green-500 bg-green-50"
+            : "border-gray-200 hover:border-gray-300"
+        }`}
+      >
+        <div className={`p-2 rounded-lg shrink-0 mt-0.5 ${isKernel ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+          <Cpu className="w-5 h-5" />
+        </div>
+        <div className="flex-1">
+          <p className="font-medium text-gray-900 text-sm">Marcar como Kernel</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Un kernel es el currículo base de tu escuela o institución. Otros maestros lo podrán forkear y adaptar. Aparecerá destacado en la sección Kernels.
+          </p>
+        </div>
+        <div className={`w-5 h-5 rounded-full border-2 shrink-0 mt-0.5 transition-all ${
+          isKernel ? "border-green-500 bg-green-500" : "border-gray-300"
+        }`} />
+      </button>
 
       {error && (
         <div className="text-red-600 text-sm bg-red-50 rounded-xl px-4 py-3">

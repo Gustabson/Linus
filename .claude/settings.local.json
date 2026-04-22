@@ -20,7 +20,9 @@
       "Read(//tmp/**)",
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_QryaNJwqn9R4@ep-small-frog-acthkzfj.sa-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma db push)",
       "mcp__Claude_in_Chrome__tabs_context_mcp",
-      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_QryaNJwqn9R4@ep-small-frog-acthkzfj.sa-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma db push --accept-data-loss)"
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_QryaNJwqn9R4@ep-small-frog-acthkzfj.sa-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma db push --accept-data-loss)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_QryaNJwqn9R4@ep-small-frog-acthkzfj.sa-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma migrate dev --name add_comments_and_username)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_QryaNJwqn9R4@ep-small-frog-acthkzfj.sa-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma generate)"
     ]
   }
 }

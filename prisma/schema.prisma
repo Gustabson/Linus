@@ -75,6 +75,7 @@ model User {
   ledgerEntries     LedgerEntry[]
   likes             TreeLike[]
   extensions        TreeExtension[]
+  comments          DocumentComment[]
 }
 
 // ─── DOCUMENT TREES (repos) ───────────────────────────────────────────────────
@@ -150,6 +151,7 @@ model Document {
 
   currentVersionId String?
   versions         DocumentVersion[]
+  comments         DocumentComment[]
 
   @@unique([treeId, slug])
   @@index([treeId])
@@ -219,6 +221,27 @@ model DocumentSection {
   @@index([versionId])
 }
 
+// ─── COMMENTS ─────────────────────────────────────────────────────────────────
+
+model DocumentComment {
+  id          String   @id @default(cuid())
+  content     String
+  quotedText  String?
+  sectionType String?
+  isPrivate   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([authorId])
+}
+
 // ─── CHANGE PROPOSALS (pull requests) ─────────────────────────────────────────
 
 enum ProposalStatus {
@@ -273,6 +296,9 @@ enum LedgerEventType {
   PROPOSAL_WITHDRAWN
   // Export
   DOCUMENT_EXPORTED
+  // Social
+  COMMENT_ADDED
+  USERNAME_SET
 }
 
 model LedgerEntry {

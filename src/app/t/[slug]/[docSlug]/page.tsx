@@ -7,6 +7,8 @@ import { SECTION_ORDER, formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { ChevronRight, Clock, Users, Shield } from "lucide-react";
 import { DocumentEditor } from "@/components/editor/DocumentEditor";
+import { DocumentComments } from "@/components/documents/DocumentComments";
+import { DocumentCommentsWrapper } from "@/components/documents/DocumentCommentsWrapper";
 
 export default async function DocumentPage({
   params,
@@ -21,7 +23,9 @@ export default async function DocumentPage({
     select: { id: true, title: true, slug: true, ownerId: true, visibility: true },
   });
 
-  if (!tree || tree.visibility === "PRIVATE") notFound();
+  if (!tree) notFound();
+  const isOwner = session?.user?.id === tree.ownerId;
+  if (tree.visibility === "PRIVATE" && !isOwner) notFound();
 
   const doc = await prisma.document.findUnique({
     where: { treeId_slug: { treeId: tree.id, slug: docSlug } },
@@ -40,7 +44,6 @@ export default async function DocumentPage({
   if (!doc) notFound();
 
   const latestVersion = doc.versions[0];
-  const isOwner = session?.user?.id === tree.ownerId;
 
   // Build sections map, filling in empty ones
   const sectionsMap = new Map(
@@ -91,10 +94,11 @@ export default async function DocumentPage({
         </div>
       </div>
 
-      {/* Sections */}
-      <DocumentEditor
+      {/* Sections + Comments (client wrapper handles quote state) */}
+      <DocumentCommentsWrapper
         treeSlug={tree.slug}
         docSlug={docSlug}
+        docId={doc.id}
         versionId={latestVersion?.id ?? null}
         sectionsMap={Object.fromEntries(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,6 +106,7 @@ export default async function DocumentPage({
         )}
         isOwner={isOwner}
         isAuthenticated={!!session}
+        currentUserId={session?.user?.id}
       />
     </div>
   );

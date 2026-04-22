@@ -12,6 +12,7 @@ interface DocumentEditorProps {
   sectionsMap: Record<string, DocumentSection | null>;
   isOwner: boolean;
   isAuthenticated: boolean;
+  onQuote?: (text: string, sectionType: string) => void;
 }
 
 export function DocumentEditor({
@@ -20,6 +21,7 @@ export function DocumentEditor({
   sectionsMap,
   isOwner,
   isAuthenticated,
+  onQuote,
 }: DocumentEditorProps) {
   const [openSection, setOpenSection] = useState<string>(SECTION_ORDER[0]);
 
@@ -48,6 +50,7 @@ export function DocumentEditor({
           isAuthenticated={isAuthenticated}
           onToggle={() => setOpenSection(openSection === sectionType ? "" : sectionType)}
           onSave={saveSection}
+          onQuote={onQuote}
         />
       ))}
     </div>
