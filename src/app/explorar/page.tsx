@@ -1,88 +1,155 @@
 import { prisma } from "@/lib/prisma";
-
-export const dynamic = "force-dynamic";
-import { GitFork, BookOpen, Search } from "lucide-react";
+import { GitFork, BookOpen, Search, Heart, TrendingUp, Star, Clock } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
+import Image from "next/image";
+
+export const dynamic = "force-dynamic";
+
+const SORT_OPTIONS = [
+  { key: "trending", label: "Tendencia", icon: <TrendingUp className="w-4 h-4" /> },
+  { key: "likes", label: "Más likeados", icon: <Heart className="w-4 h-4" /> },
+  { key: "forks", label: "Más forkeados", icon: <GitFork className="w-4 h-4" /> },
+  { key: "new", label: "Más nuevos", icon: <Clock className="w-4 h-4" /> },
+  { key: "kernel", label: "Kernels", icon: <Star className="w-4 h-4" /> },
+];
 
 export default async function ExplorarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; sort?: string; author?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, sort = "trending", author } = await searchParams;
 
   const trees = await prisma.documentTree.findMany({
     where: {
       visibility: "PUBLIC",
-      ...(q
-        ? {
-            OR: [
-              { title: { contains: q, mode: "insensitive" } },
-              { description: { contains: q, mode: "insensitive" } },
-            ],
-          }
-        : {}),
+      ...(sort === "kernel" ? { isKernel: true } : {}),
+      ...(q ? {
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
+        ],
+      } : {}),
+      ...(author ? {
+        owner: {
+          OR: [
+            { name: { contains: author, mode: "insensitive" } },
+            { username: { contains: author, mode: "insensitive" } },
+          ],
+        },
+      } : {}),
     },
     include: {
-      owner: { select: { name: true, image: true } },
-      _count: { select: { forks: true, documents: true } },
+      owner: { select: { id: true, name: true, username: true, image: true } },
+      _count: { select: { forks: true, likes: true, documents: true } },
     },
-    orderBy: [{ isKernel: "desc" }, { createdAt: "desc" }],
-    take: 50,
+    orderBy:
+      sort === "likes" ? { likes: { _count: "desc" } }
+      : sort === "forks" ? { forks: { _count: "desc" } }
+      : sort === "new" ? { createdAt: "desc" }
+      : sort === "kernel" ? { createdAt: "asc" }
+      : { createdAt: "desc" }, // trending = recent + popular (simplified)
+    take: 60,
   });
 
+  // For trending: sort by combined score in memory
+  const sorted =
+    sort === "trending"
+      ? [...trees].sort(
+          (a, b) =>
+            b._count.likes * 2 + b._count.forks * 3 -
+            (a._count.likes * 2 + a._count.forks * 3)
+        )
+      : trees;
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Explorar currículos</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Explorar</h1>
         <p className="text-gray-500 mt-1">
-          {trees.length} curriculum{trees.length !== 1 ? "s" : ""} disponibles
+          {sorted.length} currículo{sorted.length !== 1 ? "s" : ""} disponibles
         </p>
       </div>
 
-      {/* Search */}
-      <form method="get" className="relative max-w-xl">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Buscar por título, tema, nivel..."
-          className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
-        />
+      {/* Search + author filter */}
+      <form method="get" className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Buscar por nombre del currículo..."
+            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+          />
+        </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            name="author"
+            defaultValue={author}
+            placeholder="Buscar por autor..."
+            className="w-full sm:w-48 pl-9 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+          />
+        </div>
+        <input type="hidden" name="sort" value={sort} />
+        <button
+          type="submit"
+          className="bg-green-700 text-white px-5 py-3 rounded-xl text-sm font-medium hover:bg-green-800"
+        >
+          Buscar
+        </button>
       </form>
 
+      {/* Sort tabs */}
+      <div className="flex flex-wrap gap-2">
+        {SORT_OPTIONS.map((opt) => (
+          <a
+            key={opt.key}
+            href={`/explorar?sort=${opt.key}${q ? `&q=${q}` : ""}${author ? `&author=${author}` : ""}`}
+            className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-xl border transition-colors ${
+              sort === opt.key
+                ? "bg-green-700 text-white border-green-700"
+                : "bg-white text-gray-600 border-gray-200 hover:border-green-300"
+            }`}
+          >
+            {opt.icon}
+            {opt.label}
+          </a>
+        ))}
+      </div>
+
       {/* Grid */}
-      {trees.length === 0 ? (
+      {sorted.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-40" />
-          <p>No se encontraron currículos{q ? ` para "${q}"` : ""}.</p>
+          <p>No se encontraron currículos.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {trees.map((tree) => (
+          {sorted.map((tree) => (
             <Link
               key={tree.id}
               href={`/t/${tree.slug}`}
-              className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-sm transition-all group"
+              className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-sm transition-all group flex flex-col"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  {tree.isKernel && (
-                    <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">
-                      Kernel
-                    </span>
-                  )}
-                  {tree.forkDepth > 0 && (
-                    <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <GitFork className="w-3 h-3" />
-                      Nivel {tree.forkDepth}
-                    </span>
-                  )}
-                </div>
+              {/* Badges */}
+              <div className="flex items-center gap-2 mb-3">
+                {tree.isKernel && (
+                  <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">
+                    Kernel
+                  </span>
+                )}
+                {tree.forkDepth > 0 && (
+                  <span className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <GitFork className="w-3 h-3" />
+                    Nivel {tree.forkDepth}
+                  </span>
+                )}
               </div>
 
-              <h3 className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors line-clamp-2 mb-1">
+              {/* Title */}
+              <h3 className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors line-clamp-2 mb-1 flex-1">
                 {tree.title}
               </h3>
               {tree.description && (
@@ -91,14 +158,43 @@ export default async function ExplorarPage({
                 </p>
               )}
 
-              <div className="flex items-center justify-between text-xs text-gray-400 mt-auto pt-3 border-t border-gray-100">
+              {/* Author */}
+              <Link
+                href={`/u/${tree.owner.username ?? tree.owner.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-2 mb-3 group/author"
+              >
+                {tree.owner.image ? (
+                  <Image
+                    src={tree.owner.image}
+                    alt={tree.owner.name ?? ""}
+                    width={20}
+                    height={20}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xs font-bold">
+                    {(tree.owner.name ?? "?")[0]}
+                  </div>
+                )}
+                <span className="text-xs text-gray-400 group-hover/author:text-green-700 transition-colors">
+                  {tree.owner.name}
+                </span>
+              </Link>
+
+              {/* Stats */}
+              <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
                 <span className="flex items-center gap-1">
-                  <BookOpen className="w-3 h-3" />
-                  {tree._count.documents} doc{tree._count.documents !== 1 ? "s" : ""}
+                  <Heart className="w-3 h-3" />
+                  {tree._count.likes}
                 </span>
                 <span className="flex items-center gap-1">
                   <GitFork className="w-3 h-3" />
-                  {tree._count.forks} forks
+                  {tree._count.forks}
+                </span>
+                <span className="flex items-center gap-1">
+                  <BookOpen className="w-3 h-3" />
+                  {tree._count.documents}
                 </span>
                 <span>{formatDate(tree.createdAt)}</span>
               </div>

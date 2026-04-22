@@ -54,22 +54,27 @@ enum UserRole {
 model User {
   id            String    @id @default(cuid())
   name          String?
+  username      String?   @unique
   email         String?   @unique
   emailVerified DateTime?
   image         String?
   role          UserRole  @default(EDUCATOR)
   bio           String?
+  website       String?
+  location      String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts       Account[]
-  sessions       Session[]
-  ownedTrees     DocumentTree[]    @relation("TreeOwner")
-  memberships    TreeMembership[]
+  accounts          Account[]
+  sessions          Session[]
+  ownedTrees        DocumentTree[]    @relation("TreeOwner")
+  memberships       TreeMembership[]
   committedVersions DocumentVersion[]
-  proposals      ChangeProposal[]  @relation("ProposalAuthor")
-  reviewedProposals ChangeProposal[] @relation("ProposalReviewer")
-  ledgerEntries  LedgerEntry[]
+  proposals         ChangeProposal[]  @relation("ProposalAuthor")
+  reviewedProposals ChangeProposal[]  @relation("ProposalReviewer")
+  ledgerEntries     LedgerEntry[]
+  likes             TreeLike[]
+  extensions        TreeExtension[]
 }
 
 // ─── DOCUMENT TREES (repos) ───────────────────────────────────────────────────
@@ -103,6 +108,8 @@ model DocumentTree {
   memberships  TreeMembership[]
   proposalsFrom ChangeProposal[] @relation("SourceTree")
   proposalsTo   ChangeProposal[] @relation("TargetTree")
+  likes        TreeLike[]
+  extensions   TreeExtension[]
 
   @@index([ownerId])
   @@index([parentTreeId])
@@ -285,4 +292,52 @@ model LedgerEntry {
   @@index([subjectId])
   @@index([eventType])
   @@index([eventTimestamp])
+}
+
+// ─── LIKES ────────────────────────────────────────────────────────────────────
+
+model TreeLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  treeId String
+  tree   DocumentTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([treeId, userId])
+  @@index([treeId])
+  @@index([userId])
+}
+
+// ─── EXTENSIONS (links, apps, images attached to a tree) ─────────────────────
+
+enum ExtensionType {
+  LINK
+  APP
+  IMAGE
+  VIDEO
+  FILE
+  TOOL
+}
+
+model TreeExtension {
+  id          String        @id @default(cuid())
+  type        ExtensionType
+  title       String
+  description String?
+  url         String?
+  imageUrl    String?
+  isPinned    Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  treeId String
+  tree   DocumentTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  @@index([treeId])
 }
