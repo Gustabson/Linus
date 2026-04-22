@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { formatDate, SECTION_LABELS } from "@/lib/utils";
-import { GitFork, BookOpen, Shield, ChevronRight, Plus } from "lucide-react";
+import { GitFork, BookOpen, Shield, ChevronRight, Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { ForkButton } from "@/components/trees/ForkButton";
@@ -52,9 +52,11 @@ export default async function TreePage({
     },
   });
 
-  if (!tree || tree.visibility === "PRIVATE") notFound();
+  if (!tree) notFound();
 
   const isOwner = session?.user?.id === tree.ownerId;
+
+  if (tree.visibility === "PRIVATE" && !isOwner) notFound();
   const userLiked = session?.user?.id
     ? !!(await prisma.treeLike.findUnique({
         where: { treeId_userId: { treeId: tree.id, userId: session.user.id } },
@@ -139,13 +141,22 @@ export default async function TreePage({
               <ForkButton treeId={tree.id} treeTitle={tree.title} />
             )}
             {isOwner && (
-              <Link
-                href={`/t/${tree.slug}/nuevo`}
-                className="flex items-center gap-1.5 bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Nuevo doc
-              </Link>
+              <>
+                <Link
+                  href={`/t/${tree.slug}/configuracion`}
+                  className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  Configurar
+                </Link>
+                <Link
+                  href={`/t/${tree.slug}/nuevo`}
+                  className="flex items-center gap-1.5 bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nuevo doc
+                </Link>
+              </>
             )}
           </div>
         </div>
