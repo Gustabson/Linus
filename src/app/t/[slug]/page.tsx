@@ -8,8 +8,38 @@ import Image from "next/image";
 import { ForkButton } from "@/components/trees/ForkButton";
 import { LikeButton } from "@/components/trees/LikeButton";
 import { ExtensionsPanel } from "@/components/trees/ExtensionsPanel";
+import { ForkTree } from "@/components/trees/ForkTree";
 
 export const dynamic = "force-dynamic";
+
+// Recursively fetch fork tree up to N levels deep
+async function fetchForkSubtree(treeId: string, depth: number): Promise<{
+  id: string; slug: string; title: string; isKernel: boolean; forkDepth: number;
+  owner: { name: string | null; username: string | null; image: string | null };
+  _count: { forks: number; likes: number };
+  forks: ReturnType<typeof fetchForkSubtree> extends Promise<infer T> ? T[] : never[];
+}> {
+  const node = await prisma.documentTree.findUnique({
+    where: { id: treeId },
+    select: {
+      id: true, slug: true, title: true, isKernel: true, forkDepth: true,
+      owner: { select: { name: true, username: true, image: true } },
+      _count: { select: { forks: true, likes: true } },
+      forks: depth > 0
+        ? { where: { visibility: "PUBLIC" }, select: { id: true }, take: 20 }
+        : false,
+    },
+  });
+
+  if (!node) throw new Error("Tree not found");
+
+  const children =
+    depth > 0 && node.forks
+      ? await Promise.all(node.forks.map((f: { id: string }) => fetchForkSubtree(f.id, depth - 1)))
+      : [];
+
+  return { ...node, forks: children };
+}
 
 export default async function TreePage({
   params,
@@ -23,16 +53,7 @@ export default async function TreePage({
     where: { slug },
     include: {
       owner: { select: { id: true, name: true, username: true, image: true, bio: true } },
-      parentTree: { select: { slug: true, title: true } },
-      forks: {
-        where: { visibility: "PUBLIC" },
-        take: 6,
-        include: {
-          owner: { select: { name: true, image: true } },
-          _count: { select: { forks: true, likes: true } },
-        },
-        orderBy: { createdAt: "desc" },
-      },
+      parentTree: { select: { id: true, slug: true, title: true, isKernel: true, parentTreeId: true } },
       documents: {
         include: {
           versions: {
@@ -55,24 +76,45 @@ export default async function TreePage({
   if (!tree) notFound();
 
   const isOwner = session?.user?.id === tree.ownerId;
-
   if (tree.visibility === "PRIVATE" && !isOwner) notFound();
+
   const userLiked = session?.user?.id
     ? !!(await prisma.treeLike.findUnique({
         where: { treeId_userId: { treeId: tree.id, userId: session.user.id } },
       }))
     : false;
 
+  // Build ancestor chain (walk up to find root)
+  const ancestors: { id: string; slug: string; title: string; isKernel: boolean }[] = [];
+  let current = tree.parentTree as typeof tree.parentTree & { parentTreeId?: string | null } | null;
+  while (current) {
+    ancestors.unshift({ id: current.id, slug: current.slug, title: current.title, isKernel: current.isKernel ?? false });
+    if (!current.parentTreeId) break;
+    current = await prisma.documentTree.findUnique({
+      where: { id: current.parentTreeId },
+      select: { id: true, slug: true, title: true, isKernel: true, parentTreeId: true },
+    }) as typeof current;
+  }
+
+  // Build fork tree from current tree (3 levels deep)
+  const forkTree = await fetchForkSubtree(tree.id, 3);
+  const hasForkTree = forkTree.forks.length > 0 || ancestors.length > 0;
+
   const authorSlug = tree.owner.username ?? tree.owner.id;
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       {/* Breadcrumb */}
-      {tree.parentTree && (
-        <nav className="flex items-center gap-2 text-sm text-gray-500">
-          <Link href={`/t/${tree.parentTree.slug}`} className="hover:text-gray-900">
-            {tree.parentTree.title}
-          </Link>
+      {ancestors.length > 0 && (
+        <nav className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+          {ancestors.map((a, i) => (
+            <span key={a.id} className="flex items-center gap-2">
+              {i > 0 && <ChevronRight className="w-4 h-4" />}
+              <Link href={`/t/${a.slug}`} className="hover:text-gray-900">
+                {a.title}
+              </Link>
+            </span>
+          ))}
           <ChevronRight className="w-4 h-4" />
           <span className="text-gray-900">{tree.title}</span>
         </nav>
@@ -81,18 +123,10 @@ export default async function TreePage({
       {/* Header */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
         {/* Author row */}
-        <Link
-          href={`/u/${authorSlug}`}
-          className="flex items-center gap-3 group w-fit"
-        >
+        <Link href={`/u/${authorSlug}`} className="flex items-center gap-3 group w-fit">
           {tree.owner.image ? (
-            <Image
-              src={tree.owner.image}
-              alt={tree.owner.name ?? ""}
-              width={40}
-              height={40}
-              className="rounded-full ring-2 ring-transparent group-hover:ring-green-300 transition-all"
-            />
+            <Image src={tree.owner.image} alt={tree.owner.name ?? ""} width={40} height={40}
+              className="rounded-full ring-2 ring-transparent group-hover:ring-green-300 transition-all" />
           ) : (
             <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold ring-2 ring-transparent group-hover:ring-green-300 transition-all">
               {(tree.owner.name ?? "?")[0].toUpperCase()}
@@ -131,28 +165,19 @@ export default async function TreePage({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <LikeButton
-              treeSlug={tree.slug}
-              initialLiked={userLiked}
-              initialCount={tree._count.likes}
-              isAuthenticated={!!session}
-            />
+            <LikeButton treeSlug={tree.slug} initialLiked={userLiked} initialCount={tree._count.likes} isAuthenticated={!!session} />
             {!isOwner && session && (
               <ForkButton treeId={tree.id} treeTitle={tree.title} />
             )}
             {isOwner && (
               <>
-                <Link
-                  href={`/t/${tree.slug}/configuracion`}
-                  className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-                >
+                <Link href={`/t/${tree.slug}/configuracion`}
+                  className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
                   <Settings className="w-4 h-4" />
                   Configurar
                 </Link>
-                <Link
-                  href={`/t/${tree.slug}/nuevo`}
-                  className="flex items-center gap-1.5 bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
-                >
+                <Link href={`/t/${tree.slug}/nuevo`}
+                  className="flex items-center gap-1.5 bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 transition-colors">
                   <Plus className="w-4 h-4" />
                   Nuevo doc
                 </Link>
@@ -194,15 +219,10 @@ export default async function TreePage({
             const completeSections = latestVersion?.sections.filter((s) => s.isComplete).length ?? 0;
             const progress = Math.round((completeSections / 10) * 100);
             return (
-              <Link
-                key={doc.id}
-                href={`/t/${tree.slug}/${doc.slug}`}
-                className="bg-white rounded-xl border border-gray-200 p-5 hover:border-green-300 transition-all block group"
-              >
+              <Link key={doc.id} href={`/t/${tree.slug}/${doc.slug}`}
+                className="bg-white rounded-xl border border-gray-200 p-5 hover:border-green-300 transition-all block group">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-gray-900 group-hover:text-green-700">
-                    {doc.title}
-                  </h3>
+                  <h3 className="font-medium text-gray-900 group-hover:text-green-700">{doc.title}</h3>
                   <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600" />
                 </div>
                 <div className="flex flex-wrap gap-1 mb-3">
@@ -224,47 +244,30 @@ export default async function TreePage({
         )}
       </div>
 
+      {/* Fork tree */}
+      {hasForkTree && (
+        <ForkTree
+          root={forkTree}
+          currentSlug={tree.slug}
+          ancestors={ancestors.map(a => ({
+            ...a,
+            forkDepth: 0,
+            owner: { name: null, username: null, image: null },
+            _count: { forks: 0, likes: 0 },
+            forks: [],
+          }))}
+        />
+      )}
+
       {/* Extensions */}
       <ExtensionsPanel
         treeSlug={tree.slug}
         initialExtensions={tree.extensions.map((e) => ({
-          id: e.id,
-          type: e.type,
-          title: e.title,
-          description: e.description,
-          url: e.url,
-          imageUrl: e.imageUrl,
-          author: e.author,
+          id: e.id, type: e.type, title: e.title, description: e.description,
+          url: e.url, imageUrl: e.imageUrl, author: e.author,
         }))}
         isOwner={isOwner}
       />
-
-      {/* Forks */}
-      {tree.forks.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-            <GitFork className="w-5 h-5" />
-            Forks ({tree._count.forks})
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {tree.forks.map((fork) => (
-              <Link key={fork.id} href={`/t/${fork.slug}`} className="bg-white rounded-xl border border-gray-200 p-4 hover:border-green-300 transition-all flex items-center gap-3">
-                {fork.owner.image ? (
-                  <Image src={fork.owner.image} alt="" width={28} height={28} className="rounded-full shrink-0" />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-500 shrink-0">
-                    {(fork.owner.name ?? "?")[0]}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="font-medium text-gray-900 text-sm truncate">{fork.title}</p>
-                  <p className="text-xs text-gray-400">{fork.owner.name} · {fork._count.likes} ❤️ · {fork._count.forks} forks</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Ledger */}
       <div className="flex items-center gap-2 text-sm text-gray-400 bg-gray-50 rounded-xl px-4 py-3">

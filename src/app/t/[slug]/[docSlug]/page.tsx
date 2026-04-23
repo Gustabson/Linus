@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { SECTION_ORDER, formatDate } from "@/lib/utils";
 import Link from "next/link";
-import { ChevronRight, Clock, Users, Shield } from "lucide-react";
+import { ChevronRight, Clock, Users, Shield, Eye } from "lucide-react";
 import { DocumentEditor } from "@/components/editor/DocumentEditor";
 import { DocumentComments } from "@/components/documents/DocumentComments";
 import { DocumentCommentsWrapper } from "@/components/documents/DocumentCommentsWrapper";
@@ -83,14 +83,23 @@ export default async function DocumentPage({
               </div>
             )}
           </div>
-          {isOwner && (
+          <div className="flex items-center gap-2">
             <Link
-              href={`/t/${tree.slug}/${docSlug}/editar`}
-              className="bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800"
+              href={`/t/${tree.slug}/${docSlug}/preview`}
+              className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Editar
+              <Eye className="w-4 h-4" />
+              Preview
             </Link>
-          )}
+            {isOwner && (
+              <Link
+                href={`/t/${tree.slug}/${docSlug}/editar`}
+                className="bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800"
+              >
+                Editar
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
