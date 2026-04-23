@@ -123,11 +123,13 @@ export default async function ExplorarPage({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {sorted.map((tree) => (
-            <Link
+            <div
               key={tree.id}
-              href={`/t/${tree.slug}`}
-              className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-sm transition-all group flex flex-col"
+              className="relative bg-white rounded-2xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-sm transition-all group flex flex-col"
             >
+              {/* Main card link — covers the whole card */}
+              <Link href={`/t/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
+
               {/* Badges */}
               <div className="flex items-center gap-2 mb-3">
                 {tree.isKernel && (
@@ -153,11 +155,10 @@ export default async function ExplorarPage({
                 </p>
               )}
 
-              {/* Author */}
+              {/* Author — relative z-10 so it's above the card link */}
               <Link
                 href={`/u/${tree.owner.username ?? tree.owner.id}`}
-                onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-2 mb-3 group/author"
+                className="relative z-10 flex items-center gap-2 mb-3 w-fit"
               >
                 {tree.owner.image ? (
                   <Image
@@ -172,7 +173,7 @@ export default async function ExplorarPage({
                     {(tree.owner.name ?? "?")[0]}
                   </div>
                 )}
-                <span className="text-xs text-gray-400 group-hover/author:text-green-700 transition-colors">
+                <span className="text-xs text-gray-400 hover:text-green-700 transition-colors">
                   {tree.owner.name}
                 </span>
               </Link>
@@ -193,7 +194,7 @@ export default async function ExplorarPage({
                 </span>
                 <span>{formatDate(tree.createdAt)}</span>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

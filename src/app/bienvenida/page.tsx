@@ -52,9 +52,9 @@ export default function BienvenidaPage() {
     setSaving(false);
 
     if (res.ok) {
-      // Refresh session so username appears in JWT
+      // Force full page reload so JWT refreshes with new username
       await update();
-      router.push("/dashboard");
+      window.location.href = "/dashboard";
     } else {
       setError(data.error ?? "Error al guardar");
     }
