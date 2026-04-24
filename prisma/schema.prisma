@@ -77,6 +77,8 @@ model User {
   extensions          TreeExtension[]
   comments            DocumentComment[]
   addedAttachments    TreeAttachment[]  @relation("AttachmentAddedBy")
+  followers           UserFollow[]      @relation("Following")
+  following           UserFollow[]      @relation("Follower")
 }
 
 // ─── DOCUMENT TREES (kernels, modules, resources) ────────────────────────────
@@ -329,6 +331,8 @@ enum LedgerEventType {
   // Social
   COMMENT_ADDED
   USERNAME_SET
+  USER_FOLLOWED
+  USER_UNFOLLOWED
   // Attachments
   CONTENT_ATTACHED
   CONTENT_DETACHED
@@ -351,6 +355,23 @@ model LedgerEntry {
   @@index([subjectId])
   @@index([eventType])
   @@index([eventTimestamp])
+}
+
+// ─── FOLLOWS ──────────────────────────────────────────────────────────────────
+
+model UserFollow {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+
+  followerId  String
+  follower    User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+
+  followingId String
+  following   User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }
 
 // ─── LIKES ────────────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { BookOpen, GitFork, Search, LogOut, User, Menu, X, AlertCircle } from "lucide-react";
+import { BookOpen, Search, LogOut, User, Menu, X, AlertCircle } from "lucide-react";
 import { useState } from "react";
 
 export function Navbar() {
@@ -45,10 +45,6 @@ export function Navbar() {
               <Link href="/explorar" className="text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center gap-1">
                 <Search className="w-4 h-4" />
                 Explorar
-              </Link>
-              <Link href="/nuevo" className="text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center gap-1">
-                <BookOpen className="w-4 h-4" />
-                Crear
               </Link>
             </div>
 
@@ -96,7 +92,6 @@ export function Navbar() {
           {open && (
             <div className="md:hidden py-3 border-t border-gray-100 space-y-2">
               <Link href="/explorar" className="block px-2 py-1 text-gray-700" onClick={() => setOpen(false)}>Explorar</Link>
-              <Link href="/nuevo" className="block px-2 py-1 text-gray-700" onClick={() => setOpen(false)}>Crear</Link>
               {session ? (
                 <>
                   {needsUsername && (
