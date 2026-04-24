@@ -18,7 +18,7 @@ export default async function DocumentPreviewPage({
 
   const tree = await prisma.documentTree.findUnique({
     where: { slug },
-    select: { id: true, title: true, slug: true, ownerId: true, visibility: true, isKernel: true },
+    select: { id: true, title: true, slug: true, ownerId: true, visibility: true, contentType: true },
   });
 
   if (!tree) notFound();
@@ -64,7 +64,7 @@ export default async function DocumentPreviewPage({
 
       {/* Title card */}
       <div className="bg-white rounded-2xl border border-gray-200 p-8 space-y-3 text-center">
-        {tree.isKernel && (
+        {tree.contentType === "KERNEL" && (
           <span className="inline-block bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium mb-2">
             Kernel oficial
           </span>

@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 // Recursively fetch fork tree up to N levels deep
 async function fetchForkSubtree(treeId: string, depth: number): Promise<{
-  id: string; slug: string; title: string; isKernel: boolean; forkDepth: number;
+  id: string; slug: string; title: string; contentType: string; forkDepth: number;
   owner: { name: string | null; username: string | null; image: string | null };
   _count: { forks: number; likes: number };
   forks: ReturnType<typeof fetchForkSubtree> extends Promise<infer T> ? T[] : never[];
@@ -22,7 +22,7 @@ async function fetchForkSubtree(treeId: string, depth: number): Promise<{
   const node = await prisma.documentTree.findUnique({
     where: { id: treeId },
     select: {
-      id: true, slug: true, title: true, isKernel: true, forkDepth: true,
+      id: true, slug: true, title: true, contentType: true, forkDepth: true,
       owner: { select: { name: true, username: true, image: true } },
       _count: { select: { forks: true, likes: true } },
       forks: depth > 0
@@ -53,7 +53,7 @@ export default async function TreePage({
     where: { slug },
     include: {
       owner: { select: { id: true, name: true, username: true, image: true, bio: true } },
-      parentTree: { select: { id: true, slug: true, title: true, isKernel: true, parentTreeId: true } },
+      parentTree: { select: { id: true, slug: true, title: true, contentType: true, parentTreeId: true } },
       documents: {
         include: {
           versions: {
@@ -85,14 +85,14 @@ export default async function TreePage({
     : false;
 
   // Build ancestor chain (walk up to find root)
-  const ancestors: { id: string; slug: string; title: string; isKernel: boolean }[] = [];
+  const ancestors: { id: string; slug: string; title: string; contentType: string }[] = [];
   let current = tree.parentTree as typeof tree.parentTree & { parentTreeId?: string | null } | null;
   while (current) {
-    ancestors.unshift({ id: current.id, slug: current.slug, title: current.title, isKernel: current.isKernel ?? false });
+    ancestors.unshift({ id: current.id, slug: current.slug, title: current.title, contentType: current.contentType ?? "KERNEL" });
     if (!current.parentTreeId) break;
     current = await prisma.documentTree.findUnique({
       where: { id: current.parentTreeId },
-      select: { id: true, slug: true, title: true, isKernel: true, parentTreeId: true },
+      select: { id: true, slug: true, title: true, contentType: true, parentTreeId: true },
     }) as typeof current;
   }
 
@@ -146,7 +146,7 @@ export default async function TreePage({
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
-              {tree.isKernel && (
+              {tree.contentType === "KERNEL" && (
                 <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">
                   Kernel oficial
                 </span>
@@ -167,7 +167,7 @@ export default async function TreePage({
           <div className="flex items-center gap-2 flex-wrap">
             <LikeButton treeSlug={tree.slug} initialLiked={userLiked} initialCount={tree._count.likes} isAuthenticated={!!session} />
             {!isOwner && session && (
-              <ForkButton treeId={tree.id} treeTitle={tree.title} />
+              <ForkButton treeId={tree.id} treeTitle={tree.title} contentType={tree.contentType} />
             )}
             {isOwner && (
               <>
@@ -251,6 +251,7 @@ export default async function TreePage({
           currentSlug={tree.slug}
           ancestors={ancestors.map(a => ({
             ...a,
+            contentType: a.contentType,
             forkDepth: 0,
             owner: { name: null, username: null, image: null },
             _count: { forks: 0, likes: 0 },

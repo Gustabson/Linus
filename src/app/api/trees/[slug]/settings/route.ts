@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeLedgerEntry } from "@/lib/ledger";
 import { slugify } from "@/lib/utils";
-import type { TreeVisibility } from "@prisma/client";
+import type { TreeVisibility, ContentType } from "@prisma/client";
 
 export async function PATCH(
   req: NextRequest,
@@ -20,7 +20,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
 
   const body = await req.json();
-  const { title, description, visibility, archived } = body;
+  const { title, description, visibility, contentType, archived } = body;
 
   // Handle archive
   if (archived) {
@@ -40,7 +40,7 @@ export async function PATCH(
 
   // Build new slug if title changed
   let newSlug = tree.slug;
-  if (title && title.trim() !== tree.title && !tree.isKernel) {
+  if (title && title.trim() !== tree.title) {
     const base = slugify(title);
     newSlug = base;
     let attempt = 0;
@@ -59,6 +59,7 @@ export async function PATCH(
       title: title?.trim() ?? tree.title,
       description: description?.trim() || null,
       visibility: (visibility as TreeVisibility) ?? tree.visibility,
+      contentType: (contentType as ContentType) ?? tree.contentType,
       slug: newSlug,
     },
   });

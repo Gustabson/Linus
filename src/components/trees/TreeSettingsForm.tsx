@@ -10,7 +10,7 @@ interface TreeData {
   title: string;
   description: string | null;
   visibility: string;
-  isKernel: boolean;
+  contentType: string;
 }
 
 export function TreeSettingsForm({ tree }: { tree: TreeData }) {
@@ -123,7 +123,7 @@ export function TreeSettingsForm({ tree }: { tree: TreeData }) {
       </button>
 
       {/* Danger zone */}
-      {!tree.isKernel && (
+      {tree.contentType !== "KERNEL" && (
         <div className="bg-white rounded-2xl border border-red-100 p-6 space-y-3">
           <h2 className="font-semibold text-red-700">Zona de peligro</h2>
           <p className="text-sm text-gray-500">

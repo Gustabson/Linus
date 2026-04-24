@@ -65,25 +65,32 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts          Account[]
-  sessions          Session[]
-  ownedTrees        DocumentTree[]    @relation("TreeOwner")
-  memberships       TreeMembership[]
-  committedVersions DocumentVersion[]
-  proposals         ChangeProposal[]  @relation("ProposalAuthor")
-  reviewedProposals ChangeProposal[]  @relation("ProposalReviewer")
-  ledgerEntries     LedgerEntry[]
-  likes             TreeLike[]
-  extensions        TreeExtension[]
-  comments          DocumentComment[]
+  accounts            Account[]
+  sessions            Session[]
+  ownedTrees          DocumentTree[]    @relation("TreeOwner")
+  memberships         TreeMembership[]
+  committedVersions   DocumentVersion[]
+  proposals           ChangeProposal[]  @relation("ProposalAuthor")
+  reviewedProposals   ChangeProposal[]  @relation("ProposalReviewer")
+  ledgerEntries       LedgerEntry[]
+  likes               TreeLike[]
+  extensions          TreeExtension[]
+  comments            DocumentComment[]
+  addedAttachments    TreeAttachment[]  @relation("AttachmentAddedBy")
 }
 
-// ─── DOCUMENT TREES (repos) ───────────────────────────────────────────────────
+// ─── DOCUMENT TREES (kernels, modules, resources) ────────────────────────────
 
 enum TreeVisibility {
   PUBLIC
   UNLISTED
   PRIVATE
+}
+
+enum ContentType {
+  KERNEL
+  MODULE
+  RESOURCE
 }
 
 model DocumentTree {
@@ -93,7 +100,7 @@ model DocumentTree {
   description  String?
   language     String         @default("es")
   visibility   TreeVisibility @default(PUBLIC)
-  isKernel     Boolean        @default(false)
+  contentType  ContentType    @default(KERNEL)
   forkDepth    Int            @default(0)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
@@ -112,9 +119,32 @@ model DocumentTree {
   likes        TreeLike[]
   extensions   TreeExtension[]
 
+  // Modules/Resources attached to this kernel
+  attachments  TreeAttachment[] @relation("KernelAttachments")
+  // Kernels this module/resource is attached to
+  attachedTo   TreeAttachment[] @relation("AttachedContent")
+
   @@index([ownerId])
   @@index([parentTreeId])
-  @@index([isKernel])
+  @@index([contentType])
+}
+
+model TreeAttachment {
+  id        String   @id @default(cuid())
+  addedAt   DateTime @default(now())
+
+  kernelId  String
+  kernel    DocumentTree @relation("KernelAttachments", fields: [kernelId], references: [id], onDelete: Cascade)
+
+  contentId String
+  content   DocumentTree @relation("AttachedContent", fields: [contentId], references: [id], onDelete: Cascade)
+
+  addedById String
+  addedBy   User @relation("AttachmentAddedBy", fields: [addedById], references: [id])
+
+  @@unique([kernelId, contentId])
+  @@index([kernelId])
+  @@index([contentId])
 }
 
 enum MemberRole {
@@ -299,6 +329,9 @@ enum LedgerEventType {
   // Social
   COMMENT_ADDED
   USERNAME_SET
+  // Attachments
+  CONTENT_ATTACHED
+  CONTENT_DETACHED
 }
 
 model LedgerEntry {

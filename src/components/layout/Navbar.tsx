@@ -46,9 +46,9 @@ export function Navbar() {
                 <Search className="w-4 h-4" />
                 Explorar
               </Link>
-              <Link href="/kernels" className="text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center gap-1">
+              <Link href="/explorar" className="text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center gap-1">
                 <GitFork className="w-4 h-4" />
-                Kernels
+                Explorar
               </Link>
             </div>
 
@@ -96,7 +96,7 @@ export function Navbar() {
           {open && (
             <div className="md:hidden py-3 border-t border-gray-100 space-y-2">
               <Link href="/explorar" className="block px-2 py-1 text-gray-700" onClick={() => setOpen(false)}>Explorar</Link>
-              <Link href="/kernels" className="block px-2 py-1 text-gray-700" onClick={() => setOpen(false)}>Kernels</Link>
+              <Link href="/explorar" className="block px-2 py-1 text-gray-700" onClick={() => setOpen(false)}>Explorar</Link>
               {session ? (
                 <>
                   {needsUsername && (

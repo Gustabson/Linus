@@ -18,7 +18,7 @@ export default async function TreeSettingsPage({
     where: { slug },
     select: {
       id: true, slug: true, title: true,
-      description: true, visibility: true, isKernel: true,
+      description: true, visibility: true, contentType: true,
       ownerId: true,
     },
   });

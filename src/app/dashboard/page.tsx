@@ -69,7 +69,7 @@ export default async function DashboardPage() {
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  {tree.isKernel && (
+                  {tree.contentType === "KERNEL" && (
                     <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium mr-2">
                       Kernel
                     </span>

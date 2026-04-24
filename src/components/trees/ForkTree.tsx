@@ -9,7 +9,7 @@ interface ForkNode {
   id: string;
   slug: string;
   title: string;
-  isKernel: boolean;
+  contentType: string;
   forkDepth: number;
   owner: { name: string | null; username: string | null; image: string | null };
   _count: { forks: number; likes: number };
@@ -71,7 +71,7 @@ function TreeNode({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
-              {node.isKernel && (
+              {node.contentType === "KERNEL" && (
                 <Cpu className="w-3 h-3 text-green-600 shrink-0" />
               )}
               <span className={`text-sm font-medium truncate ${isCurrent ? "text-green-800" : "text-gray-900"}`}>
@@ -157,7 +157,7 @@ export function ForkTree({
                     href={`/t/${a.slug}`}
                     className="text-xs text-gray-500 hover:text-green-700 flex items-center gap-1"
                   >
-                    {a.isKernel && <Cpu className="w-3 h-3 text-green-600" />}
+                    {a.contentType === "KERNEL" && <Cpu className="w-3 h-3 text-green-600" />}
                     {a.title}
                   </Link>
                 </div>

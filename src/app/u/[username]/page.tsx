@@ -156,7 +156,7 @@ export default async function UserProfilePage({
                 className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-sm transition-all group"
               >
                 <div className="flex items-start gap-2 mb-2">
-                  {tree.isKernel && (
+                  {tree.contentType === "KERNEL" && (
                     <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">
                       Kernel
                     </span>
