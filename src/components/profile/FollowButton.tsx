@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { UserPlus, UserCheck } from "lucide-react";
 
 export function FollowButton({
@@ -14,15 +15,13 @@ export function FollowButton({
   initialCount: number;
   isAuthenticated: boolean;
 }) {
+  const router = useRouter();
   const [following, setFollowing] = useState(initialFollowing);
   const [count, setCount] = useState(initialCount);
   const [loading, setLoading] = useState(false);
 
   async function toggle() {
-    if (!isAuthenticated) {
-      window.location.href = "/login";
-      return;
-    }
+    if (!isAuthenticated) { router.push("/login"); return; }
     setLoading(true);
     try {
       const res = await fetch(`/api/users/${userId}/follow`, {

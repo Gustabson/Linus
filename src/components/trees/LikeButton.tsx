@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,15 +16,13 @@ export function LikeButton({
   initialCount: number;
   isAuthenticated: boolean;
 }) {
+  const router = useRouter();
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
   const [loading, setLoading] = useState(false);
 
   async function toggle() {
-    if (!isAuthenticated) {
-      window.location.href = "/login";
-      return;
-    }
+    if (!isAuthenticated) { router.push("/login"); return; }
     setLoading(true);
     const res = await fetch(`/api/trees/${treeSlug}/like`, { method: "POST" });
     if (res.ok) {

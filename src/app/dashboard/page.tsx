@@ -1,28 +1,18 @@
 import { auth } from "@/lib/auth";
-export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
   GitFork, BookOpen, Plus, Clock, Heart, Settings,
-  Cpu, Puzzle, Package, Eye, TrendingUp,
+  Eye, TrendingUp,
 } from "lucide-react";
 import { DeleteTreeButton } from "@/components/trees/DeleteTreeButton";
 import { formatDate } from "@/lib/utils";
+import { CONTENT_TYPE_BADGE, CONTENT_TABS } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
 
-const TABS: { key: ContentType; label: string; icon: React.ReactNode; color: string }[] = [
-  { key: "KERNEL",   label: "Kernels",  icon: <Cpu className="w-4 h-4" />,    color: "green" },
-  { key: "MODULE",   label: "Módulos",  icon: <Puzzle className="w-4 h-4" />, color: "blue"  },
-  { key: "RESOURCE", label: "Recursos", icon: <Package className="w-4 h-4" />, color: "amber" },
-];
-
-const TYPE_BADGE: Record<string, { label: string; cls: string }> = {
-  KERNEL:   { label: "Kernel",  cls: "bg-green-100 text-green-800" },
-  MODULE:   { label: "Módulo",  cls: "bg-blue-100 text-blue-800"  },
-  RESOURCE: { label: "Recurso", cls: "bg-amber-100 text-amber-800" },
-};
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({
   searchParams,
@@ -35,18 +25,17 @@ export default async function DashboardPage({
   const { tab = "KERNEL" } = await searchParams;
   const activeTab = (["KERNEL", "MODULE", "RESOURCE"].includes(tab) ? tab : "KERNEL") as ContentType;
 
-  // Fetch all content in one query, then split by type
   const [allTrees, user] = await Promise.all([
     prisma.documentTree.findMany({
-      where: { ownerId: session.user.id },
+      where:   { ownerId: session.user.id },
       include: {
         parentTree: { select: { slug: true, title: true, contentType: true } },
-        _count: { select: { forks: true, likes: true, documents: true } },
+        _count:     { select: { forks: true, likes: true, documents: true } },
       },
       orderBy: { updatedAt: "desc" },
     }),
     prisma.user.findUnique({
-      where: { id: session.user.id },
+      where:  { id: session.user.id },
       select: { name: true, username: true, image: true, bio: true },
     }),
   ]);
@@ -57,9 +46,7 @@ export default async function DashboardPage({
     RESOURCE: allTrees.filter(t => t.contentType === "RESOURCE"),
   };
 
-  const totalLikes = allTrees.reduce((acc, t) => acc + t._count.likes, 0);
-  const totalForks = allTrees.reduce((acc, t) => acc + t._count.forks, 0);
-
+  const totalForks  = allTrees.reduce((acc, t) => acc + t._count.forks,  0);
   const activeTrees = byType[activeTab];
 
   return (
@@ -78,13 +65,13 @@ export default async function DashboardPage({
             <h1 className="text-2xl font-bold text-gray-900">
               {user?.name?.split(" ")[0]} 👋
             </h1>
-            {user?.username && (
-              <p className="text-sm text-gray-400">@{user.username}</p>
-            )}
+            {user?.username && <p className="text-sm text-gray-400">@{user.username}</p>}
           </div>
         </div>
-        <Link href="/nuevo"
-          className="flex items-center gap-2 bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors">
+        <Link
+          href="/nuevo"
+          className="flex items-center gap-2 bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors"
+        >
           <Plus className="w-4 h-4" />
           Crear nuevo
         </Link>
@@ -93,11 +80,14 @@ export default async function DashboardPage({
       {/* Stats bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Kernels",  value: byType.KERNEL.length,   icon: <Cpu className="w-4 h-4 text-green-600" />,    href: "/dashboard?tab=KERNEL"   },
-          { label: "Módulos",  value: byType.MODULE.length,   icon: <Puzzle className="w-4 h-4 text-blue-600" />,  href: "/dashboard?tab=MODULE"   },
-          { label: "Recursos", value: byType.RESOURCE.length, icon: <Package className="w-4 h-4 text-amber-600" />, href: "/dashboard?tab=RESOURCE" },
-          { label: "Forks recibidos", value: totalForks, icon: <GitFork className="w-4 h-4 text-gray-500" />, href: null },
-        ].map((stat) => (
+          ...CONTENT_TABS.map(t => ({
+            label: t.label,
+            value: byType[t.key].length,
+            icon:  CONTENT_TABS.find(x => x.key === t.key)!.icon,
+            href:  `/dashboard?tab=${t.key}`,
+          })),
+          { label: "Forks recibidos", value: totalForks, icon: <GitFork className="w-4 h-4 text-gray-500" />, href: null as string | null },
+        ].map((stat) =>
           stat.href ? (
             <Link key={stat.label} href={stat.href}
               className="bg-white rounded-2xl border border-gray-200 px-4 py-3 hover:border-green-300 transition-colors">
@@ -110,12 +100,12 @@ export default async function DashboardPage({
               <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
             </div>
           )
-        ))}
+        )}
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-200 pb-0">
-        {TABS.map((t) => (
+        {CONTENT_TABS.map((t) => (
           <Link key={t.key} href={`/dashboard?tab=${t.key}`}
             className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
               activeTab === t.key
@@ -137,10 +127,10 @@ export default async function DashboardPage({
       {activeTrees.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
           <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-            {TABS.find(t => t.key === activeTab)?.icon}
+            {CONTENT_TABS.find(t => t.key === activeTab)?.icon}
           </div>
           <h3 className="font-medium text-gray-900 mb-1">
-            Todavía no tenés {TYPE_BADGE[activeTab].label.toLowerCase()}s
+            Todavía no tenés {CONTENT_TYPE_BADGE[activeTab].label.toLowerCase()}s
           </h3>
           <p className="text-gray-500 text-sm mb-4">
             {activeTab === "KERNEL"
@@ -151,90 +141,75 @@ export default async function DashboardPage({
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link href="/explorar" className="text-sm text-green-700 hover:underline">
-              Explorar {TYPE_BADGE[activeTab].label.toLowerCase()}s de otros
+              Explorar {CONTENT_TYPE_BADGE[activeTab].label.toLowerCase()}s de otros
             </Link>
             <Link href="/nuevo" className="bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 transition-colors">
-              Crear {TYPE_BADGE[activeTab].label.toLowerCase()}
+              Crear {CONTENT_TYPE_BADGE[activeTab].label.toLowerCase()}
             </Link>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {activeTrees.map((tree) => (
-            <div key={tree.id} className="relative bg-white rounded-2xl border border-gray-200 hover:border-green-300 hover:shadow-sm transition-all group flex flex-col">
-              <Link href={`/t/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
+          {activeTrees.map((tree) => {
+            const badge = CONTENT_TYPE_BADGE[tree.contentType];
+            return (
+              <div key={tree.id} className="relative bg-white rounded-2xl border border-gray-200 hover:border-green-300 hover:shadow-sm transition-all group flex flex-col">
+                <Link href={`/t/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
-              <div className="p-5 flex flex-col gap-3 flex-1">
-                {/* Badge + fork source */}
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_BADGE[tree.contentType].cls}`}>
-                    {TYPE_BADGE[tree.contentType].label}
-                  </span>
-                  {tree.parentTree && (
-                    <span className="text-xs text-gray-400 flex items-center gap-1">
-                      <GitFork className="w-3 h-3" />
-                      Fork de {tree.parentTree.title}
+                <div className="p-5 flex flex-col gap-3 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
+                      {badge.label}
                     </span>
-                  )}
-                  <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${
-                    tree.visibility === "PUBLIC" ? "bg-green-50 text-green-600" :
-                    tree.visibility === "UNLISTED" ? "bg-gray-100 text-gray-500" :
-                    "bg-red-50 text-red-500"
-                  }`}>
-                    {tree.visibility === "PUBLIC" ? "Público" : tree.visibility === "UNLISTED" ? "No listado" : "Privado"}
-                  </span>
-                </div>
+                    {tree.parentTree && (
+                      <span className="text-xs text-gray-400 flex items-center gap-1">
+                        <GitFork className="w-3 h-3" />
+                        Fork de {tree.parentTree.title}
+                      </span>
+                    )}
+                    <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${
+                      tree.visibility === "PUBLIC"   ? "bg-green-50 text-green-600" :
+                      tree.visibility === "UNLISTED" ? "bg-gray-100 text-gray-500"  :
+                                                       "bg-red-50 text-red-500"
+                    }`}>
+                      {tree.visibility === "PUBLIC" ? "Público" : tree.visibility === "UNLISTED" ? "No listado" : "Privado"}
+                    </span>
+                  </div>
 
-                {/* Title */}
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors line-clamp-2">
+                  <h3 className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors line-clamp-2 flex-1">
                     {tree.title}
                   </h3>
+
+                  <div className="flex items-center gap-4 text-xs text-gray-400">
+                    <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{tree._count.likes}</span>
+                    <span className="flex items-center gap-1"><GitFork className="w-3 h-3" />{tree._count.forks}</span>
+                    {tree.contentType === "KERNEL" && (
+                      <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{tree._count.documents} docs</span>
+                    )}
+                    <span className="flex items-center gap-1 ml-auto"><Clock className="w-3 h-3" />{formatDate(tree.updatedAt)}</span>
+                  </div>
                 </div>
 
-                {/* Stats */}
-                <div className="flex items-center gap-4 text-xs text-gray-400">
-                  <span className="flex items-center gap-1">
-                    <Heart className="w-3 h-3" /> {tree._count.likes}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <GitFork className="w-3 h-3" /> {tree._count.forks}
-                  </span>
-                  {tree.contentType === "KERNEL" && (
-                    <span className="flex items-center gap-1">
-                      <BookOpen className="w-3 h-3" /> {tree._count.documents} docs
+                <div className="border-t border-gray-100 px-5 py-2.5 flex items-center gap-2 flex-wrap">
+                  <Link href={`/t/${tree.slug}`}
+                    className="relative z-10 flex items-center gap-1 text-xs text-gray-500 hover:text-green-700 transition-colors px-2 py-1 rounded-lg hover:bg-green-50">
+                    <Eye className="w-3.5 h-3.5" /> Ver
+                  </Link>
+                  <Link href={`/t/${tree.slug}/configuracion`}
+                    className="relative z-10 flex items-center gap-1 text-xs text-gray-500 hover:text-green-700 transition-colors px-2 py-1 rounded-lg hover:bg-green-50">
+                    <Settings className="w-3.5 h-3.5" /> Configurar
+                  </Link>
+                  <DeleteTreeButton slug={tree.slug} title={tree.title} hasForks={tree._count.forks > 0} />
+                  {tree._count.forks > 0 && (
+                    <span className="ml-auto relative z-10 flex items-center gap-1 text-xs text-gray-400">
+                      <TrendingUp className="w-3 h-3 text-green-500" />
+                      {tree._count.forks} fork{tree._count.forks !== 1 ? "s" : ""}
                     </span>
                   )}
-                  <span className="flex items-center gap-1 ml-auto">
-                    <Clock className="w-3 h-3" /> {formatDate(tree.updatedAt)}
-                  </span>
                 </div>
               </div>
-
-              {/* Actions */}
-              <div className="border-t border-gray-100 px-5 py-2.5 flex items-center gap-2 flex-wrap">
-                <Link href={`/t/${tree.slug}`}
-                  className="relative z-10 flex items-center gap-1 text-xs text-gray-500 hover:text-green-700 transition-colors px-2 py-1 rounded-lg hover:bg-green-50">
-                  <Eye className="w-3.5 h-3.5" /> Ver
-                </Link>
-                <Link href={`/t/${tree.slug}/configuracion`}
-                  className="relative z-10 flex items-center gap-1 text-xs text-gray-500 hover:text-green-700 transition-colors px-2 py-1 rounded-lg hover:bg-green-50">
-                  <Settings className="w-3.5 h-3.5" /> Configurar
-                </Link>
-                <DeleteTreeButton
-                  slug={tree.slug}
-                  title={tree.title}
-                  hasForks={tree._count.forks > 0}
-                />
-                {tree._count.forks > 0 && (
-                  <span className="ml-auto relative z-10 flex items-center gap-1 text-xs text-gray-400">
-                    <TrendingUp className="w-3 h-3 text-green-500" />
-                    {tree._count.forks} fork{tree._count.forks !== 1 ? "s" : ""}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

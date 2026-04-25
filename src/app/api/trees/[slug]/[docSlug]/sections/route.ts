@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeLedgerEntry } from "@/lib/ledger";
+import { copySectionFields } from "@/lib/sections";
 import { createHash } from "crypto";
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
@@ -26,11 +27,35 @@ async function getOwnerDoc(slug: string, docSlug: string, userId: string) {
   return doc ? { tree, doc } : null;
 }
 
-function makeHash(content: string) {
-  return createHash("sha256").update(content).digest("hex");
+/** Commits a new version and updates the document's currentVersionId. */
+async function commitVersion(
+  docId: string,
+  authorId: string,
+  commitMessage: string,
+  contentHash: string,
+  parentVersionId: string | null,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sections: any[]
+) {
+  return prisma.$transaction(async (tx) => {
+    const version = await tx.documentVersion.create({
+      data: {
+        documentId: docId,
+        authorId,
+        commitMessage,
+        contentHash,
+        parentVersionId,
+        sections: { create: sections },
+      },
+    });
+    await tx.document.update({ where: { id: docId }, data: { currentVersionId: version.id } });
+    return version;
+  });
 }
 
-// ── POST — add a new section ─────────────────────────────────────────────────
+const sha256 = (data: string) => createHash("sha256").update(data).digest("hex");
+
+// ── POST — add a new section ──────────────────────────────────────────────────
 export async function POST(req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -43,42 +68,27 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!title?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 });
 
   const { doc } = result;
-  const latestVersion = doc.versions[0];
-  const existingSections = latestVersion?.sections ?? [];
-  const newOrder = existingSections.length > 0
-    ? Math.max(...existingSections.map((s) => s.sectionOrder)) + 1
-    : 0;
+  const existing = doc.versions[0]?.sections ?? [];
+  const newOrder = existing.length > 0 ? Math.max(...existing.map((s) => s.sectionOrder)) + 1 : 0;
 
-  const emptyContent = { type: "doc", content: [] };
-  const hash = makeHash(title + newOrder + Date.now());
-
+  // POST needs the new section back, so we run the transaction inline with include
   const newVersion = await prisma.$transaction(async (tx) => {
     const version = await tx.documentVersion.create({
       data: {
         documentId: doc.id,
         authorId: session.user.id,
         commitMessage: `Agregar sección: ${title}`,
-        contentHash: hash,
-        parentVersionId: latestVersion?.id ?? null,
+        contentHash: sha256(title + newOrder + Date.now()),
+        parentVersionId: doc.versions[0]?.id ?? null,
         sections: {
           create: [
-            ...existingSections.map((s) => ({
-              sectionType: s.sectionType,
-              sectionOrder: s.sectionOrder,
-              difficultyLevel: s.difficultyLevel,
-              ageRangeMin: s.ageRangeMin,
-              ageRangeMax: s.ageRangeMax,
-              gradeLevel: s.gradeLevel,
-              durationMinutes: s.durationMinutes,
-              isComplete: s.isComplete,
-              richTextContent: s.richTextContent as object,
-            })),
+            ...existing.map(copySectionFields),
             {
               sectionType: title.trim(),
               sectionOrder: newOrder,
               difficultyLevel: "BEGINNER" as never,
               isComplete: false,
-              richTextContent: emptyContent,
+              richTextContent: { type: "doc", content: [] },
             },
           ],
         },
@@ -97,12 +107,11 @@ export async function POST(req: NextRequest, { params }: Params) {
     actorId: session.user.id,
   });
 
-  // Return the newly created section
-  const newSection = newVersion.sections.find((s) => s.sectionOrder === newOrder);
-  return NextResponse.json(newSection);
+  const created = newVersion.sections.find((s) => s.sectionOrder === newOrder);
+  return NextResponse.json(created);
 }
 
-// ── PATCH — update a section's content/meta ──────────────────────────────────
+// ── PATCH — update a section's content / meta ─────────────────────────────────
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -115,68 +124,46 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const latestVersion = doc.versions[0];
   if (!latestVersion) return NextResponse.json({ error: "Sin versión" }, { status: 404 });
 
-  const body = await req.json();
-  const { sectionId, richTextContent, difficultyLevel, ageRangeMin, ageRangeMax, durationMinutes } = body;
+  const { sectionId, richTextContent, difficultyLevel, ageRangeMin, ageRangeMax, durationMinutes } =
+    await req.json();
 
-  const existingSections = latestVersion.sections;
-  const targetSection = existingSections.find((s) => s.id === sectionId);
-  if (!targetSection) return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
+  const target = latestVersion.sections.find((s) => s.id === sectionId);
+  if (!target) return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
 
-  const hash = makeHash(JSON.stringify(richTextContent));
+  const updatedSections = latestVersion.sections.map((s) =>
+    s.id === sectionId
+      ? {
+          ...copySectionFields(s),
+          difficultyLevel: (difficultyLevel ?? s.difficultyLevel) as never,
+          ageRangeMin:     ageRangeMin     ?? s.ageRangeMin,
+          ageRangeMax:     ageRangeMax     ?? s.ageRangeMax,
+          durationMinutes: durationMinutes ?? s.durationMinutes,
+          isComplete: true,
+          richTextContent,
+        }
+      : copySectionFields(s)
+  );
 
-  const newVersion = await prisma.$transaction(async (tx) => {
-    const version = await tx.documentVersion.create({
-      data: {
-        documentId: doc.id,
-        authorId: session.user.id,
-        commitMessage: `Actualizar: ${targetSection.sectionType}`,
-        contentHash: hash,
-        parentVersionId: latestVersion.id,
-        sections: {
-          create: existingSections.map((s) =>
-            s.id === sectionId
-              ? {
-                  sectionType: s.sectionType,
-                  sectionOrder: s.sectionOrder,
-                  difficultyLevel: (difficultyLevel ?? s.difficultyLevel) as never,
-                  ageRangeMin: ageRangeMin ?? s.ageRangeMin,
-                  ageRangeMax: ageRangeMax ?? s.ageRangeMax,
-                  gradeLevel: s.gradeLevel,
-                  durationMinutes: durationMinutes ?? s.durationMinutes,
-                  isComplete: true,
-                  richTextContent,
-                }
-              : {
-                  sectionType: s.sectionType,
-                  sectionOrder: s.sectionOrder,
-                  difficultyLevel: s.difficultyLevel,
-                  ageRangeMin: s.ageRangeMin,
-                  ageRangeMax: s.ageRangeMax,
-                  gradeLevel: s.gradeLevel,
-                  durationMinutes: s.durationMinutes,
-                  isComplete: s.isComplete,
-                  richTextContent: s.richTextContent as object,
-                }
-          ),
-        },
-      },
-    });
-    await tx.document.update({ where: { id: doc.id }, data: { currentVersionId: version.id } });
-    return version;
-  });
+  const version = await commitVersion(
+    doc.id, session.user.id,
+    `Actualizar: ${target.sectionType}`,
+    sha256(JSON.stringify(richTextContent)),
+    latestVersion.id,
+    updatedSections
+  );
 
   await writeLedgerEntry({
     eventType: "VERSION_COMMITTED",
-    subjectId: newVersion.id,
+    subjectId: version.id,
     subjectType: "version",
-    eventPayload: { documentId: doc.id, sectionId, sectionTitle: targetSection.sectionType, hash },
+    eventPayload: { documentId: doc.id, sectionId, sectionTitle: target.sectionType, hash: version.contentHash },
     actorId: session.user.id,
   });
 
-  return NextResponse.json({ versionId: newVersion.id });
+  return NextResponse.json({ versionId: version.id });
 }
 
-// ── DELETE — remove a section ────────────────────────────────────────────────
+// ── DELETE — remove a section ─────────────────────────────────────────────────
 export async function DELETE(req: NextRequest, { params }: Params) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -192,38 +179,17 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const { sectionId } = await req.json();
   const remaining = latestVersion.sections.filter((s) => s.id !== sectionId);
 
-  const hash = makeHash(remaining.map((s) => s.id).join(",") + Date.now());
-
-  const newVersion = await prisma.$transaction(async (tx) => {
-    const version = await tx.documentVersion.create({
-      data: {
-        documentId: doc.id,
-        authorId: session.user.id,
-        commitMessage: "Eliminar sección",
-        contentHash: hash,
-        parentVersionId: latestVersion.id,
-        sections: {
-          create: remaining.map((s) => ({
-            sectionType: s.sectionType,
-            sectionOrder: s.sectionOrder,
-            difficultyLevel: s.difficultyLevel,
-            ageRangeMin: s.ageRangeMin,
-            ageRangeMax: s.ageRangeMax,
-            gradeLevel: s.gradeLevel,
-            durationMinutes: s.durationMinutes,
-            isComplete: s.isComplete,
-            richTextContent: s.richTextContent as object,
-          })),
-        },
-      },
-    });
-    await tx.document.update({ where: { id: doc.id }, data: { currentVersionId: version.id } });
-    return version;
-  });
+  const version = await commitVersion(
+    doc.id, session.user.id,
+    "Eliminar sección",
+    sha256(remaining.map((s) => s.id).join(",") + Date.now()),
+    latestVersion.id,
+    remaining.map(copySectionFields)
+  );
 
   await writeLedgerEntry({
     eventType: "VERSION_COMMITTED",
-    subjectId: newVersion.id,
+    subjectId: version.id,
     subjectType: "version",
     eventPayload: { documentId: doc.id, action: "section_deleted", sectionId },
     actorId: session.user.id,

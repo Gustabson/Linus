@@ -1,39 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeLedgerEntry } from "@/lib/ledger";
-import { slugify } from "@/lib/utils";
+import { getSession, getOwnedTree, unauthorized, forbidden, uniqueSlug } from "@/lib/api-helpers";
 import { createHash } from "crypto";
 
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
   const { slug } = await params;
-
-  const tree = await prisma.documentTree.findUnique({
-    where: { slug },
-    select: { id: true, ownerId: true },
-  });
-
-  if (!tree || tree.ownerId !== session.user.id)
-    return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
+  const tree = await getOwnedTree(slug, session.user.id);
+  if (!tree) return forbidden();
 
   const { title } = await req.json();
-  if (!title?.trim())
-    return NextResponse.json({ error: "Título requerido" }, { status: 400 });
+  if (!title?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 });
 
-  const baseSlug = slugify(title);
-  let docSlug = baseSlug;
-  let attempt = 0;
-  while (await prisma.document.findUnique({ where: { treeId_slug: { treeId: tree.id, slug: docSlug } } })) {
-    attempt++;
-    docSlug = `${baseSlug}-${attempt}`;
-  }
+  const docSlug = await uniqueSlug(title, (s) =>
+    prisma.document
+      .findUnique({ where: { treeId_slug: { treeId: tree.id, slug: s } }, select: { id: true } })
+      .then(Boolean)
+  );
 
   const contentHash = createHash("sha256").update(title + docSlug).digest("hex");
 
@@ -43,26 +32,25 @@ export async function POST(
     });
     const version = await tx.documentVersion.create({
       data: {
-        documentId: newDoc.id,
-        authorId: session.user.id,
+        documentId:    newDoc.id,
+        authorId:      session.user.id,
         commitMessage: "Documento creado",
         contentHash,
-        // No sections — user adds them manually
       },
     });
     await tx.document.update({
       where: { id: newDoc.id },
-      data: { currentVersionId: version.id },
+      data:  { currentVersionId: version.id },
     });
     return newDoc;
   });
 
   await writeLedgerEntry({
-    eventType: "DOCUMENT_CREATED",
-    subjectId: doc.id,
-    subjectType: "document",
+    eventType:    "DOCUMENT_CREATED",
+    subjectId:    doc.id,
+    subjectType:  "document",
     eventPayload: { documentId: doc.id, treeId: tree.id, title: doc.title },
-    actorId: session.user.id,
+    actorId:      session.user.id,
   });
 
   return NextResponse.json({ slug: docSlug, id: doc.id });

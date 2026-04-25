@@ -2,19 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { GitFork, Heart, MapPin, Globe, Calendar, Cpu, Puzzle, Package } from "lucide-react";
+import { GitFork, Heart, MapPin, Globe, Calendar } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { EditProfileButton } from "@/components/profile/EditProfileButton";
 import { FollowButton } from "@/components/profile/FollowButton";
+import { CONTENT_TYPE_BADGE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
-
-const TYPE_BADGE: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
-  KERNEL:   { label: "Kernel",  cls: "bg-green-100 text-green-800",  icon: <Cpu className="w-3 h-3" />    },
-  MODULE:   { label: "Módulo",  cls: "bg-blue-100 text-blue-800",    icon: <Puzzle className="w-3 h-3" /> },
-  RESOURCE: { label: "Recurso", cls: "bg-amber-100 text-amber-800",  icon: <Package className="w-3 h-3" /> },
-};
 
 export default async function UserProfilePage({
   params,
@@ -159,7 +154,7 @@ export default async function UserProfilePage({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {user.ownedTrees.map((tree) => {
-              const badge = TYPE_BADGE[tree.contentType] ?? TYPE_BADGE.KERNEL;
+              const badge = CONTENT_TYPE_BADGE[tree.contentType] ?? CONTENT_TYPE_BADGE.KERNEL;
               return (
                 <Link key={tree.id} href={`/t/${tree.slug}`}
                   className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-sm transition-all group block">

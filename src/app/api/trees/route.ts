@@ -1,43 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeLedgerEntry } from "@/lib/ledger";
-import { slugify } from "@/lib/utils";
+import { getSession, unauthorized, uniqueSlug } from "@/lib/api-helpers";
 import type { TreeVisibility, ContentType } from "@prisma/client";
 
+const VALID_TYPES: ContentType[] = ["KERNEL", "MODULE", "RESOURCE"];
+
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
-  }
+  const session = await getSession();
+  if (!session) return unauthorized();
 
   const { title, description, language, visibility, contentType } = await req.json();
+  if (!title?.trim()) return NextResponse.json({ error: "El título es requerido" }, { status: 400 });
 
-  if (!title?.trim()) {
-    return NextResponse.json({ error: "El título es requerido" }, { status: 400 });
-  }
+  const resolvedType: ContentType = VALID_TYPES.includes(contentType) ? contentType : "KERNEL";
 
-  const validTypes: ContentType[] = ["KERNEL", "MODULE", "RESOURCE"];
-  const resolvedType: ContentType = validTypes.includes(contentType) ? contentType : "KERNEL";
-
-  const baseSlug = slugify(title);
-  let slug = baseSlug;
-  let attempt = 0;
-  while (await prisma.documentTree.findUnique({ where: { slug } })) {
-    attempt++;
-    slug = `${baseSlug}-${attempt}`;
-  }
+  const slug = await uniqueSlug(title, (s) =>
+    prisma.documentTree.findUnique({ where: { slug: s }, select: { id: true } }).then(Boolean)
+  );
 
   const tree = await prisma.documentTree.create({
     data: {
       slug,
-      title: title.trim(),
+      title:       title.trim(),
       description: description?.trim() || null,
-      language: language ?? "es",
-      visibility: (visibility as TreeVisibility) ?? "PUBLIC",
+      language:    language ?? "es",
+      visibility:  (visibility as TreeVisibility) ?? "PUBLIC",
       contentType: resolvedType,
-      forkDepth: 0,
-      ownerId: session.user.id,
+      forkDepth:   0,
+      ownerId:     session.user.id,
     },
   });
 
@@ -46,11 +37,11 @@ export async function POST(req: NextRequest) {
   });
 
   await writeLedgerEntry({
-    eventType: "TREE_CREATED",
-    subjectId: tree.id,
-    subjectType: "tree",
+    eventType:    "TREE_CREATED",
+    subjectId:    tree.id,
+    subjectType:  "tree",
     eventPayload: { treeId: tree.id, title: tree.title, slug: tree.slug, contentType: resolvedType },
-    actorId: session.user.id,
+    actorId:      session.user.id,
   });
 
   return NextResponse.json({ slug: tree.slug, id: tree.id });

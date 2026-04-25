@@ -1,30 +1,19 @@
 import { prisma } from "@/lib/prisma";
-import { GitFork, BookOpen, Search, Heart, TrendingUp, Clock, Cpu, Puzzle, Package } from "lucide-react";
+import { GitFork, BookOpen, Search, Heart, TrendingUp, Clock } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import Image from "next/image";
+import { CONTENT_TYPE_BADGE, CONTENT_TABS } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
-const CONTENT_TABS = [
-  { key: "KERNEL",   label: "Kernels",  icon: <Cpu className="w-4 h-4" />,    color: "green" },
-  { key: "MODULE",   label: "Módulos",  icon: <Puzzle className="w-4 h-4" />, color: "blue"  },
-  { key: "RESOURCE", label: "Recursos", icon: <Package className="w-4 h-4" />, color: "amber" },
-];
-
 const SORT_OPTIONS = [
-  { key: "trending", label: "Tendencia", icon: <TrendingUp className="w-4 h-4" /> },
-  { key: "likes",    label: "Más likeados", icon: <Heart className="w-4 h-4" /> },
-  { key: "forks",    label: "Más forkeados", icon: <GitFork className="w-4 h-4" /> },
-  { key: "new",      label: "Más nuevos", icon: <Clock className="w-4 h-4" /> },
+  { key: "trending", label: "Tendencia",    icon: <TrendingUp className="w-4 h-4" /> },
+  { key: "likes",    label: "Más likeados", icon: <Heart className="w-4 h-4" />      },
+  { key: "forks",    label: "Más forkeados",icon: <GitFork className="w-4 h-4" />    },
+  { key: "new",      label: "Más nuevos",   icon: <Clock className="w-4 h-4" />      },
 ];
-
-const TYPE_BADGE: Record<string, { label: string; icon: React.ReactNode; cls: string }> = {
-  KERNEL:   { label: "Kernel",  icon: <Cpu className="w-3 h-3" />,    cls: "bg-green-100 text-green-800" },
-  MODULE:   { label: "Módulo",  icon: <Puzzle className="w-3 h-3" />, cls: "bg-blue-100 text-blue-800"  },
-  RESOURCE: { label: "Recurso", icon: <Package className="w-3 h-3" />, cls: "bg-amber-100 text-amber-800" },
-};
 
 export default async function ExplorarPage({
   searchParams,
@@ -32,7 +21,6 @@ export default async function ExplorarPage({
   searchParams: Promise<{ q?: string; sort?: string; tipo?: string }>;
 }) {
   const { q, sort = "trending", tipo = "KERNEL" } = await searchParams;
-
   const contentType = (["KERNEL", "MODULE", "RESOURCE"].includes(tipo) ? tipo : "KERNEL") as ContentType;
 
   const trees = await prisma.documentTree.findMany({
@@ -41,7 +29,7 @@ export default async function ExplorarPage({
       contentType,
       ...(q ? {
         OR: [
-          { title: { contains: q, mode: "insensitive" } },
+          { title:       { contains: q, mode: "insensitive" } },
           { description: { contains: q, mode: "insensitive" } },
         ],
       } : {}),
@@ -55,20 +43,16 @@ export default async function ExplorarPage({
   });
 
   const sorted = [...trees].sort((a, b) => {
-    if (sort === "likes")  return b._count.likes - a._count.likes;
-    if (sort === "forks")  return b._count.forks - a._count.forks;
-    if (sort === "new")    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (sort === "likes") return b._count.likes - a._count.likes;
+    if (sort === "forks") return b._count.forks - a._count.forks;
+    if (sort === "new")   return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     return (b._count.likes * 2 + b._count.forks * 3) - (a._count.likes * 2 + a._count.forks * 3);
   });
 
-  const badge = TYPE_BADGE[contentType];
+  const badge = CONTENT_TYPE_BADGE[contentType];
 
-  function tabHref(t: string) {
-    return `/explorar?tipo=${t}${sort !== "trending" ? `&sort=${sort}` : ""}${q ? `&q=${q}` : ""}`;
-  }
-  function sortHref(s: string) {
-    return `/explorar?tipo=${contentType}&sort=${s}${q ? `&q=${q}` : ""}`;
-  }
+  const tabHref  = (t: string) => `/explorar?tipo=${t}${sort !== "trending" ? `&sort=${sort}` : ""}${q ? `&q=${q}` : ""}`;
+  const sortHref = (s: string) => `/explorar?tipo=${contentType}&sort=${s}${q ? `&q=${q}` : ""}`;
 
   return (
     <div className="space-y-6">
@@ -140,51 +124,52 @@ export default async function ExplorarPage({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {sorted.map((tree) => (
-            <div key={tree.id} className="relative bg-white rounded-2xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-sm transition-all group flex flex-col">
-              <Link href={`/t/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
+          {sorted.map((tree) => {
+            const tb = CONTENT_TYPE_BADGE[tree.contentType];
+            return (
+              <div key={tree.id} className="relative bg-white rounded-2xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-sm transition-all group flex flex-col">
+                <Link href={`/t/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
-              {/* Badge */}
-              <div className="flex items-center gap-2 mb-3">
-                <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_BADGE[tree.contentType].cls}`}>
-                  {TYPE_BADGE[tree.contentType].icon}
-                  {TYPE_BADGE[tree.contentType].label}
-                </span>
-                {tree.forkDepth > 0 && (
-                  <span className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <GitFork className="w-3 h-3" /> Nivel {tree.forkDepth}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${tb.cls}`}>
+                    {tb.icon}
+                    {tb.label}
                   </span>
+                  {tree.forkDepth > 0 && (
+                    <span className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <GitFork className="w-3 h-3" /> Nivel {tree.forkDepth}
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors line-clamp-2 mb-1 flex-1">
+                  {tree.title}
+                </h3>
+                {tree.description && (
+                  <p className="text-gray-500 text-sm line-clamp-2 mb-3">{tree.description}</p>
                 )}
+
+                <Link href={`/u/${tree.owner.username ?? tree.owner.id}`}
+                  className="relative z-10 flex items-center gap-2 mb-3 w-fit">
+                  {tree.owner.image ? (
+                    <Image src={tree.owner.image} alt="" width={20} height={20} className="rounded-full" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xs font-bold">
+                      {(tree.owner.name ?? "?")[0]}
+                    </div>
+                  )}
+                  <span className="text-xs text-gray-400 hover:text-green-700 transition-colors">{tree.owner.name}</span>
+                </Link>
+
+                <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
+                  <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{tree._count.likes}</span>
+                  <span className="flex items-center gap-1"><GitFork className="w-3 h-3" />{tree._count.forks}</span>
+                  <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{tree._count.documents}</span>
+                  <span>{formatDate(tree.createdAt)}</span>
+                </div>
               </div>
-
-              <h3 className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors line-clamp-2 mb-1 flex-1">
-                {tree.title}
-              </h3>
-              {tree.description && (
-                <p className="text-gray-500 text-sm line-clamp-2 mb-3">{tree.description}</p>
-              )}
-
-              {/* Author */}
-              <Link href={`/u/${tree.owner.username ?? tree.owner.id}`} className="relative z-10 flex items-center gap-2 mb-3 w-fit">
-                {tree.owner.image ? (
-                  <Image src={tree.owner.image} alt="" width={20} height={20} className="rounded-full" />
-                ) : (
-                  <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xs font-bold">
-                    {(tree.owner.name ?? "?")[0]}
-                  </div>
-                )}
-                <span className="text-xs text-gray-400 hover:text-green-700 transition-colors">{tree.owner.name}</span>
-              </Link>
-
-              {/* Stats */}
-              <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
-                <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{tree._count.likes}</span>
-                <span className="flex items-center gap-1"><GitFork className="w-3 h-3" />{tree._count.forks}</span>
-                <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{tree._count.documents}</span>
-                <span>{formatDate(tree.createdAt)}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

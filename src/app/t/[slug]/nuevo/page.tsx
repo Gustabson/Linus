@@ -24,15 +24,13 @@ export default async function NewDocumentPage({
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <p className="text-sm text-gray-500 mb-1">
-          {tree.title}
-        </p>
+        <p className="text-sm text-gray-500 mb-1">{tree.title}</p>
         <h1 className="text-3xl font-bold text-gray-900">Nuevo documento</h1>
         <p className="text-gray-500 mt-1">
-          Se crearán las 10 secciones automáticamente para que las completes.
+          El documento empieza vacío — vos elegís el nombre y la cantidad de secciones.
         </p>
       </div>
-      <NewDocumentForm treeSlug={tree.slug} treeId={tree.id} />
+      <NewDocumentForm treeSlug={tree.slug} />
     </div>
   );
 }

@@ -4,12 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText } from "lucide-react";
 
-export function NewDocumentForm({
-  treeSlug,
-}: {
-  treeSlug: string;
-  treeId: string;
-}) {
+export function NewDocumentForm({ treeSlug }: { treeSlug: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();

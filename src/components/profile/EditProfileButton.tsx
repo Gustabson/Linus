@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Pencil, X, Save } from "lucide-react";
 
 interface ProfileData {
@@ -13,6 +14,7 @@ interface ProfileData {
 }
 
 export function EditProfileButton({ user }: { user: ProfileData }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -33,7 +35,7 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
     setSaving(false);
     if (res.ok) {
       setOpen(false);
-      window.location.reload();
+      router.refresh();
     }
   }
 
