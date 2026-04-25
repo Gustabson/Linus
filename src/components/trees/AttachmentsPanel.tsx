@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Puzzle, Package, Plus, X, Search, Loader2,
+  Puzzle, Plus, X, Search, Loader2,
   Heart, GitFork, ExternalLink, FileText,
 } from "lucide-react";
 
@@ -22,44 +22,29 @@ interface Attachment {
   content: AttachedTree;
 }
 
-const TYPE_META = {
-  MODULE: {
-    label: "Módulo",
-    plural: "Módulos",
-    icon: <Puzzle className="w-3.5 h-3.5" />,
-    cls: "bg-blue-100 text-blue-800",
-    emptyText: "No hay módulos adjuntos.",
-    hint: "Creá una unidad didáctica o adjuntá una existente.",
-    placeholder: "Ej: Unidad de Fracciones — 4to grado",
-  },
-  RESOURCE: {
-    label: "Recurso",
-    plural: "Recursos",
-    icon: <Package className="w-3.5 h-3.5" />,
-    cls: "bg-amber-100 text-amber-800",
-    emptyText: "No hay recursos adjuntos.",
-    hint: "Creá material de apoyo o adjuntá uno existente.",
-    placeholder: "Ej: Guía de actividades de lectura",
-  },
-} as const;
+const MODULE_META = {
+  label: "Módulo",
+  plural: "Módulos",
+  icon: <Puzzle className="w-3.5 h-3.5" />,
+  cls: "bg-blue-100 text-blue-800",
+  emptyText: "No hay módulos adjuntos.",
+  hint: "Creá una unidad didáctica o adjuntá una existente.",
+  placeholder: "Ej: Unidad de Fracciones — 4to grado",
+};
 
-type ContentType = keyof typeof TYPE_META;
-
-// ── Single-type section ──────────────────────────────────────────────────────
+// ── Modules section ──────────────────────────────────────────────────────────
 function AttachSection({
-  type,
   kernelSlug,
   kernelId,
   initialItems,
-  canAdd,       // only true when parent is KERNEL and current user is owner
+  canAdd,
 }: {
-  type: ContentType;
   kernelSlug: string;
   kernelId: string;
   initialItems: Attachment[];
   canAdd: boolean;
 }) {
-  const meta = TYPE_META[type];
+  const meta = MODULE_META;
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
 
@@ -83,13 +68,13 @@ function AttachSection({
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       const res = await fetch(
-        `/api/trees/search?q=${encodeURIComponent(query)}&types=${type}&exclude=${kernelId}`
+        `/api/trees/search?q=${encodeURIComponent(query)}&types=MODULE&exclude=${kernelId}`
       );
       if (res.ok) setResults(await res.json());
       setSearching(false);
     }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [query, showSearch, kernelId, type]);
+  }, [query, showSearch, kernelId]);
 
   // Create tree + first document + attach → redirect to editor
   async function handleCreate(e: React.FormEvent) {
@@ -101,7 +86,7 @@ function AttachSection({
     const treeRes = await fetch("/api/trees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: createTitle.trim(), contentType: type, visibility: "PUBLIC" }),
+      body: JSON.stringify({ title: createTitle.trim(), contentType: "MODULE", visibility: "PUBLIC" }),
     });
     if (!treeRes.ok) { setCreating(false); return; }
     const tree = await treeRes.json();
@@ -348,26 +333,16 @@ export function AttachmentsPanel({
   isOwner: boolean;
   isKernel: boolean;
 }) {
-  const modules   = initialAttachments.filter((a) => a.content.contentType === "MODULE");
-  const resources = initialAttachments.filter((a) => a.content.contentType === "RESOURCE");
+  // Only show MODULE type — RESOURCE type is standalone and not attached to kernels
+  const modules = initialAttachments.filter((a) => a.content.contentType === "MODULE");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h2 className="text-xl font-semibold text-gray-900">Módulos</h2>
-
       <AttachSection
-        type="MODULE"
         kernelSlug={kernelSlug}
         kernelId={kernelId}
         initialItems={modules}
-        canAdd={isKernel && isOwner}
-      />
-
-      <AttachSection
-        type="RESOURCE"
-        kernelSlug={kernelSlug}
-        kernelId={kernelId}
-        initialItems={resources}
         canAdd={isKernel && isOwner}
       />
     </div>

@@ -110,7 +110,7 @@ export function ExtensionsPanel({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">Materiales</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Recursos</h2>
         {isOwner && (
           <button
             onClick={() => setShowForm(!showForm)}
@@ -203,7 +203,7 @@ export function ExtensionsPanel({
       {/* List */}
       {extensions.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center text-gray-400 text-sm">
-          No hay materiales todavía.
+          No hay recursos todavía.
           {isOwner && " Agregá links, archivos o apps que complementen este currículo."}
         </div>
       ) : (
