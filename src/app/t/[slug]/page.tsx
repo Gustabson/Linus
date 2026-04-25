@@ -9,6 +9,7 @@ import { ForkButton } from "@/components/trees/ForkButton";
 import { LikeButton } from "@/components/trees/LikeButton";
 import { ExtensionsPanel } from "@/components/trees/ExtensionsPanel";
 import { ForkTree } from "@/components/trees/ForkTree";
+import { AttachmentsPanel } from "@/components/trees/AttachmentsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,18 @@ export default async function TreePage({
       extensions: {
         orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
         include: { author: { select: { name: true, image: true } } },
+      },
+      attachments: {
+        orderBy: { addedAt: "asc" },
+        include: {
+          content: {
+            select: {
+              id: true, slug: true, title: true, contentType: true,
+              owner: { select: { name: true, username: true } },
+              _count: { select: { likes: true, forks: true } },
+            },
+          },
+        },
       },
       _count: { select: { forks: true, likes: true } },
     },
@@ -243,6 +256,19 @@ export default async function TreePage({
           })
         )}
       </div>
+
+      {/* Attachments (modules/resources) — kernels only */}
+      {tree.contentType === "KERNEL" && (
+        <AttachmentsPanel
+          kernelSlug={tree.slug}
+          kernelId={tree.id}
+          initialAttachments={tree.attachments.map((a) => ({
+            id: a.id,
+            content: a.content,
+          }))}
+          isOwner={isOwner}
+        />
+      )}
 
       {/* Fork tree */}
       {hasForkTree && (
