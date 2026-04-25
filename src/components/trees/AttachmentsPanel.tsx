@@ -106,7 +106,7 @@ function AttachSection({
               Adjuntar
             </button>
             <Link
-              href={`/nuevo?tipo=${type}`}
+              href={`/nuevo?tipo=${type}&kernel=${kernelSlug}`}
               className="flex items-center gap-1 text-xs bg-green-700 text-white px-2.5 py-1.5 rounded-lg hover:bg-green-800 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />

@@ -35,7 +35,15 @@ export async function POST(req: NextRequest, { params }: Params) {
     where: { kernelId_contentId: { kernelId: kernel.id, contentId } },
     create: { kernelId: kernel.id, contentId, addedById: session.user.id },
     update: {},
-    include: { content: { select: { id: true, slug: true, title: true, contentType: true } } },
+    include: {
+      content: {
+        select: {
+          id: true, slug: true, title: true, contentType: true,
+          owner: { select: { name: true, username: true } },
+          _count: { select: { likes: true, forks: true } },
+        },
+      },
+    },
   });
 
   await writeLedgerEntry({

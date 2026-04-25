@@ -25,7 +25,15 @@ const CONTENT_TYPES = [
   },
 ];
 
-export function NewTreeForm({ defaultType = "KERNEL" }: { defaultType?: "KERNEL" | "MODULE" | "RESOURCE" }) {
+export function NewTreeForm({
+  defaultType = "KERNEL",
+  lockType = false,
+  kernelSlug,
+}: {
+  defaultType?: "KERNEL" | "MODULE" | "RESOURCE";
+  lockType?: boolean;
+  kernelSlug?: string;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [contentType, setContentType] = useState(defaultType);
@@ -37,6 +45,7 @@ export function NewTreeForm({ defaultType = "KERNEL" }: { defaultType?: "KERNEL"
     setError("");
     const data = new FormData(e.currentTarget);
 
+    // 1. Create the tree
     const res = await fetch("/api/trees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -50,47 +59,80 @@ export function NewTreeForm({ defaultType = "KERNEL" }: { defaultType?: "KERNEL"
     });
 
     const json = await res.json();
-    setLoading(false);
-    if (res.ok) router.push(`/t/${json.slug}`);
-    else setError(json.error ?? "Error al crear");
+    if (!res.ok) {
+      setError(json.error ?? "Error al crear");
+      setLoading(false);
+      return;
+    }
+
+    // 2. If coming from a kernel, auto-attach
+    if (kernelSlug && (contentType === "MODULE" || contentType === "RESOURCE")) {
+      await fetch(`/api/trees/${kernelSlug}/attachments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contentId: json.id }),
+      });
+    }
+
+    // 3. For modules/resources created from a kernel: go straight to the document editor
+    //    For kernels or standalone creation: go to the tree page
+    if (kernelSlug && (contentType === "MODULE" || contentType === "RESOURCE")) {
+      router.push(`/t/${json.slug}/nuevo`);
+    } else {
+      router.push(`/t/${json.slug}`);
+    }
   }
+
+  const selected = CONTENT_TYPES.find((t) => t.value === contentType)!;
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
-      {/* Type selector */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de contenido</label>
-        <div className="space-y-2">
-          {CONTENT_TYPES.map((t) => (
-            <button
-              key={t.value}
-              type="button"
-              onClick={() => setContentType(t.value as "KERNEL" | "MODULE" | "RESOURCE")}
-              className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
-                contentType === t.value
-                  ? "border-green-500 bg-green-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${contentType === t.value ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                {t.icon}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{t.label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{t.desc}</p>
-              </div>
-              <div className={`w-4 h-4 rounded-full border-2 shrink-0 mt-1 ${contentType === t.value ? "border-green-500 bg-green-500" : "border-gray-300"}`} />
-            </button>
-          ))}
+      {/* Type selector — hidden when type is locked from context */}
+      {lockType ? (
+        <div className="flex items-center gap-3 p-3 rounded-xl border border-green-200 bg-green-50">
+          <div className="p-1.5 rounded-lg bg-green-100 text-green-700 shrink-0">
+            {selected.icon}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-900">{selected.label}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{selected.desc}</p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de contenido</label>
+          <div className="space-y-2">
+            {CONTENT_TYPES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => setContentType(t.value as "KERNEL" | "MODULE" | "RESOURCE")}
+                className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
+                  contentType === t.value
+                    ? "border-green-500 bg-green-50"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${contentType === t.value ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                  {t.icon}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">{t.label}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{t.desc}</p>
+                </div>
+                <div className={`w-4 h-4 rounded-full border-2 shrink-0 mt-1 ${contentType === t.value ? "border-green-500 bg-green-500" : "border-gray-300"}`} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
         <input name="title" required placeholder={
-          contentType === "KERNEL" ? "Ej: Educación Primaria Argentina - Grado 3" :
-          contentType === "MODULE" ? "Ej: Unidad de Fracciones - 4to grado" :
-          "Ej: Guía de actividades de lectura"
+          contentType === "KERNEL"   ? "Ej: Educación Primaria Argentina - Grado 3" :
+          contentType === "MODULE"   ? "Ej: Unidad de Fracciones - 4to grado" :
+                                       "Ej: Guía de actividades de lectura"
         } className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
       </div>
 
@@ -126,7 +168,9 @@ export function NewTreeForm({ defaultType = "KERNEL" }: { defaultType?: "KERNEL"
       <button type="submit" disabled={loading}
         className="w-full bg-green-700 text-white py-3 rounded-xl font-medium hover:bg-green-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
         <BookOpen className="w-5 h-5" />
-        {loading ? "Creando..." : `Crear ${CONTENT_TYPES.find(t => t.value === contentType)?.label ?? ""}`}
+        {loading
+          ? (kernelSlug ? "Creando y adjuntando..." : "Creando...")
+          : `Crear ${selected.label}`}
       </button>
     </form>
   );
