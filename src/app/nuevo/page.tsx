@@ -2,19 +2,27 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { NewTreeForm } from "@/components/trees/NewTreeForm";
 
-export default async function NuevoPage() {
+export default async function NuevoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tipo?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
+
+  const { tipo } = await searchParams;
+  const validTypes = ["KERNEL", "MODULE", "RESOURCE"];
+  const defaultType = validTypes.includes(tipo ?? "") ? (tipo as "KERNEL" | "MODULE" | "RESOURCE") : "KERNEL";
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Crear nuevo currículo</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Crear nuevo</h1>
         <p className="text-gray-500 mt-1">
           Tu propio espacio educativo. Podés llenarlo poco a poco.
         </p>
       </div>
-      <NewTreeForm />
+      <NewTreeForm defaultType={defaultType} />
     </div>
   );
 }

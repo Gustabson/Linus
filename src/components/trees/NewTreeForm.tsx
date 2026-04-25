@@ -25,10 +25,10 @@ const CONTENT_TYPES = [
   },
 ];
 
-export function NewTreeForm() {
+export function NewTreeForm({ defaultType = "KERNEL" }: { defaultType?: "KERNEL" | "MODULE" | "RESOURCE" }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [contentType, setContentType] = useState("KERNEL");
+  const [contentType, setContentType] = useState(defaultType);
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -65,7 +65,7 @@ export function NewTreeForm() {
             <button
               key={t.value}
               type="button"
-              onClick={() => setContentType(t.value)}
+              onClick={() => setContentType(t.value as "KERNEL" | "MODULE" | "RESOURCE")}
               className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
                 contentType === t.value
                   ? "border-green-500 bg-green-50"
