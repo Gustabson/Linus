@@ -2,7 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Puzzle, Package, Plus, X, Search, Loader2, Heart, GitFork, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Puzzle, Package, Plus, X, Search, Loader2,
+  Heart, GitFork, ExternalLink, FileText,
+} from "lucide-react";
 
 interface AttachedTree {
   id: string;
@@ -19,8 +23,24 @@ interface Attachment {
 }
 
 const TYPE_META = {
-  MODULE:   { label: "Módulo",  icon: <Puzzle className="w-3.5 h-3.5" />,  cls: "bg-blue-100 text-blue-800",  emptyText: "No hay módulos adjuntos.",  hint: "Adjuntá unidades didácticas de otros maestros o creá la tuya."  },
-  RESOURCE: { label: "Recurso", icon: <Package className="w-3.5 h-3.5" />, cls: "bg-amber-100 text-amber-800", emptyText: "No hay recursos adjuntos.", hint: "Adjuntá materiales de apoyo o creá el tuyo." },
+  MODULE: {
+    label: "Módulo",
+    plural: "Módulos",
+    icon: <Puzzle className="w-3.5 h-3.5" />,
+    cls: "bg-blue-100 text-blue-800",
+    emptyText: "No hay módulos adjuntos.",
+    hint: "Creá una unidad didáctica o adjuntá una existente.",
+    placeholder: "Ej: Unidad de Fracciones — 4to grado",
+  },
+  RESOURCE: {
+    label: "Recurso",
+    plural: "Recursos",
+    icon: <Package className="w-3.5 h-3.5" />,
+    cls: "bg-amber-100 text-amber-800",
+    emptyText: "No hay recursos adjuntos.",
+    hint: "Creá material de apoyo o adjuntá uno existente.",
+    placeholder: "Ej: Guía de actividades de lectura",
+  },
 } as const;
 
 type ContentType = keyof typeof TYPE_META;
@@ -31,21 +51,30 @@ function AttachSection({
   kernelSlug,
   kernelId,
   initialItems,
-  isOwner,
+  canAdd,       // only true when parent is KERNEL and current user is owner
 }: {
   type: ContentType;
   kernelSlug: string;
   kernelId: string;
   initialItems: Attachment[];
-  isOwner: boolean;
+  canAdd: boolean;
 }) {
   const meta = TYPE_META[type];
+  const router = useRouter();
   const [items, setItems] = useState(initialItems);
+
+  // Inline create
+  const [showCreate, setShowCreate] = useState(false);
+  const [createTitle, setCreateTitle] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  // Search existing
   const [showSearch, setShowSearch] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<AttachedTree[]>([]);
   const [searching, setSearching] = useState(false);
   const [attaching, setAttaching] = useState<string | null>(null);
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -61,6 +90,45 @@ function AttachSection({
     }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query, showSearch, kernelId, type]);
+
+  // Create tree + first document + attach → redirect to editor
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!createTitle.trim()) return;
+    setCreating(true);
+
+    // 1. Create the tree
+    const treeRes = await fetch("/api/trees", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: createTitle.trim(), contentType: type, visibility: "PUBLIC" }),
+    });
+    if (!treeRes.ok) { setCreating(false); return; }
+    const tree = await treeRes.json();
+
+    // 2. Create the first document (same title)
+    const docRes = await fetch(`/api/trees/${tree.slug}/documents`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: createTitle.trim(), treeId: tree.id }),
+    });
+    if (!docRes.ok) { setCreating(false); return; }
+    const doc = await docRes.json();
+
+    // 3. Attach to this kernel
+    const attRes = await fetch(`/api/trees/${kernelSlug}/attachments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contentId: tree.id }),
+    });
+    if (attRes.ok) {
+      const newAtt = await attRes.json();
+      setItems((prev) => [...prev, newAtt]);
+    }
+
+    // 4. Go straight to the section editor
+    router.push(`/t/${tree.slug}/${doc.slug}`);
+  }
 
   async function attach(contentId: string) {
     setAttaching(contentId);
@@ -78,12 +146,26 @@ function AttachSection({
   }
 
   async function detach(attachmentId: string, contentId: string) {
-    const res = await fetch(`/api/trees/${kernelSlug}/attachments`, {
+    // optimistic
+    setItems((prev) => prev.filter((a) => a.id !== attachmentId));
+    await fetch(`/api/trees/${kernelSlug}/attachments`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contentId }),
     });
-    if (res.ok) setItems((prev) => prev.filter((a) => a.id !== attachmentId));
+  }
+
+  function toggleCreate() {
+    setShowCreate((v) => !v);
+    setShowSearch(false);
+    setCreateTitle("");
+  }
+
+  function toggleSearch() {
+    setShowSearch((v) => !v);
+    setShowCreate(false);
+    setQuery("");
+    setResults([]);
   }
 
   return (
@@ -92,32 +174,76 @@ function AttachSection({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${meta.cls}`}>
-            {meta.icon} {meta.label}s
+            {meta.icon} {meta.plural}
           </span>
           <span className="text-sm text-gray-400">{items.length}</span>
         </div>
-        {isOwner && (
+
+        {canAdd && (
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { setShowSearch(!showSearch); setQuery(""); setResults([]); }}
-              className="flex items-center gap-1 text-xs text-gray-600 hover:text-green-700 border border-gray-200 px-2.5 py-1.5 rounded-lg hover:border-green-200 hover:bg-green-50 transition-colors"
+              onClick={toggleSearch}
+              className={`flex items-center gap-1 text-xs border px-2.5 py-1.5 rounded-lg transition-colors ${
+                showSearch
+                  ? "border-green-400 bg-green-50 text-green-700"
+                  : "border-gray-200 text-gray-600 hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+              }`}
             >
               <Search className="w-3.5 h-3.5" />
               Adjuntar
             </button>
-            <Link
-              href={`/nuevo?tipo=${type}&kernel=${kernelSlug}`}
-              className="flex items-center gap-1 text-xs bg-green-700 text-white px-2.5 py-1.5 rounded-lg hover:bg-green-800 transition-colors"
+            <button
+              onClick={toggleCreate}
+              className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
+                showCreate
+                  ? "bg-green-800 text-white"
+                  : "bg-green-700 text-white hover:bg-green-800"
+              }`}
             >
               <Plus className="w-3.5 h-3.5" />
               Agregar
-            </Link>
+            </button>
           </div>
         )}
       </div>
 
-      {/* Search dropdown */}
-      {showSearch && (
+      {/* Inline create form */}
+      {showCreate && canAdd && (
+        <form onSubmit={handleCreate}
+          className="bg-white rounded-xl border border-green-200 p-4 space-y-3">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1 font-medium">
+              Título del {meta.label.toLowerCase()} *
+            </label>
+            <input
+              autoFocus
+              value={createTitle}
+              onChange={(e) => setCreateTitle(e.target.value)}
+              placeholder={meta.placeholder}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-green-400"
+            />
+          </div>
+          <p className="text-xs text-gray-400 flex items-center gap-1">
+            <FileText className="w-3.5 h-3.5" />
+            Se crearán las 10 secciones automáticamente. Vas a ir directo al editor.
+          </p>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setShowCreate(false)}
+              className="text-sm text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button type="submit" disabled={creating || !createTitle.trim()}
+              className="text-sm bg-green-700 text-white px-4 py-1.5 rounded-lg hover:bg-green-800 disabled:opacity-50 flex items-center gap-1.5">
+              {creating
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Creando...</>
+                : <><FileText className="w-3.5 h-3.5" /> Crear y abrir editor</>}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Search existing */}
+      {showSearch && canAdd && (
         <div className="bg-white rounded-xl border border-green-200 p-3 space-y-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -139,7 +265,8 @@ function AttachSection({
 
           <div className="space-y-1.5 max-h-56 overflow-y-auto">
             {results.map((tree) => (
-              <div key={tree.id} className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:border-green-200 hover:bg-green-50 transition-colors">
+              <div key={tree.id}
+                className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:border-green-200 hover:bg-green-50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900 text-sm truncate">{tree.title}</p>
                   <p className="text-xs text-gray-400">
@@ -155,8 +282,7 @@ function AttachSection({
                   <button
                     onClick={() => attach(tree.id)}
                     disabled={attaching === tree.id}
-                    className="text-xs bg-green-700 text-white px-2.5 py-1 rounded-lg hover:bg-green-800 disabled:opacity-50 transition-colors flex items-center gap-1"
-                  >
+                    className="text-xs bg-green-700 text-white px-2.5 py-1 rounded-lg hover:bg-green-800 disabled:opacity-50 transition-colors flex items-center gap-1">
                     {attaching === tree.id ? <Loader2 className="w-3 h-3 animate-spin" /> : "Adjuntar"}
                   </button>
                 </div>
@@ -170,7 +296,7 @@ function AttachSection({
       {items.length === 0 ? (
         <div className="bg-white rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
           {meta.emptyText}
-          {isOwner && <span> {meta.hint}</span>}
+          {canAdd && <span className="block mt-0.5 text-xs">{meta.hint}</span>}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -179,22 +305,26 @@ function AttachSection({
               className="relative bg-white rounded-xl border border-gray-200 p-4 hover:border-green-300 transition-colors group flex flex-col gap-2">
               <Link href={`/t/${att.content.slug}`} className="absolute inset-0 rounded-xl" aria-label={att.content.title} />
 
-              <p className="font-medium text-gray-900 text-sm group-hover:text-green-700 transition-colors line-clamp-2">
-                {att.content.title}
-              </p>
+              {/* Title row with detach button always visible */}
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-medium text-gray-900 text-sm group-hover:text-green-700 transition-colors line-clamp-2 flex-1">
+                  {att.content.title}
+                </p>
+                <button
+                  onClick={() => detach(att.id, att.content.id)}
+                  className="relative z-10 shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Desadjuntar"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
               <p className="text-xs text-gray-400">
                 {att.content.owner.username ? `@${att.content.owner.username}` : att.content.owner.name}
               </p>
               <div className="flex items-center gap-3 text-xs text-gray-400">
                 <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{att.content._count.likes}</span>
                 <span className="flex items-center gap-1"><GitFork className="w-3 h-3" />{att.content._count.forks}</span>
-                {isOwner && (
-                  <button onClick={() => detach(att.id, att.content.id)}
-                    className="relative z-10 ml-auto p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Desadjuntar">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
               </div>
             </div>
           ))}
@@ -210,11 +340,13 @@ export function AttachmentsPanel({
   kernelId,
   initialAttachments,
   isOwner,
+  isKernel,
 }: {
   kernelSlug: string;
   kernelId: string;
   initialAttachments: Attachment[];
   isOwner: boolean;
+  isKernel: boolean;
 }) {
   const modules   = initialAttachments.filter((a) => a.content.contentType === "MODULE");
   const resources = initialAttachments.filter((a) => a.content.contentType === "RESOURCE");
@@ -228,7 +360,7 @@ export function AttachmentsPanel({
         kernelSlug={kernelSlug}
         kernelId={kernelId}
         initialItems={modules}
-        isOwner={isOwner}
+        canAdd={isKernel && isOwner}
       />
 
       <AttachSection
@@ -236,7 +368,7 @@ export function AttachmentsPanel({
         kernelSlug={kernelSlug}
         kernelId={kernelId}
         initialItems={resources}
-        isOwner={isOwner}
+        canAdd={isKernel && isOwner}
       />
     </div>
   );

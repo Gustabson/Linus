@@ -257,8 +257,8 @@ export default async function TreePage({
         )}
       </div>
 
-      {/* Attachments (modules/resources) — kernels only */}
-      {tree.contentType === "KERNEL" && (
+      {/* Attachments panel — full for kernels, detach-only for modules/resources with legacy data */}
+      {(tree.contentType === "KERNEL" || tree.attachments.length > 0) && (
         <AttachmentsPanel
           kernelSlug={tree.slug}
           kernelId={tree.id}
@@ -267,6 +267,7 @@ export default async function TreePage({
             content: a.content,
           }))}
           isOwner={isOwner}
+          isKernel={tree.contentType === "KERNEL"}
         />
       )}
 
