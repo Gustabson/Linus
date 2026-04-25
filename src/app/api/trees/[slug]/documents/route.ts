@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeLedgerEntry } from "@/lib/ledger";
-import { slugify, SECTION_ORDER } from "@/lib/utils";
+import { slugify } from "@/lib/utils";
 import { createHash } from "crypto";
-
-const EMPTY_SECTION = { type: "doc", content: [] };
 
 export async function POST(
   req: NextRequest,
@@ -32,47 +30,30 @@ export async function POST(
   const baseSlug = slugify(title);
   let docSlug = baseSlug;
   let attempt = 0;
-  while (
-    await prisma.document.findUnique({
-      where: { treeId_slug: { treeId: tree.id, slug: docSlug } },
-    })
-  ) {
+  while (await prisma.document.findUnique({ where: { treeId_slug: { treeId: tree.id, slug: docSlug } } })) {
     attempt++;
     docSlug = `${baseSlug}-${attempt}`;
   }
 
-  const contentHash = createHash("sha256")
-    .update(title + docSlug)
-    .digest("hex");
+  const contentHash = createHash("sha256").update(title + docSlug).digest("hex");
 
   const doc = await prisma.$transaction(async (tx) => {
     const newDoc = await tx.document.create({
       data: { treeId: tree.id, slug: docSlug, title: title.trim() },
     });
-
     const version = await tx.documentVersion.create({
       data: {
         documentId: newDoc.id,
         authorId: session.user.id,
         commitMessage: "Documento creado",
         contentHash,
-        sections: {
-          create: SECTION_ORDER.map((type, idx) => ({
-            sectionType: type as never,
-            sectionOrder: idx,
-            difficultyLevel: "BEGINNER" as never,
-            isComplete: false,
-            richTextContent: EMPTY_SECTION,
-          })),
-        },
+        // No sections — user adds them manually
       },
     });
-
     await tx.document.update({
       where: { id: newDoc.id },
       data: { currentVersionId: version.id },
     });
-
     return newDoc;
   });
 
@@ -84,5 +65,5 @@ export async function POST(
     actorId: session.user.id,
   });
 
-  return NextResponse.json({ slug: docSlug });
+  return NextResponse.json({ slug: docSlug, id: doc.id });
 }

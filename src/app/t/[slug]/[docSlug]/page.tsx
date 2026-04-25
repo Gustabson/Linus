@@ -3,11 +3,9 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
-import { SECTION_ORDER, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { ChevronRight, Clock, Users, Shield, Eye } from "lucide-react";
-import { DocumentEditor } from "@/components/editor/DocumentEditor";
-import { DocumentComments } from "@/components/documents/DocumentComments";
 import { DocumentCommentsWrapper } from "@/components/documents/DocumentCommentsWrapper";
 
 export default async function DocumentPage({
@@ -44,11 +42,7 @@ export default async function DocumentPage({
   if (!doc) notFound();
 
   const latestVersion = doc.versions[0];
-
-  // Build sections map, filling in empty ones
-  const sectionsMap = new Map(
-    latestVersion?.sections.map((s) => [s.sectionType, s]) ?? []
-  );
+  const sections = latestVersion?.sections ?? [];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -109,10 +103,7 @@ export default async function DocumentPage({
         docSlug={docSlug}
         docId={doc.id}
         versionId={latestVersion?.id ?? null}
-        sectionsMap={Object.fromEntries(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          SECTION_ORDER.map((type) => [type, sectionsMap.get(type as any) ?? null])
-        )}
+        sections={sections}
         isOwner={isOwner}
         isAuthenticated={!!session}
         currentUserId={session?.user?.id}

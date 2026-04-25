@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
-import { SECTION_ORDER, SECTION_LABELS, SECTION_DESCRIPTIONS, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, ExternalLink } from "lucide-react";
 import { PreviewContent } from "@/components/documents/PreviewContent";
@@ -42,9 +42,7 @@ export default async function DocumentPreviewPage({
   if (!doc) notFound();
 
   const latestVersion = doc.versions[0];
-  const sectionsMap = new Map(
-    latestVersion?.sections.map((s) => [s.sectionType, s]) ?? []
-  );
+  const sections = latestVersion?.sections ?? [];
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
@@ -89,20 +87,19 @@ export default async function DocumentPreviewPage({
       </div>
 
       {/* Table of contents */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-green-600" />
-          Contenido
-        </h2>
-        <div className="grid grid-cols-2 gap-2">
-          {SECTION_ORDER.map((type, i) => {
-            const section = sectionsMap.get(type as keyof typeof sectionsMap extends string ? typeof type : never);
-            return (
+      {sections.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-green-600" />
+            Contenido
+          </h2>
+          <div className="grid grid-cols-2 gap-2">
+            {sections.map((section, i) => (
               <a
-                key={type}
-                href={`#section-${type}`}
+                key={section.id}
+                href={`#section-${section.id}`}
                 className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg transition-colors ${
-                  section?.isComplete
+                  section.isComplete
                     ? "text-gray-700 hover:bg-green-50 hover:text-green-700"
                     : "text-gray-400 cursor-default"
                 }`}
@@ -110,60 +107,57 @@ export default async function DocumentPreviewPage({
                 <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-xs flex items-center justify-center shrink-0">
                   {i + 1}
                 </span>
-                {SECTION_LABELS[type]}
+                {section.sectionType}
               </a>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Sections */}
       <div className="space-y-6">
-        {SECTION_ORDER.map((type, i) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const section = sectionsMap.get(type as any);
-          if (!section?.isComplete) return null;
-
-          return (
-            <div key={type} id={`section-${type}`} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              {/* Section header */}
-              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-3">
-                <span className="w-7 h-7 rounded-full bg-green-100 text-green-700 text-sm font-medium flex items-center justify-center shrink-0">
-                  {i + 1}
-                </span>
-                <div>
-                  <h2 className="font-semibold text-gray-900">{SECTION_LABELS[type]}</h2>
-                  <p className="text-xs text-gray-400">{SECTION_DESCRIPTIONS[type]}</p>
-                </div>
-                {/* Meta badges */}
-                <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
-                  {section.difficultyLevel && (
-                    <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
-                      {section.difficultyLevel === "BEGINNER" ? "Inicial" :
-                       section.difficultyLevel === "INTERMEDIATE" ? "Intermedio" :
-                       section.difficultyLevel === "ADVANCED" ? "Avanzado" : "Experto"}
-                    </span>
-                  )}
-                  {section.ageRangeMin && section.ageRangeMax && (
-                    <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">
-                      {section.ageRangeMin}–{section.ageRangeMax} años
-                    </span>
-                  )}
-                  {section.durationMinutes && (
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                      {section.durationMinutes} min
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Rich text content */}
-              <div className="px-6 py-5">
-                <PreviewContent content={section.richTextContent as object} />
+        {sections.filter((s) => s.isComplete).map((section, i) => (
+          <div key={section.id} id={`section-${section.id}`} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            {/* Section header */}
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-3">
+              <span className="w-7 h-7 rounded-full bg-green-100 text-green-700 text-sm font-medium flex items-center justify-center shrink-0">
+                {i + 1}
+              </span>
+              <h2 className="font-semibold text-gray-900">{section.sectionType}</h2>
+              {/* Meta badges */}
+              <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+                {section.difficultyLevel && (
+                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                    {section.difficultyLevel === "BEGINNER" ? "Inicial" :
+                     section.difficultyLevel === "INTERMEDIATE" ? "Intermedio" :
+                     section.difficultyLevel === "ADVANCED" ? "Avanzado" : "Experto"}
+                  </span>
+                )}
+                {section.ageRangeMin && section.ageRangeMax && (
+                  <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">
+                    {section.ageRangeMin}–{section.ageRangeMax} años
+                  </span>
+                )}
+                {section.durationMinutes && (
+                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    {section.durationMinutes} min
+                  </span>
+                )}
               </div>
             </div>
-          );
-        })}
+
+            {/* Rich text content */}
+            <div className="px-6 py-5">
+              <PreviewContent content={section.richTextContent as object} />
+            </div>
+          </div>
+        ))}
+
+        {sections.length === 0 && (
+          <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center">
+            <p className="text-gray-400">Este documento todavía no tiene secciones.</p>
+          </div>
+        )}
       </div>
 
       {/* Footer */}

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
-import { formatDate, SECTION_LABELS } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { GitFork, BookOpen, Shield, ChevronRight, Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -61,7 +61,7 @@ export default async function TreePage({
             orderBy: { createdAt: "desc" },
             take: 1,
             include: {
-              sections: { select: { sectionType: true, isComplete: true } },
+              sections: { select: { id: true, sectionType: true, isComplete: true } },
             },
           },
         },
@@ -229,8 +229,9 @@ export default async function TreePage({
         ) : (
           tree.documents.map((doc) => {
             const latestVersion = doc.versions[0];
+            const totalSections = latestVersion?.sections.length ?? 0;
             const completeSections = latestVersion?.sections.filter((s) => s.isComplete).length ?? 0;
-            const progress = Math.round((completeSections / 10) * 100);
+            const progress = totalSections > 0 ? Math.round((completeSections / totalSections) * 100) : 0;
             return (
               <Link key={doc.id} href={`/t/${tree.slug}/${doc.slug}`}
                 className="bg-white rounded-xl border border-gray-200 p-5 hover:border-green-300 transition-all block group">
@@ -240,8 +241,8 @@ export default async function TreePage({
                 </div>
                 <div className="flex flex-wrap gap-1 mb-3">
                   {latestVersion?.sections.map((s) => (
-                    <span key={s.sectionType} className={`text-xs px-2 py-0.5 rounded-full ${s.isComplete ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
-                      {SECTION_LABELS[s.sectionType]}
+                    <span key={s.id} className={`text-xs px-2 py-0.5 rounded-full ${s.isComplete ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
+                      {s.sectionType}
                     </span>
                   ))}
                 </div>

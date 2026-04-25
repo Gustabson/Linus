@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { MessageSquare, Lock, X, Send, Loader2, Quote } from "lucide-react";
 import Image from "next/image";
-import { SECTION_LABELS } from "@/lib/utils";
+
 
 interface Comment {
   id: string;
@@ -135,7 +135,7 @@ export function DocumentComments({
               <div className="flex-1 min-w-0">
                 {activeQuote.sectionType && (
                   <p className="text-xs text-green-700 font-medium mb-0.5">
-                    {(SECTION_LABELS as Record<string, string>)[activeQuote.sectionType] ?? activeQuote.sectionType}
+                    {activeQuote.sectionType}
                   </p>
                 )}
                 <p className="text-xs text-green-800 line-clamp-2">{activeQuote.text}</p>
@@ -242,7 +242,7 @@ function CommentCard({
         <div className="bg-gray-50 border-l-4 border-gray-300 pl-3 py-1.5 rounded-r-lg">
           {comment.sectionType && (
             <p className="text-xs text-gray-500 font-medium mb-0.5">
-              {(SECTION_LABELS as Record<string, string>)[comment.sectionType] ?? comment.sectionType}
+              {comment.sectionType}
             </p>
           )}
           <p className="text-xs text-gray-600 italic line-clamp-2">&ldquo;{comment.quotedText}&rdquo;</p>

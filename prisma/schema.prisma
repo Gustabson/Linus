@@ -213,19 +213,6 @@ model DocumentVersion {
 
 // ─── SECTIONS ─────────────────────────────────────────────────────────────────
 
-enum SectionType {
-  PHILOSOPHY
-  BEHAVIOR
-  EXERCISES
-  PROBLEMS
-  ANTI_BULLYING
-  ECONOMY
-  SCIENTIFIC_METHOD
-  ETHICS
-  ASSESSMENT
-  RESOURCES
-}
-
 enum DifficultyLevel {
   BEGINNER
   INTERMEDIATE
@@ -235,7 +222,7 @@ enum DifficultyLevel {
 
 model DocumentSection {
   id               String          @id @default(cuid())
-  sectionType      SectionType
+  sectionType      String          // free-form user-defined section title
   sectionOrder     Int
   difficultyLevel  DifficultyLevel @default(BEGINNER)
   ageRangeMin      Int?
@@ -249,8 +236,8 @@ model DocumentSection {
   versionId String
   version   DocumentVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
 
-  @@unique([versionId, sectionType])
   @@index([versionId])
+  @@index([versionId, sectionOrder])
 }
 
 // ─── COMMENTS ─────────────────────────────────────────────────────────────────

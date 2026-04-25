@@ -3,11 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FileText } from "lucide-react";
-import { SECTION_LABELS, SECTION_ORDER } from "@/lib/utils";
 
 export function NewDocumentForm({
   treeSlug,
-  treeId,
 }: {
   treeSlug: string;
   treeId: string;
@@ -25,10 +23,7 @@ export function NewDocumentForm({
     const res = await fetch(`/api/trees/${treeSlug}/documents`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: data.get("title"),
-        treeId,
-      }),
+      body: JSON.stringify({ title: data.get("title") }),
     });
 
     const json = await res.json();
@@ -55,22 +50,9 @@ export function NewDocumentForm({
             className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
-
-        <div className="bg-gray-50 rounded-xl p-4">
-          <p className="text-xs font-medium text-gray-500 mb-2">
-            Se crearán estas 10 secciones (las completás después):
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {SECTION_ORDER.map((type) => (
-              <span
-                key={type}
-                className="text-xs bg-white border border-gray-200 text-gray-600 px-2 py-1 rounded-lg"
-              >
-                {SECTION_LABELS[type]}
-              </span>
-            ))}
-          </div>
-        </div>
+        <p className="text-xs text-gray-400">
+          El documento se crea vacío. Vas a agregar las secciones vos mismo con los nombres que quieras.
+        </p>
       </div>
 
       {error && (

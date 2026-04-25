@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { DocumentEditor } from "@/components/editor/DocumentEditor";
 import { DocumentComments } from "@/components/documents/DocumentComments";
+import type { DocumentSection } from "@prisma/client";
 
 interface Props {
   treeSlug: string;
   docSlug: string;
   docId: string;
   versionId: string | null;
-  sectionsMap: Record<string, unknown>;
+  sections: DocumentSection[];
   isOwner: boolean;
   isAuthenticated: boolean;
   currentUserId?: string;
@@ -20,7 +21,7 @@ export function DocumentCommentsWrapper({
   docSlug,
   docId,
   versionId,
-  sectionsMap,
+  sections,
   isOwner,
   isAuthenticated,
   currentUserId,
@@ -36,13 +37,11 @@ export function DocumentCommentsWrapper({
         treeSlug={treeSlug}
         docSlug={docSlug}
         versionId={versionId}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        sectionsMap={sectionsMap as any}
+        sections={sections}
         isOwner={isOwner}
         isAuthenticated={isAuthenticated}
-        onQuote={isAuthenticated ? (text, sectionType) => {
-          setPendingQuote({ text, sectionType });
-          // Scroll to comments
+        onQuote={isAuthenticated ? (text, sectionTitle) => {
+          setPendingQuote({ text, sectionType: sectionTitle });
           setTimeout(() => {
             document.getElementById("comments-section")?.scrollIntoView({ behavior: "smooth" });
           }, 100);
