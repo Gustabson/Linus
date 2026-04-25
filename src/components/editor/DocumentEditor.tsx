@@ -24,12 +24,10 @@ export function DocumentEditor({
   onQuote,
 }: DocumentEditorProps) {
   const [sections, setSections] = useState<DocumentSection[]>(initialSections);
-  const [openId, setOpenId] = useState<string>(initialSections[0]?.id ?? "");
-
-  // Add section state
-  const [showAdd, setShowAdd] = useState(false);
+  const [openId, setOpenId]     = useState<string>(initialSections[0]?.id ?? "");
+  const [showAdd, setShowAdd]   = useState(false);
   const [newTitle, setNewTitle] = useState("");
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding]     = useState(false);
 
   async function handleAddSection(e: React.FormEvent) {
     e.preventDefault();
@@ -55,15 +53,34 @@ export function DocumentEditor({
     richTextContent: object,
     meta: Record<string, string | number | null>
   ) {
-    await fetch(`/api/trees/${treeSlug}/${docSlug}/sections`, {
+    const res = await fetch(`/api/trees/${treeSlug}/${docSlug}/sections`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sectionId, richTextContent, ...meta }),
     });
-    // Mark as complete locally
-    setSections((prev) =>
-      prev.map((s) => s.id === sectionId ? { ...s, isComplete: true } : s)
-    );
+    if (res.ok) {
+      // Update local state so re-opening the section shows the saved content
+      setSections((prev) =>
+        prev.map((s) =>
+          s.id === sectionId
+            ? { ...s, isComplete: true, richTextContent: richTextContent as never }
+            : s
+        )
+      );
+    }
+  }
+
+  async function handleRename(sectionId: string, newTitle: string) {
+    const res = await fetch(`/api/trees/${treeSlug}/${docSlug}/sections`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sectionId, sectionTitle: newTitle }),
+    });
+    if (res.ok) {
+      setSections((prev) =>
+        prev.map((s) => s.id === sectionId ? { ...s, sectionType: newTitle } : s)
+      );
+    }
   }
 
   async function handleDelete(sectionId: string) {
@@ -82,9 +99,7 @@ export function DocumentEditor({
     <div className="space-y-3">
       {sections.length === 0 && !showAdd && (
         <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center">
-          <p className="text-gray-400 mb-4">
-            Este documento todavía no tiene secciones.
-          </p>
+          <p className="text-gray-400 mb-4">Este documento todavía no tiene secciones.</p>
           {isOwner && (
             <button
               onClick={() => setShowAdd(true)}
@@ -107,12 +122,12 @@ export function DocumentEditor({
           isAuthenticated={isAuthenticated}
           onToggle={() => setOpenId(openId === section.id ? "" : section.id)}
           onSave={handleSave}
+          onRename={handleRename}
           onDelete={handleDelete}
           onQuote={onQuote}
         />
       ))}
 
-      {/* Add section */}
       {isOwner && sections.length > 0 && !showAdd && (
         <button
           onClick={() => setShowAdd(true)}
@@ -124,11 +139,11 @@ export function DocumentEditor({
       )}
 
       {showAdd && isOwner && (
-        <form onSubmit={handleAddSection}
-          className="bg-white rounded-2xl border border-green-200 p-5 space-y-3">
-          <label className="block text-sm font-medium text-gray-700">
-            Nombre de la sección
-          </label>
+        <form
+          onSubmit={handleAddSection}
+          className="bg-white rounded-2xl border border-green-200 p-5 space-y-3"
+        >
+          <label className="block text-sm font-medium text-gray-700">Nombre de la sección</label>
           <input
             autoFocus
             value={newTitle}

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronUp, CheckCircle, Circle, Save, Quote, Trash2 } from "lucide-react";
+import { useState, useRef } from "react";
+import { ChevronDown, ChevronUp, CheckCircle, Circle, Save, Quote, Trash2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SectionEditor } from "./SectionEditor";
 import { SectionMetaFields } from "./SectionMetaFields";
@@ -15,6 +15,7 @@ interface SectionCardProps {
   isAuthenticated: boolean;
   onToggle: () => void;
   onSave: (sectionId: string, content: object, meta: Record<string, string | number | null>) => Promise<void>;
+  onRename: (sectionId: string, newTitle: string) => Promise<void>;
   onDelete: (sectionId: string) => Promise<void>;
   onQuote?: (text: string, sectionTitle: string) => void;
 }
@@ -27,15 +28,21 @@ export function SectionCard({
   isAuthenticated,
   onToggle,
   onSave,
+  onRename,
   onDelete,
   onQuote,
 }: SectionCardProps) {
-  const [content, setContent] = useState<object | null>(null);
-  const [meta, setMeta] = useState<Record<string, string | number | null>>({});
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [content, setContent]           = useState<object | null>(null);
+  const [meta, setMeta]                 = useState<Record<string, string | number | null>>({});
+  const [saving, setSaving]             = useState(false);
+  const [saved, setSaved]               = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [deleting, setDeleting]         = useState(false);
+
+  // Title editing
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleValue, setTitleValue]     = useState(section.sectionType);
+  const titleInputRef                   = useRef<HTMLInputElement>(null);
 
   const isDirty = content !== null;
 
@@ -50,12 +57,30 @@ export function SectionCard({
     setSaving(false);
     setSaved(true);
     setContent(null);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => setSaved(false), 2500);
   }
 
   async function handleDelete() {
     setDeleting(true);
     await onDelete(section.id);
+  }
+
+  function startEditTitle(e: React.MouseEvent) {
+    e.stopPropagation();
+    setEditingTitle(true);
+    setTimeout(() => titleInputRef.current?.select(), 0);
+  }
+
+  async function commitTitle() {
+    const trimmed = titleValue.trim();
+    if (!trimmed) { setTitleValue(section.sectionType); setEditingTitle(false); return; }
+    if (trimmed !== section.sectionType) await onRename(section.id, trimmed);
+    setEditingTitle(false);
+  }
+
+  function handleTitleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter")  { e.preventDefault(); commitTitle(); }
+    if (e.key === "Escape") { setTitleValue(section.sectionType); setEditingTitle(false); }
   }
 
   return (
@@ -74,21 +99,43 @@ export function SectionCard({
             {index + 1}
           </span>
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="font-medium text-gray-900 truncate">
-              {section.sectionType}
-            </span>
+            {/* Editable title — only when open and owner */}
+            {isOwner && isOpen && editingTitle ? (
+              <input
+                ref={titleInputRef}
+                value={titleValue}
+                onChange={(e) => setTitleValue(e.target.value)}
+                onBlur={commitTitle}
+                onKeyDown={handleTitleKeyDown}
+                onClick={(e) => e.stopPropagation()}
+                className="font-medium text-gray-900 bg-transparent border-b border-green-400 focus:outline-none min-w-0 flex-1"
+              />
+            ) : (
+              <span className="font-medium text-gray-900 truncate">{titleValue}</span>
+            )}
             {section.isComplete
               ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-              : <Circle className="w-4 h-4 text-gray-300 shrink-0" />}
-            {isDirty && (
+              : <Circle      className="w-4 h-4 text-gray-300 shrink-0" />}
+            {isDirty && !saved && (
               <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded shrink-0">
                 Sin guardar
               </span>
             )}
+            {/* Rename button — only when open and owner */}
+            {isOwner && isOpen && !editingTitle && (
+              <button
+                type="button"
+                title="Renombrar sección"
+                onClick={startEditTitle}
+                className="p-1 text-gray-300 hover:text-green-600 transition-colors shrink-0"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </button>
 
-        {/* Delete button */}
+        {/* Actions */}
         {isOwner && (
           <div className="pr-4 flex items-center gap-2 shrink-0">
             {confirmDelete ? (
@@ -117,16 +164,12 @@ export function SectionCard({
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
-            {isOpen
-              ? <ChevronUp className="w-5 h-5 text-gray-400" />
-              : <ChevronDown className="w-5 h-5 text-gray-400" />}
+            {isOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </div>
         )}
         {!isOwner && (
           <div className="pr-5">
-            {isOpen
-              ? <ChevronUp className="w-5 h-5 text-gray-400" />
-              : <ChevronDown className="w-5 h-5 text-gray-400" />}
+            {isOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </div>
         )}
       </div>
@@ -146,18 +189,24 @@ export function SectionCard({
 
           <SectionEditor
             content={section.richTextContent as object ?? null}
-            placeholder={`Escribí el contenido de "${section.sectionType}"...`}
+            placeholder={`Escribí el contenido de "${titleValue}"...`}
             editable={isOwner}
             onChange={setContent}
           />
 
-          {isOwner && isDirty && (
+          {/* Save button — visible while dirty OR briefly after save */}
+          {isOwner && (isDirty || saved) && (
             <div className="flex justify-end">
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-2 bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 disabled:opacity-50 transition-colors"
+                disabled={saving || saved}
+                className={cn(
+                  "flex items-center gap-2 text-sm px-4 py-2 rounded-lg transition-colors",
+                  saved
+                    ? "bg-green-100 text-green-700 cursor-default"
+                    : "bg-green-700 text-white hover:bg-green-800 disabled:opacity-50"
+                )}
               >
                 <Save className="w-4 h-4" />
                 {saving ? "Guardando..." : saved ? "¡Guardado!" : "Guardar"}
@@ -165,7 +214,7 @@ export function SectionCard({
             </div>
           )}
 
-          {/* Quote button for authenticated non-owners */}
+          {/* Quote for non-owners */}
           {!isOwner && isAuthenticated && onQuote && section.richTextContent && (
             <div className="flex justify-end">
               <button
@@ -179,7 +228,7 @@ export function SectionCard({
                     return "";
                   };
                   const text = extractText(section.richTextContent as Record<string, unknown>).trim().slice(0, 300);
-                  if (text) onQuote(text, section.sectionType);
+                  if (text) onQuote(text, titleValue);
                 }}
                 className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-green-700 border border-gray-200 hover:border-green-300 px-3 py-1.5 rounded-lg transition-colors"
               >

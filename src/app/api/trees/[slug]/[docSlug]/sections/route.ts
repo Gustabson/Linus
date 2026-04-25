@@ -124,7 +124,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const latestVersion = doc.versions[0];
   if (!latestVersion) return NextResponse.json({ error: "Sin versión" }, { status: 404 });
 
-  const { sectionId, richTextContent, difficultyLevel, ageRangeMin, ageRangeMax, durationMinutes } =
+  const { sectionId, richTextContent, sectionTitle, difficultyLevel, ageRangeMin, ageRangeMax, durationMinutes } =
     await req.json();
 
   const target = latestVersion.sections.find((s) => s.id === sectionId);
@@ -134,20 +134,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     s.id === sectionId
       ? {
           ...copySectionFields(s),
+          sectionType:     sectionTitle    ?? s.sectionType,
           difficultyLevel: (difficultyLevel ?? s.difficultyLevel) as never,
           ageRangeMin:     ageRangeMin     ?? s.ageRangeMin,
           ageRangeMax:     ageRangeMax     ?? s.ageRangeMax,
           durationMinutes: durationMinutes ?? s.durationMinutes,
-          isComplete: true,
-          richTextContent,
+          isComplete:      richTextContent ? true : s.isComplete,
+          richTextContent: richTextContent ?? s.richTextContent,
         }
       : copySectionFields(s)
   );
 
+  const label = sectionTitle ?? target.sectionType;
   const version = await commitVersion(
     doc.id, session.user.id,
-    `Actualizar: ${target.sectionType}`,
-    sha256(JSON.stringify(richTextContent)),
+    richTextContent ? `Actualizar: ${label}` : `Renombrar: ${label}`,
+    sha256(JSON.stringify(updatedSections)),
     latestVersion.id,
     updatedSections
   );

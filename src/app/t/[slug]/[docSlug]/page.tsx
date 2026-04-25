@@ -85,14 +85,6 @@ export default async function DocumentPage({
               <Eye className="w-4 h-4" />
               Preview
             </Link>
-            {isOwner && (
-              <Link
-                href={`/t/${tree.slug}/${docSlug}/editar`}
-                className="bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800"
-              >
-                Editar
-              </Link>
-            )}
           </div>
         </div>
       </div>

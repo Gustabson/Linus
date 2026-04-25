@@ -33,7 +33,7 @@ function formatRelative(dateStr: string) {
   return `hace ${days}d`;
 }
 
-const POLL_MS = 30_000;
+const POLL_MS = 60_000;
 
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -53,11 +53,13 @@ export function NotificationBell() {
     }
   }, []);
 
-  // Initial fetch + polling every 30s
+  // Initial fetch + polling every 60s + refetch when tab becomes visible
   useEffect(() => {
     fetchNotifications();
     const id = setInterval(fetchNotifications, POLL_MS);
-    return () => clearInterval(id);
+    function onVisible() { if (document.visibilityState === "visible") fetchNotifications(); }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVisible); };
   }, [fetchNotifications]);
 
   // Close on outside click
