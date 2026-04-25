@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { writeLedgerEntry } from "@/lib/ledger";
 import { getSession, unauthorized, uniqueSlug } from "@/lib/api-helpers";
 import { copySectionFields } from "@/lib/sections";
+import { createNotification } from "@/lib/notifications";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -127,6 +128,14 @@ export async function POST(req: NextRequest) {
       targetKernelId:  targetKernelId ?? null,
     },
     actorId: session.user.id,
+  });
+
+  // Notify original tree owner
+  await createNotification({
+    type:        "NEW_FORK",
+    recipientId: source.ownerId,
+    actorId:     session.user.id,
+    link:        `/t/${newTree.slug}`,
   });
 
   return NextResponse.json({ slug: newTree.slug });

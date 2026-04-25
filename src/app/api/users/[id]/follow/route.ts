@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeLedgerEntry } from "@/lib/ledger";
+import { createNotification } from "@/lib/notifications";
 import { NextResponse } from "next/server";
 
 export async function POST(
@@ -31,6 +32,18 @@ export async function POST(
     subjectType: "User",
     eventPayload: { followerId: session.user.id, followingId },
     actorId: session.user.id,
+  });
+
+  // Notify the followed user
+  const actor = await prisma.user.findUnique({
+    where:  { id: session.user.id },
+    select: { username: true },
+  });
+  await createNotification({
+    type:        "NEW_FOLLOWER",
+    recipientId: followingId,
+    actorId:     session.user.id,
+    link:        actor?.username ? `/u/${actor.username}` : `/u/${session.user.id}`,
   });
 
   const count = await prisma.userFollow.count({ where: { followingId } });

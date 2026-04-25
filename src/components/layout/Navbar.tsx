@@ -7,13 +7,28 @@ import {
   LayoutDashboard, Home,
 } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export function Navbar() {
-  const { data: session } = useSession();
+  const { data: session, update, status } = useSession();
   const [open, setOpen] = useState(false);
+  const refreshedRef = useRef(false);
 
-  const needsUsername = session && !session.user?.username;
+  // If the JWT is stale (authenticated but no username in token),
+  // force one refresh so the server re-reads the username from DB.
+  useEffect(() => {
+    if (
+      status === "authenticated" &&
+      !session?.user?.username &&
+      !refreshedRef.current
+    ) {
+      refreshedRef.current = true;
+      update();
+    }
+  }, [status, session?.user?.username, update]);
+
+  const needsUsername = status === "authenticated" && !session?.user?.username;
   const profileHref = session?.user?.username
     ? `/u/${session.user.username}`
     : "/dashboard";
@@ -85,6 +100,7 @@ export function Navbar() {
                     )}
                     <span className="font-medium">{session.user?.name?.split(" ")[0]}</span>
                   </Link>
+                  <NotificationBell />
                   <button
                     onClick={() => signOut()}
                     className="text-sm text-gray-400 hover:text-red-600 flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-red-50 transition-colors"

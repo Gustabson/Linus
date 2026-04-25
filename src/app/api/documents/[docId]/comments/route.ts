@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeLedgerEntry } from "@/lib/ledger";
+import { createNotification } from "@/lib/notifications";
 
 export async function GET(
   req: NextRequest,
@@ -39,8 +40,8 @@ export async function POST(
   const { docId } = await params;
 
   const doc = await prisma.document.findUnique({
-    where: { id: docId },
-    select: { id: true },
+    where:  { id: docId },
+    select: { id: true, slug: true, tree: { select: { slug: true, ownerId: true, visibility: true } } },
   });
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
 
@@ -69,6 +70,16 @@ export async function POST(
     eventPayload: { commentId: comment.id, isPrivate: comment.isPrivate },
     actorId: session.user.id,
   });
+
+  // Notify tree owner of public comments
+  if (!comment.isPrivate && doc.tree.visibility === "PUBLIC") {
+    await createNotification({
+      type:        "NEW_COMMENT",
+      recipientId: doc.tree.ownerId,
+      actorId:     session.user.id,
+      link:        `/t/${doc.tree.slug}/${doc.slug}`,
+    });
+  }
 
   return NextResponse.json(comment);
 }

@@ -51,15 +51,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role ?? "EDUCATOR";
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          select: { username: true },
-        });
-        token.username = dbUser?.username ?? null;
       }
-      if (trigger === "update") {
+      // Refresh username from DB on sign-in, explicit update, OR whenever
+      // the token still has no username (covers sessions issued before the
+      // username was set, avoiding the "banner stuck" bug).
+      if (user || trigger === "update" || (token.id && !token.username)) {
         const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
+          where:  { id: (user?.id ?? token.id) as string },
           select: { username: true },
         });
         token.username = dbUser?.username ?? null;
