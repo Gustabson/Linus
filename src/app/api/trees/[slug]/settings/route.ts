@@ -5,6 +5,45 @@ import { writeLedgerEntry } from "@/lib/ledger";
 import { slugify } from "@/lib/utils";
 import type { TreeVisibility, ContentType } from "@prisma/client";
 
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const session = await auth();
+  if (!session?.user?.id)
+    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
+  const { slug } = await params;
+  const tree = await prisma.documentTree.findUnique({
+    where: { slug },
+    select: { id: true, ownerId: true, title: true, _count: { select: { forks: true } } },
+  });
+
+  if (!tree || tree.ownerId !== session.user.id)
+    return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
+
+  // Detach forks from this tree so the FK doesn't block deletion.
+  // Forks are independent — they keep all their content, just lose the parent reference.
+  if (tree._count.forks > 0) {
+    await prisma.documentTree.updateMany({
+      where: { parentTreeId: tree.id },
+      data: { parentTreeId: null },
+    });
+  }
+
+  await prisma.documentTree.delete({ where: { id: tree.id } });
+
+  await writeLedgerEntry({
+    eventType: "TREE_ARCHIVED",   // closest existing event; no TREE_DELETED yet
+    subjectId: tree.id,
+    subjectType: "tree",
+    eventPayload: { treeId: tree.id, title: tree.title, action: "deleted" },
+    actorId: session.user.id,
+  });
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }

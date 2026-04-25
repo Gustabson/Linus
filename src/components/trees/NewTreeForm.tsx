@@ -37,6 +37,7 @@ export function NewTreeForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [contentType, setContentType] = useState(defaultType);
+  const [title, setTitle] = useState("");
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -74,13 +75,23 @@ export function NewTreeForm({
       });
     }
 
-    // 3. For modules/resources created from a kernel: go straight to the document editor
-    //    For kernels or standalone creation: go to the tree page
-    if (kernelSlug && (contentType === "MODULE" || contentType === "RESOURCE")) {
-      router.push(`/t/${json.slug}/nuevo`);
-    } else {
-      router.push(`/t/${json.slug}`);
+    // 3. Modules and resources always go directly to the document editor.
+    //    Create the first document automatically using the same title.
+    if (contentType === "MODULE" || contentType === "RESOURCE") {
+      const docRes = await fetch(`/api/trees/${json.slug}/documents`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title || String(data.get("title")), treeId: json.id }),
+      });
+      if (docRes.ok) {
+        const doc = await docRes.json();
+        router.push(`/t/${json.slug}/${doc.slug}`);
+        return;
+      }
     }
+
+    // Kernels go to the tree overview page
+    router.push(`/t/${json.slug}`);
   }
 
   const selected = CONTENT_TYPES.find((t) => t.value === contentType)!;
@@ -129,11 +140,18 @@ export function NewTreeForm({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
-        <input name="title" required placeholder={
-          contentType === "KERNEL"   ? "Ej: Educación Primaria Argentina - Grado 3" :
-          contentType === "MODULE"   ? "Ej: Unidad de Fracciones - 4to grado" :
-                                       "Ej: Guía de actividades de lectura"
-        } className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+        <input
+          name="title"
+          required
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={
+            contentType === "KERNEL"   ? "Ej: Educación Primaria Argentina - Grado 3" :
+            contentType === "MODULE"   ? "Ej: Unidad de Fracciones - 4to grado" :
+                                         "Ej: Guía de actividades de lectura"
+          }
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+        />
       </div>
 
       <div>

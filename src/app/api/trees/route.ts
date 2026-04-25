@@ -53,5 +53,5 @@ export async function POST(req: NextRequest) {
     actorId: session.user.id,
   });
 
-  return NextResponse.json({ slug: tree.slug });
+  return NextResponse.json({ slug: tree.slug, id: tree.id });
 }
