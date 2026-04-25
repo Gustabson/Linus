@@ -62,9 +62,12 @@ export default async function DashboardPage({
             </div>
           )}
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              {user?.name?.split(" ")[0]} 👋
-            </h1>
+            <div>
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5">Espacio de trabajo</p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {user?.name?.split(" ")[0]} 👋
+              </h1>
+            </div>
             {user?.username && <p className="text-sm text-gray-400">@{user.username}</p>}
           </div>
         </div>

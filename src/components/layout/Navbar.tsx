@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { BookOpen, Search, LogOut, User, Menu, X, AlertCircle } from "lucide-react";
+import {
+  BookOpen, Search, LogOut, Menu, X, AlertCircle,
+  LayoutDashboard, Home,
+} from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 
 export function Navbar() {
@@ -10,6 +14,9 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
 
   const needsUsername = session && !session.user?.username;
+  const profileHref = session?.user?.username
+    ? `/u/${session.user.username}`
+    : "/dashboard";
 
   return (
     <>
@@ -34,6 +41,7 @@ export function Navbar() {
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
+
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 font-bold text-xl text-green-700">
               <BookOpen className="w-6 h-6" />
@@ -41,35 +49,52 @@ export function Navbar() {
             </Link>
 
             {/* Desktop nav */}
-            <div className="hidden md:flex items-center gap-6">
-              <Link href="/explorar" className="text-gray-600 hover:text-gray-900 text-sm font-medium flex items-center gap-1">
-                <Search className="w-4 h-4" />
-                Explorar
-              </Link>
-            </div>
-
-            {/* Auth */}
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-1">
               {session ? (
                 <>
+                  <NavLink href="/" icon={<Home className="w-4 h-4" />} label="Inicio" />
+                  <NavLink href="/explorar" icon={<Search className="w-4 h-4" />} label="Explorar" />
+                  <NavLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Espacio de trabajo" />
+                </>
+              ) : (
+                <NavLink href="/explorar" icon={<Search className="w-4 h-4" />} label="Explorar" />
+              )}
+            </div>
+
+            {/* Auth section */}
+            <div className="hidden md:flex items-center gap-2">
+              {session ? (
+                <>
+                  {/* Avatar → profile */}
                   <Link
-                    href="/dashboard"
-                    className="text-sm text-gray-700 hover:text-gray-900 flex items-center gap-1"
+                    href={profileHref}
+                    className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <User className="w-4 h-4" />
-                    {session.user?.name?.split(" ")[0]}
+                    {session.user?.image ? (
+                      <Image
+                        src={session.user.image}
+                        alt=""
+                        width={28}
+                        height={28}
+                        className="rounded-full ring-2 ring-green-100"
+                      />
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xs font-bold">
+                        {(session.user?.name ?? "?")[0]}
+                      </div>
+                    )}
+                    <span className="font-medium">{session.user?.name?.split(" ")[0]}</span>
                   </Link>
                   <button
                     onClick={() => signOut()}
-                    className="text-sm text-gray-500 hover:text-red-600 flex items-center gap-1"
+                    className="text-sm text-gray-400 hover:text-red-600 flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
-                    Salir
                   </button>
                 </>
               ) : (
                 <>
-                  <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900">
+                  <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5">
                     Ingresar
                   </Link>
                   <Link
@@ -83,29 +108,41 @@ export function Navbar() {
             </div>
 
             {/* Mobile toggle */}
-            <button className="md:hidden" onClick={() => setOpen(!open)}>
+            <button className="md:hidden p-1" onClick={() => setOpen(!open)}>
               {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
 
           {/* Mobile menu */}
           {open && (
-            <div className="md:hidden py-3 border-t border-gray-100 space-y-2">
-              <Link href="/explorar" className="block px-2 py-1 text-gray-700" onClick={() => setOpen(false)}>Explorar</Link>
+            <div className="md:hidden py-3 border-t border-gray-100 space-y-1">
               {session ? (
                 <>
                   {needsUsername && (
-                    <Link href="/bienvenida" className="block px-2 py-1 text-amber-700 font-medium" onClick={() => setOpen(false)}>
+                    <Link href="/bienvenida" className="flex items-center gap-2 px-3 py-2 text-amber-700 font-medium rounded-lg" onClick={() => setOpen(false)}>
                       ⚠ Elegir username
                     </Link>
                   )}
-                  <Link href="/dashboard" className="block px-2 py-1 text-gray-700" onClick={() => setOpen(false)}>Mi espacio</Link>
-                  <button onClick={() => signOut()} className="block px-2 py-1 text-red-600 w-full text-left">Salir</button>
+                  <MobileLink href="/"          icon={<Home className="w-4 h-4" />}            label="Inicio"              onClick={() => setOpen(false)} />
+                  <MobileLink href="/explorar"  icon={<Search className="w-4 h-4" />}          label="Explorar"            onClick={() => setOpen(false)} />
+                  <MobileLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Espacio de trabajo"  onClick={() => setOpen(false)} />
+                  <MobileLink href={profileHref} icon={
+                    session.user?.image
+                      ? <Image src={session.user.image} alt="" width={16} height={16} className="rounded-full" />
+                      : <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-[9px] font-bold">{(session.user?.name ?? "?")[0]}</div>
+                  } label="Mi perfil" onClick={() => setOpen(false)} />
+                  <button
+                    onClick={() => signOut()}
+                    className="flex items-center gap-2 px-3 py-2 text-red-600 rounded-lg hover:bg-red-50 w-full text-sm"
+                  >
+                    <LogOut className="w-4 h-4" /> Salir
+                  </button>
                 </>
               ) : (
                 <>
-                  <Link href="/login" className="block px-2 py-1 text-gray-700" onClick={() => setOpen(false)}>Ingresar</Link>
-                  <Link href="/registro" className="block px-2 py-1 text-green-700 font-medium" onClick={() => setOpen(false)}>Registrarse</Link>
+                  <MobileLink href="/explorar" icon={<Search className="w-4 h-4" />} label="Explorar" onClick={() => setOpen(false)} />
+                  <MobileLink href="/login"    icon={null}                            label="Ingresar"  onClick={() => setOpen(false)} />
+                  <MobileLink href="/registro" icon={null}                            label="Registrarse" onClick={() => setOpen(false)} />
                 </>
               )}
             </div>
@@ -113,5 +150,37 @@ export function Navbar() {
         </div>
       </nav>
     </>
+  );
+}
+
+function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 font-medium px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+    >
+      {icon}
+      {label}
+    </Link>
+  );
+}
+
+function MobileLink({
+  href, icon, label, onClick,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+    >
+      {icon}
+      {label}
+    </Link>
   );
 }
