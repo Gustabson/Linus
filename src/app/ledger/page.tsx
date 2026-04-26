@@ -11,7 +11,7 @@ const EVENT_LABELS: Record<string, string> = {
   TREE_VISIBILITY_CHANGED: "Visibilidad cambiada",
   TREE_ARCHIVED: "Currículo archivado",
   DOCUMENT_CREATED: "Documento creado",
-  VERSION_COMMITTED: "Versión guardada",
+  VERSION_COMMITTED: "Versión publicada",
   PROPOSAL_OPENED: "Propuesta abierta",
   PROPOSAL_REVIEWED: "Propuesta revisada",
   PROPOSAL_MERGED: "Propuesta aceptada",

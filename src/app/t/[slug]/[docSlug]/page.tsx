@@ -71,6 +71,18 @@ export default async function DocumentPage({
   const style         = CONTENT_TYPE_STYLE[tree.contentType];
   const isKernel      = tree.contentType === "KERNEL";
 
+  // For the publish system: find the latest PUBLISHED version (may differ from latestVersion if there's a DRAFT)
+  const latestPublished = latestVersion?.status === "PUBLISHED"
+    ? latestVersion
+    : await prisma.documentVersion.findFirst({
+        where:   { documentId: doc.id, status: "PUBLISHED" },
+        orderBy: { createdAt: "desc" },
+        select:  { id: true, contentHash: true, createdAt: true, commitMessage: true },
+      });
+
+  const versionStatus:       "DRAFT" | "PUBLISHED" = latestVersion?.status === "DRAFT" ? "DRAFT" : "PUBLISHED";
+  const latestPublishedHash: string | null          = latestPublished?.contentHash ?? null;
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Breadcrumb — only for kernels (module/resource = single entity, no parent listing) */}
@@ -109,10 +121,12 @@ export default async function DocumentPage({
                   <Clock className="w-4 h-4" />
                   {formatDate(latestVersion.createdAt)}
                 </span>
-                <span className="flex items-center gap-1 font-mono text-xs">
-                  <Shield className={`w-4 h-4 ${style.textCls}`} />
-                  {latestVersion.contentHash.slice(0, 12)}…
-                </span>
+                {latestPublishedHash && (
+                  <span className="flex items-center gap-1 font-mono text-xs">
+                    <Shield className={`w-4 h-4 ${style.textCls}`} />
+                    {latestPublishedHash.slice(0, 12)}…
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -146,6 +160,8 @@ export default async function DocumentPage({
         isOwner={isOwner}
         isAuthenticated={!!session}
         currentUserId={session?.user?.id}
+        versionStatus={versionStatus}
+        latestPublishedHash={latestPublishedHash}
       />
     </div>
   );

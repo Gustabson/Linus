@@ -24,7 +24,8 @@
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_QryaNJwqn9R4@ep-small-frog-acthkzfj.sa-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma migrate dev --name add_comments_and_username)",
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_QryaNJwqn9R4@ep-small-frog-acthkzfj.sa-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma generate)",
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_QryaNJwqn9R4@ep-small-frog-acthkzfj.sa-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma db execute --stdin)",
-      "Bash(2>&1)"
+      "Bash(2>&1)",
+      "Bash(npx dotenv-cli *)"
     ]
   }
 }

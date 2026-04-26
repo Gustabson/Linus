@@ -191,11 +191,17 @@ model Document {
   @@index([treeId])
 }
 
+enum VersionStatus {
+  DRAFT
+  PUBLISHED
+}
+
 model DocumentVersion {
-  id            String   @id @default(cuid())
-  commitMessage String
-  contentHash   String
-  createdAt     DateTime @default(now())
+  id            String        @id @default(cuid())
+  commitMessage String        @default("")
+  contentHash   String?                           // null for drafts; meaningful hash on publish
+  status        VersionStatus @default(PUBLISHED) // PUBLISHED default preserves existing records
+  createdAt     DateTime      @default(now())
 
   documentId      String
   document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
@@ -211,6 +217,7 @@ model DocumentVersion {
 
   @@index([documentId])
   @@index([authorId])
+  @@index([documentId, status])
 }
 
 // ─── SECTIONS ─────────────────────────────────────────────────────────────────

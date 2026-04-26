@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, GitCommit, Shield, Clock, GitBranch } from "lucide-react";
+import { HashCopyChip } from "@/components/documents/HashCopyChip";
 import { formatDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -29,8 +30,9 @@ export default async function HistorialPage({
   });
   if (!doc) notFound();
 
+  // Only show PUBLISHED versions — DRAFTs are ephemeral working copies, not history checkpoints
   const versions = await prisma.documentVersion.findMany({
-    where:   { documentId: doc.id },
+    where:   { documentId: doc.id, status: "PUBLISHED" },
     include: { author: { select: { name: true, username: true, image: true } } },
     orderBy: { createdAt: "desc" },
   });
@@ -49,10 +51,20 @@ export default async function HistorialPage({
       <div>
         <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <GitBranch className="w-5 h-5 text-green-600" />
-          Historial de versiones
+          Historial de publicaciones
         </h1>
-        <p className="text-sm text-gray-500 mt-1">{versions.length} versión{versions.length !== 1 ? "es" : ""} · {doc.title}</p>
+        <p className="text-sm text-gray-500 mt-1">
+          {versions.length} publicación{versions.length !== 1 ? "es" : ""} · {doc.title}
+        </p>
       </div>
+
+      {versions.length === 0 && (
+        <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center text-gray-400">
+          <Shield className="w-8 h-8 mx-auto mb-2 opacity-30" />
+          <p>Todavía no hay versiones publicadas.</p>
+          <p className="text-xs mt-1">Las publicaciones crean un hash que certifica el contenido.</p>
+        </div>
+      )}
 
       {/* Timeline */}
       <div className="relative">
@@ -61,7 +73,8 @@ export default async function HistorialPage({
 
         <div className="space-y-3">
           {versions.map((v, idx) => {
-            const isCurrent = v.id === doc.currentVersionId;
+            // The most recently published version is "current"
+            const isCurrent = idx === 0;
             return (
               <div key={v.id} className="relative flex gap-4">
                 {/* Dot */}
@@ -107,12 +120,10 @@ export default async function HistorialPage({
                       </div>
                     </div>
 
-                    {/* Hash */}
-                    <div className="flex items-center gap-1 text-xs font-mono text-gray-400 bg-gray-50 px-2 py-1 rounded-lg shrink-0"
-                      title={v.contentHash}>
-                      <Shield className="w-3 h-3 text-green-500" />
-                      {v.contentHash.slice(0, 10)}…
-                    </div>
+                    {/* Hash — copyable chip */}
+                    {v.contentHash && (
+                      <HashCopyChip hash={v.contentHash} />
+                    )}
                   </div>
 
                   {v.parentVersionId && (
