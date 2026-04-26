@@ -3,9 +3,10 @@ import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
-import { ChevronRight, Clock, Users, Shield, Eye, GitBranch } from "lucide-react";
+import { ChevronRight, Clock, Users, Eye, GitBranch } from "lucide-react";
 import { DocumentCommentsWrapper } from "@/components/documents/DocumentCommentsWrapper";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
+import { TreePublishButton } from "@/components/trees/TreePublishButton";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,7 @@ export default async function DocumentPage({
 
   const tree = await prisma.documentTree.findUnique({
     where:  { slug },
-    select: { id: true, title: true, slug: true, ownerId: true, visibility: true, contentType: true },
+    select: { id: true, title: true, slug: true, ownerId: true, visibility: true, contentType: true, contentHash: true },
   });
 
   if (!tree) notFound();
@@ -71,17 +72,8 @@ export default async function DocumentPage({
   const style         = CONTENT_TYPE_STYLE[tree.contentType];
   const isKernel      = tree.contentType === "KERNEL";
 
-  // For the publish system: find the latest PUBLISHED version (may differ from latestVersion if there's a DRAFT)
-  const latestPublished = latestVersion?.status === "PUBLISHED"
-    ? latestVersion
-    : await prisma.documentVersion.findFirst({
-        where:   { documentId: doc.id, status: "PUBLISHED" },
-        orderBy: { createdAt: "desc" },
-        select:  { id: true, contentHash: true, createdAt: true, commitMessage: true },
-      });
-
-  const versionStatus:       "DRAFT" | "PUBLISHED" = latestVersion?.status === "DRAFT" ? "DRAFT" : "PUBLISHED";
-  const latestPublishedHash: string | null          = latestPublished?.contentHash ?? null;
+  // For module/resource: is there a DRAFT (unpublished edits since last tree-publish)?
+  const hasChanges = !isKernel && latestVersion?.status === "DRAFT";
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -98,7 +90,7 @@ export default async function DocumentPage({
 
       {/* Header */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             {/* Badge for module/resource — makes the entity type visible */}
             {!isKernel && (
@@ -112,7 +104,7 @@ export default async function DocumentPage({
               {isKernel ? doc.title : tree.title}
             </h1>
             {latestVersion && (
-              <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+              <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 flex-wrap">
                 <span className="flex items-center gap-1">
                   <Users className="w-4 h-4" />
                   {latestVersion.author.name}
@@ -121,24 +113,32 @@ export default async function DocumentPage({
                   <Clock className="w-4 h-4" />
                   {formatDate(latestVersion.createdAt)}
                 </span>
-                {latestPublishedHash && (
-                  <span className="flex items-center gap-1 font-mono text-xs">
-                    <Shield className={`w-4 h-4 ${style.textCls}`} />
-                    {latestPublishedHash.slice(0, 12)}…
-                  </span>
-                )}
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/t/${tree.slug}/${docSlug}/historial`}
-              className={`flex items-center gap-1.5 text-sm text-gray-500 ${style.hoverTextCls} transition-colors`}
-              title="Ver historial de versiones"
-            >
-              <GitBranch className="w-4 h-4" />
-              <span className="hidden sm:inline">Historial</span>
-            </Link>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Publish button — only for module/resource (kernel publish lives on the kernel page) */}
+            {!isKernel && isOwner && (
+              <TreePublishButton
+                treeSlug={tree.slug}
+                contentType={tree.contentType}
+                initialHash={tree.contentHash ?? null}
+                hasChanges={hasChanges}
+              />
+            )}
+            {/* Historial — only for module/resource (kernel history is per-tree, not per-doc) */}
+            {!isKernel && (
+              <Link
+                href={`/t/${tree.slug}/${docSlug}/historial`}
+                className={`flex items-center gap-1.5 text-sm text-gray-500 ${style.hoverTextCls} transition-colors`}
+                title="Ver historial de publicaciones"
+              >
+                <GitBranch className="w-4 h-4" />
+                <span className="hidden sm:inline">Historial</span>
+              </Link>
+            )}
             <Link
               href={`/t/${tree.slug}/${docSlug}/preview`}
               className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
@@ -160,8 +160,6 @@ export default async function DocumentPage({
         isOwner={isOwner}
         isAuthenticated={!!session}
         currentUserId={session?.user?.id}
-        versionStatus={versionStatus}
-        latestPublishedHash={latestPublishedHash}
       />
     </div>
   );

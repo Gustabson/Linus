@@ -109,6 +109,13 @@ model DocumentTree {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
+  // ── Publication seal ─────────────────────────────────────────────────────
+  // Set when the owner explicitly publishes. The hash covers ALL documents
+  // inside this tree so one fingerprint certifies the whole entity.
+  contentHash          String?
+  publishedAt          DateTime?
+  publishCommitMessage String?
+
   ownerId      String
   owner        User           @relation("TreeOwner", fields: [ownerId], references: [id])
 

@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import { GitFork, BookOpen, Shield, ChevronRight, Plus, Settings, GitPullRequest } from "lucide-react";
 import { CONTENT_TYPE_STYLE, KERNEL_NEW_DOC_LABEL } from "@/lib/constants";
+import { TreePublishButton } from "@/components/trees/TreePublishButton";
 import Link from "next/link";
 import Image from "next/image";
 import { ForkButton } from "@/components/trees/ForkButton";
@@ -73,11 +74,13 @@ export default async function TreePage({
       owner: { select: { id: true, name: true, username: true, image: true, bio: true } },
       parentTree: { select: { id: true, slug: true, title: true, contentType: true, parentTreeId: true } },
       documents: {
+        orderBy: { createdAt: "asc" },
         include: {
           versions: {
             orderBy: { createdAt: "desc" },
             take: 1,
-            include: {
+            select: {
+              status: true,
               sections: { select: { id: true, sectionType: true, isComplete: true } },
             },
           },
@@ -107,6 +110,9 @@ export default async function TreePage({
 
   const isOwner = session?.user?.id === tree.ownerId;
   if (tree.visibility === "PRIVATE" && !isOwner) notFound();
+
+  // Whether the tree has at least one document with a DRAFT (unpublished changes)
+  const hasChanges = tree.documents.some((doc) => doc.versions[0]?.status === "DRAFT");
 
   // MODULE / RESOURCE are single-document entities — the tree page is invisible to users.
   // Redirect straight to the document editor (auto-created on tree creation).
@@ -266,55 +272,76 @@ export default async function TreePage({
           </span>
           <span className="flex items-center gap-1">
             <BookOpen className="w-4 h-4" />
-            {tree.documents.length} documento{tree.documents.length !== 1 ? "s" : ""}
+            {tree.documents.length} unidad{tree.documents.length !== 1 ? "es" : ""}
           </span>
           <span>{formatDate(tree.createdAt)}</span>
+          {/* Publish button (owner only) — lives here next to the stats so hash + publish action feel attached to the entity */}
+          {isOwner && (
+            <div className="ml-auto">
+              <TreePublishButton
+                treeSlug={tree.slug}
+                contentType={tree.contentType}
+                initialHash={tree.contentHash ?? null}
+                hasChanges={hasChanges}
+              />
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Documents */}
-      <div className="space-y-3">
-        <h2 className="text-xl font-semibold text-gray-900">Documentos</h2>
+        {/* ── Documents (inside the card — kernel + docs = one visual unit) ── */}
         {tree.documents.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center text-gray-400">
-            <BookOpen className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p>Todavía no hay documentos.</p>
+          <div className={`rounded-xl border border-dashed ${isOwner ? "border-gray-200" : "border-gray-100"} p-8 text-center text-gray-400`}>
+            <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">Todavía no hay unidades.</p>
             {isOwner && (
-              <Link href={`/t/${tree.slug}/nuevo`} className={`mt-3 inline-block text-sm ${style.textCls} hover:underline`}>
+              <Link href={`/t/${tree.slug}/nuevo`} className={`mt-2 inline-block text-sm ${style.textCls} hover:underline`}>
                 + {KERNEL_NEW_DOC_LABEL}
               </Link>
             )}
           </div>
         ) : (
-          tree.documents.map((doc) => {
-            const latestVersion = doc.versions[0];
-            const totalSections = latestVersion?.sections.length ?? 0;
-            const completeSections = latestVersion?.sections.filter((s) => s.isComplete).length ?? 0;
-            const progress = totalSections > 0 ? Math.round((completeSections / totalSections) * 100) : 0;
-            return (
-              <Link key={doc.id} href={`/t/${tree.slug}/${doc.slug}`}
-                className={`bg-white rounded-xl border border-gray-200 p-5 ${style.hoverBorderCls} transition-all block group`}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className={`font-medium text-gray-900 ${style.groupHoverTextCls}`}>{doc.title}</h3>
-                  <ChevronRight className="w-4 h-4 text-gray-400" />
-                </div>
-                <div className="flex flex-wrap gap-1 mb-3">
-                  {latestVersion?.sections.map((s) => (
-                    <span key={s.id} className={`text-xs px-2 py-0.5 rounded-full ${s.isComplete ? style.badgeCls : "bg-gray-100 text-gray-400"}`}>
-                      {s.sectionType}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                    <div className={`${style.progressCls} h-1.5 rounded-full transition-all`} style={{ width: `${progress}%` }} />
+          <div className="space-y-2">
+            {tree.documents.map((doc) => {
+              const latestVersion   = doc.versions[0];
+              const totalSections   = latestVersion?.sections.length ?? 0;
+              const completeSections = latestVersion?.sections.filter((s) => s.isComplete).length ?? 0;
+              const progress        = totalSections > 0 ? Math.round((completeSections / totalSections) * 100) : 0;
+              const isDraft         = latestVersion?.status === "DRAFT";
+              return (
+                <Link key={doc.id} href={`/t/${tree.slug}/${doc.slug}`}
+                  className={`bg-gray-50 rounded-xl border border-gray-100 p-4 ${style.hoverBorderCls} hover:bg-white transition-all block group`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <h3 className={`font-medium text-gray-900 text-sm ${style.groupHoverTextCls}`}>{doc.title}</h3>
+                      {isDraft && isOwner && (
+                        <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
+                          Borrador
+                        </span>
+                      )}
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
                   </div>
-                  <span className="text-xs text-gray-400">{progress}%</span>
-                </div>
-              </Link>
-            );
-          })
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {latestVersion?.sections.map((s) => (
+                      <span key={s.id} className={`text-xs px-1.5 py-0.5 rounded-full ${s.isComplete ? style.badgeCls : "bg-gray-200 text-gray-400"}`}>
+                        {s.sectionType}
+                      </span>
+                    ))}
+                  </div>
+                  {totalSections > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-gray-200 rounded-full h-1">
+                        <div className={`${style.progressCls} h-1 rounded-full transition-all`} style={{ width: `${progress}%` }} />
+                      </div>
+                      <span className="text-xs text-gray-400">{progress}%</span>
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
         )}
+
       </div>
 
       {/* Attachments panel — full for kernels, detach-only for modules/resources with legacy data */}

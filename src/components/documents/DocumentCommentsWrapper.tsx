@@ -6,16 +6,14 @@ import { DocumentComments } from "@/components/documents/DocumentComments";
 import type { DocumentSection } from "@prisma/client";
 
 interface Props {
-  treeSlug:            string;
-  docSlug:             string;
-  docId:               string;
-  versionId:           string | null;
-  sections:            DocumentSection[];
-  isOwner:             boolean;
-  isAuthenticated:     boolean;
-  currentUserId?:      string;
-  versionStatus:       "DRAFT" | "PUBLISHED";
-  latestPublishedHash: string | null;
+  treeSlug:        string;
+  docSlug:         string;
+  docId:           string;
+  versionId:       string | null;
+  sections:        DocumentSection[];
+  isOwner:         boolean;
+  isAuthenticated: boolean;
+  currentUserId?:  string;
 }
 
 export function DocumentCommentsWrapper({
@@ -27,8 +25,6 @@ export function DocumentCommentsWrapper({
   isOwner,
   isAuthenticated,
   currentUserId,
-  versionStatus,
-  latestPublishedHash,
 }: Props) {
   const [pendingQuote, setPendingQuote] = useState<{
     text: string;
@@ -44,8 +40,6 @@ export function DocumentCommentsWrapper({
         sections={sections}
         isOwner={isOwner}
         isAuthenticated={isAuthenticated}
-        versionStatus={versionStatus}
-        latestPublishedHash={latestPublishedHash}
         onQuote={isAuthenticated ? (text, sectionTitle) => {
           setPendingQuote({ text, sectionType: sectionTitle });
           setTimeout(() => {
