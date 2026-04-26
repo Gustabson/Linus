@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { GitFork, BookOpen, Shield, ChevronRight, Plus, Settings } from "lucide-react";
+import { GitFork, BookOpen, Shield, ChevronRight, Plus, Settings, GitPullRequest } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { ForkButton } from "@/components/trees/ForkButton";
@@ -10,6 +10,7 @@ import { LikeButton } from "@/components/trees/LikeButton";
 import { ExtensionsPanel } from "@/components/trees/ExtensionsPanel";
 import { ForkTree } from "@/components/trees/ForkTree";
 import { AttachmentsPanel } from "@/components/trees/AttachmentsPanel";
+import { CreateProposalButton } from "@/components/proposals/CreateProposalButton";
 
 export const dynamic = "force-dynamic";
 
@@ -106,11 +107,24 @@ export default async function TreePage({
   const isOwner = session?.user?.id === tree.ownerId;
   if (tree.visibility === "PRIVATE" && !isOwner) notFound();
 
-  const userLiked = session?.user?.id
-    ? !!(await prisma.treeLike.findUnique({
-        where: { treeId_userId: { treeId: tree.id, userId: session.user.id } },
-      }))
-    : false;
+  const [userLiked, openProposalsCount, userHasOpenProposal] = await Promise.all([
+    session?.user?.id
+      ? prisma.treeLike.findUnique({
+          where: { treeId_userId: { treeId: tree.id, userId: session.user.id } },
+        }).then(Boolean)
+      : Promise.resolve(false),
+    isOwner
+      ? prisma.changeProposal.count({ where: { targetTreeId: tree.id, status: "OPEN" } })
+      : Promise.resolve(0),
+    // Does this user already have an open proposal for this tree (from their fork)?
+    session?.user?.id && !isOwner && tree.parentTree === null
+      ? Promise.resolve(false) // not a fork page visitor case
+      : session?.user?.id && tree.parentTreeId
+        ? prisma.changeProposal.findFirst({
+            where: { sourceTreeId: tree.id, authorId: session.user.id, status: "OPEN" },
+          }).then(Boolean)
+        : Promise.resolve(false),
+  ]);
 
   // Build ancestor chain (walk up to find root)
   const ancestors: { id: string; slug: string; title: string; contentType: string }[] = [];
@@ -196,6 +210,27 @@ export default async function TreePage({
             <LikeButton treeSlug={tree.slug} initialLiked={userLiked} initialCount={tree._count.likes} isAuthenticated={!!session} />
             {!isOwner && session && (
               <ForkButton treeId={tree.id} treeTitle={tree.title} contentType={tree.contentType} />
+            )}
+            {/* "Proponer cambios" — only on owned forks, only if no open proposal exists */}
+            {isOwner && tree.parentTreeId && !userHasOpenProposal && (
+              <CreateProposalButton
+                sourceTreeId={tree.id}
+                parentTreeTitle={tree.parentTree?.title ?? "el original"}
+              />
+            )}
+            {isOwner && tree.parentTreeId && userHasOpenProposal && (
+              <Link href="/propuestas?tab=enviadas"
+                className="flex items-center gap-1.5 text-sm text-blue-700 border border-blue-200 bg-blue-50 px-3 py-2 rounded-xl hover:bg-blue-100 transition-colors">
+                <GitPullRequest className="w-4 h-4" />
+                Propuesta abierta
+              </Link>
+            )}
+            {isOwner && !tree.parentTreeId && openProposalsCount > 0 && (
+              <Link href="/propuestas"
+                className="flex items-center gap-2 text-sm text-blue-700 border border-blue-200 bg-blue-50 px-3 py-2 rounded-xl hover:bg-blue-100 transition-colors">
+                <GitPullRequest className="w-4 h-4" />
+                {openProposalsCount} propuesta{openProposalsCount !== 1 ? "s" : ""}
+              </Link>
             )}
             {isOwner && (
               <>

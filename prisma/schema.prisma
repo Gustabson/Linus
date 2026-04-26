@@ -387,6 +387,8 @@ enum NotificationType {
   NEW_FORK
   NEW_LIKE
   NEW_COMMENT
+  NEW_PROPOSAL
+  PROPOSAL_REVIEWED
 }
 
 model Notification {
