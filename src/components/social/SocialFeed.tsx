@@ -228,10 +228,11 @@ export async function SocialFeed({ userId }: Props) {
             <h3 className="font-semibold text-gray-900 text-sm mb-3">Accesos rápidos</h3>
             <div className="space-y-1">
               {[
-                { href: "/explorar",  label: "Explorar kernels"  },
+                { href: "/buscar",                 label: "Buscar maestros"   },
+                { href: "/explorar",               label: "Explorar kernels"  },
                 { href: "/explorar?tipo=MODULE",   label: "Explorar módulos"  },
                 { href: "/explorar?tipo=RESOURCE", label: "Explorar recursos" },
-                { href: "/ledger",    label: "Ledger público"    },
+                { href: "/ledger",                 label: "Ledger público"    },
               ].map((l) => (
                 <Link key={l.href} href={l.href}
                   className="flex items-center gap-2 text-sm text-gray-600 hover:text-green-700 py-1.5 px-2 rounded-lg hover:bg-green-50 transition-colors">

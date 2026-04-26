@@ -5,9 +5,21 @@ import { Toaster } from "@/components/ui/Toaster";
 import { SessionProvider } from "@/components/layout/SessionProvider";
 
 export const metadata: Metadata = {
-  title: "EduHub — Conocimiento Educativo Abierto",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://eduhub.vercel.app"
+  ),
+  title: {
+    default:  "EduHub — Conocimiento Educativo Abierto",
+    template: "%s · EduHub",
+  },
   description:
-    "Plataforma colaborativa de recursos educativos. Forkea, adapta y comparte curriculos con maestros de todo el mundo.",
+    "Plataforma colaborativa de recursos educativos. Forkea, adapta y compartí curriculos con maestros de todo el mundo.",
+  openGraph: {
+    siteName: "EduHub",
+    locale:   "es_AR",
+    type:     "website",
+  },
+  twitter: { card: "summary" },
 };
 
 export default function RootLayout({

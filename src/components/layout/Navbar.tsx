@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import {
   BookOpen, Search, LogOut, Menu, X, AlertCircle,
-  LayoutDashboard, Home,
+  LayoutDashboard, Home, Users,
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
@@ -69,6 +69,7 @@ export function Navbar() {
                 <>
                   <NavLink href="/" icon={<Home className="w-4 h-4" />} label="Inicio" />
                   <NavLink href="/explorar" icon={<Search className="w-4 h-4" />} label="Explorar" />
+                  <NavLink href="/buscar" icon={<Users className="w-4 h-4" />} label="Personas" />
                   <NavLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Espacio de trabajo" />
                 </>
               ) : (
@@ -141,6 +142,7 @@ export function Navbar() {
                   )}
                   <MobileLink href="/"          icon={<Home className="w-4 h-4" />}            label="Inicio"              onClick={() => setOpen(false)} />
                   <MobileLink href="/explorar"  icon={<Search className="w-4 h-4" />}          label="Explorar"            onClick={() => setOpen(false)} />
+                  <MobileLink href="/buscar"    icon={<Users className="w-4 h-4" />}           label="Personas"            onClick={() => setOpen(false)} />
                   <MobileLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Espacio de trabajo"  onClick={() => setOpen(false)} />
                   <MobileLink href={profileHref} icon={
                     session.user?.image

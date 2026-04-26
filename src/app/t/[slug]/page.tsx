@@ -13,6 +13,21 @@ import { AttachmentsPanel } from "@/components/trees/AttachmentsPanel";
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const tree = await prisma.documentTree.findUnique({
+    where:  { slug },
+    select: { title: true, description: true, contentType: true, owner: { select: { name: true } } },
+  });
+  if (!tree) return {};
+  const typeLabel = tree.contentType === "KERNEL" ? "Kernel" : tree.contentType === "MODULE" ? "Módulo" : "Recurso";
+  return {
+    title:       tree.title,
+    description: tree.description ?? `${typeLabel} educativo por ${tree.owner.name} en EduHub`,
+    openGraph:   { title: tree.title, description: tree.description ?? undefined, type: "article" },
+  };
+}
+
 // Recursively fetch fork tree up to N levels deep
 async function fetchForkSubtree(treeId: string, depth: number): Promise<{
   id: string; slug: string; title: string; contentType: string; forkDepth: number;

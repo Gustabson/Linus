@@ -1,11 +1,28 @@
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: { params: Promise<{ slug: string; docSlug: string }> }) {
+  const { slug, docSlug } = await params;
+  const tree = await prisma.documentTree.findUnique({ where: { slug }, select: { title: true, id: true } });
+  if (!tree) return {};
+  const doc = await prisma.document.findUnique({
+    where:  { treeId_slug: { treeId: tree.id, slug: docSlug } },
+    select: { title: true },
+  });
+  if (!doc) return {};
+  return {
+    title:     `${doc.title} — ${tree.title}`,
+    openGraph: { title: `${doc.title} — ${tree.title}`, type: "article" },
+  };
+}
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
-import { ChevronRight, Clock, Users, Shield, Eye } from "lucide-react";
+import { ChevronRight, Clock, Users, Shield, Eye, GitBranch } from "lucide-react";
 import { DocumentCommentsWrapper } from "@/components/documents/DocumentCommentsWrapper";
 
 export default async function DocumentPage({
@@ -78,6 +95,14 @@ export default async function DocumentPage({
             )}
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              href={`/t/${tree.slug}/${docSlug}/historial`}
+              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              title="Ver historial de versiones"
+            >
+              <GitBranch className="w-4 h-4" />
+              <span className="hidden sm:inline">Historial</span>
+            </Link>
             <Link
               href={`/t/${tree.slug}/${docSlug}/preview`}
               className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"

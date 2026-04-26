@@ -11,6 +11,20 @@ import { CONTENT_TYPE_BADGE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
+export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
+  const { username } = await params;
+  const user = await prisma.user.findUnique({
+    where:  { username },
+    select: { name: true, bio: true },
+  });
+  if (!user) return {};
+  return {
+    title:       user.name ?? username,
+    description: user.bio ?? `Perfil de ${user.name ?? username} en EduHub`,
+    openGraph:   { title: user.name ?? username, description: user.bio ?? undefined },
+  };
+}
+
 export default async function UserProfilePage({
   params,
 }: {
