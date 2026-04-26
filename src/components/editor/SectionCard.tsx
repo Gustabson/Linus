@@ -187,15 +187,32 @@ export function SectionCard({
             />
           )}
 
-          <SectionEditor
-            content={section.richTextContent as object ?? null}
-            placeholder={`Escribí el contenido de "${titleValue}"...`}
-            editable={isOwner}
-            onChange={setContent}
-          />
+          {(section.richTextContent as Record<string, unknown>)?.__type === "pdf_embed" ? (
+            /* PDF embed section — show iframe, not TipTap editor */
+            <div className="space-y-2">
+              <iframe
+                src={(section.richTextContent as Record<string, unknown>).url as string}
+                className="w-full rounded-xl border border-gray-200"
+                style={{ height: "600px" }}
+                title={section.sectionType}
+              />
+              {isOwner && (
+                <p className="text-xs text-gray-400 text-center">
+                  PDF incrustado — no se puede editar directamente
+                </p>
+              )}
+            </div>
+          ) : (
+            <SectionEditor
+              content={section.richTextContent as object ?? null}
+              placeholder={`Escribí el contenido de "${titleValue}"...`}
+              editable={isOwner}
+              onChange={setContent}
+            />
+          )}
 
-          {/* Save button — visible while dirty OR briefly after save */}
-          {isOwner && (isDirty || saved) && (
+          {/* Save button — not shown for PDF embeds */}
+          {isOwner && (isDirty || saved) && (section.richTextContent as Record<string, unknown>)?.__type !== "pdf_embed" && (
             <div className="flex justify-end">
               <button
                 type="button"

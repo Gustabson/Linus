@@ -7,6 +7,7 @@ import { ChevronRight, Clock, Users, Eye, GitBranch } from "lucide-react";
 import { DocumentCommentsWrapper } from "@/components/documents/DocumentCommentsWrapper";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import { TreePublishButton } from "@/components/trees/TreePublishButton";
+import { DocActionBar } from "@/components/documents/DocActionBar";
 
 export const dynamic = "force-dynamic";
 
@@ -89,47 +90,42 @@ export default async function DocumentPage({
       )}
 
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            {/* Badge for module/resource — makes the entity type visible */}
-            {!isKernel && (
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+        {isKernel && isOwner ? (
+          /* Kernel doc: action bar replaces the redundant title */
+          <DocActionBar treeSlug={tree.slug} docSlug={docSlug} docTitle={doc.title} />
+        ) : (
+          /* Module / resource: keep the full header with title + actions */
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
               <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium mb-2 ${style.badgeCls}`}>
                 {style.icon}
                 {style.label}
               </span>
-            )}
-            {/* For module/resource, the tree title IS the main heading */}
-            <h1 className="text-2xl font-bold text-gray-900">
-              {isKernel ? doc.title : tree.title}
-            </h1>
-            {latestVersion && (
-              <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 flex-wrap">
-                <span className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  {latestVersion.author.name}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  {formatDate(latestVersion.createdAt)}
-                </span>
-              </div>
-            )}
-          </div>
+              <h1 className="text-2xl font-bold text-gray-900">{tree.title}</h1>
+              {latestVersion && (
+                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    {latestVersion.author.name}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {formatDate(latestVersion.createdAt)}
+                  </span>
+                </div>
+              )}
+            </div>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Publish button — only for module/resource (kernel publish lives on the kernel page) */}
-            {!isKernel && isOwner && (
-              <TreePublishButton
-                treeSlug={tree.slug}
-                contentType={tree.contentType}
-                initialHash={tree.contentHash ?? null}
-                hasChanges={hasChanges}
-              />
-            )}
-            {/* Historial — only for module/resource (kernel history is per-tree, not per-doc) */}
-            {!isKernel && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {isOwner && (
+                <TreePublishButton
+                  treeSlug={tree.slug}
+                  contentType={tree.contentType}
+                  initialHash={tree.contentHash ?? null}
+                  hasChanges={hasChanges}
+                />
+              )}
               <Link
                 href={`/t/${tree.slug}/${docSlug}/historial`}
                 className={`flex items-center gap-1.5 text-sm text-gray-500 ${style.hoverTextCls} transition-colors`}
@@ -138,16 +134,16 @@ export default async function DocumentPage({
                 <GitBranch className="w-4 h-4" />
                 <span className="hidden sm:inline">Historial</span>
               </Link>
-            )}
-            <Link
-              href={`/t/${tree.slug}/${docSlug}/preview`}
-              className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Eye className="w-4 h-4" />
-              Preview
-            </Link>
+              <Link
+                href={`/t/${tree.slug}/${docSlug}/preview`}
+                className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Eye className="w-4 h-4" />
+                Preview
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Sections + Comments (client wrapper handles quote state) */}

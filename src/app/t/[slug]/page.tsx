@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { GitFork, BookOpen, Shield, ChevronRight, Plus, Settings, GitPullRequest } from "lucide-react";
+import { GitFork, BookOpen, Shield, ChevronRight, Plus, Settings, GitPullRequest, Eye } from "lucide-react";
 import { CONTENT_TYPE_STYLE, KERNEL_NEW_DOC_LABEL } from "@/lib/constants";
 import { TreePublishButton } from "@/components/trees/TreePublishButton";
 import Link from "next/link";
@@ -247,6 +247,12 @@ export default async function TreePage({
                 {openProposalsCount} propuesta{openProposalsCount !== 1 ? "s" : ""}
               </Link>
             )}
+            {/* Preview — always visible for kernels (shows full read-only view) */}
+            <Link href={`/t/${tree.slug}/preview`}
+              className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+              <Eye className="w-4 h-4" />
+              Preview
+            </Link>
             {isOwner && (
               <>
                 <Link href={`/t/${tree.slug}/configuracion`}
@@ -289,6 +295,7 @@ export default async function TreePage({
         </div>
 
         {/* ── Documents (inside the card — kernel + docs = one visual unit) ── */}
+        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Documentos</p>
         {tree.documents.length === 0 ? (
           <div className={`rounded-xl border border-dashed ${isOwner ? "border-gray-200" : "border-gray-100"} p-8 text-center text-gray-400`}>
             <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
