@@ -1,4 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { notFound } from "next/navigation";
+import { formatDate } from "@/lib/utils";
+import Link from "next/link";
+import { ChevronRight, Clock, Users, Shield, Eye, GitBranch } from "lucide-react";
+import { DocumentCommentsWrapper } from "@/components/documents/DocumentCommentsWrapper";
+import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -6,24 +13,25 @@ export async function generateMetadata({
   params,
 }: { params: Promise<{ slug: string; docSlug: string }> }) {
   const { slug, docSlug } = await params;
-  const tree = await prisma.documentTree.findUnique({ where: { slug }, select: { title: true, id: true } });
+  const tree = await prisma.documentTree.findUnique({
+    where:  { slug },
+    select: { title: true, id: true, contentType: true },
+  });
   if (!tree) return {};
   const doc = await prisma.document.findUnique({
     where:  { treeId_slug: { treeId: tree.id, slug: docSlug } },
     select: { title: true },
   });
   if (!doc) return {};
+  // For MODULE/RESOURCE the tree title IS the entity — don't duplicate
+  const pageTitle = tree.contentType === "KERNEL"
+    ? `${doc.title} — ${tree.title}`
+    : tree.title;
   return {
-    title:     `${doc.title} — ${tree.title}`,
-    openGraph: { title: `${doc.title} — ${tree.title}`, type: "article" },
+    title:     pageTitle,
+    openGraph: { title: pageTitle, type: "article" },
   };
 }
-import { auth } from "@/lib/auth";
-import { notFound } from "next/navigation";
-import { formatDate } from "@/lib/utils";
-import Link from "next/link";
-import { ChevronRight, Clock, Users, Shield, Eye, GitBranch } from "lucide-react";
-import { DocumentCommentsWrapper } from "@/components/documents/DocumentCommentsWrapper";
 
 export default async function DocumentPage({
   params,
@@ -34,8 +42,8 @@ export default async function DocumentPage({
   const session = await auth();
 
   const tree = await prisma.documentTree.findUnique({
-    where: { slug },
-    select: { id: true, title: true, slug: true, ownerId: true, visibility: true },
+    where:  { slug },
+    select: { id: true, title: true, slug: true, ownerId: true, visibility: true, contentType: true },
   });
 
   if (!tree) notFound();
@@ -59,24 +67,38 @@ export default async function DocumentPage({
   if (!doc) notFound();
 
   const latestVersion = doc.versions[0];
-  const sections = latestVersion?.sections ?? [];
+  const sections      = latestVersion?.sections ?? [];
+  const style         = CONTENT_TYPE_STYLE[tree.contentType];
+  const isKernel      = tree.contentType === "KERNEL";
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href={`/t/${tree.slug}`} className="hover:text-gray-900">
-          {tree.title}
-        </Link>
-        <ChevronRight className="w-4 h-4" />
-        <span className="text-gray-900">{doc.title}</span>
-      </nav>
+      {/* Breadcrumb — only for kernels (module/resource = single entity, no parent listing) */}
+      {isKernel && (
+        <nav className="flex items-center gap-2 text-sm text-gray-500">
+          <Link href={`/t/${tree.slug}`} className="hover:text-gray-900">
+            {tree.title}
+          </Link>
+          <ChevronRight className="w-4 h-4" />
+          <span className="text-gray-900">{doc.title}</span>
+        </nav>
+      )}
 
       {/* Header */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{doc.title}</h1>
+            {/* Badge for module/resource — makes the entity type visible */}
+            {!isKernel && (
+              <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium mb-2 ${style.badgeCls}`}>
+                {style.icon}
+                {style.label}
+              </span>
+            )}
+            {/* For module/resource, the tree title IS the main heading */}
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isKernel ? doc.title : tree.title}
+            </h1>
             {latestVersion && (
               <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                 <span className="flex items-center gap-1">
@@ -88,7 +110,7 @@ export default async function DocumentPage({
                   {formatDate(latestVersion.createdAt)}
                 </span>
                 <span className="flex items-center gap-1 font-mono text-xs">
-                  <Shield className="w-4 h-4 text-green-600" />
+                  <Shield className={`w-4 h-4 ${style.textCls}`} />
                   {latestVersion.contentHash.slice(0, 12)}…
                 </span>
               </div>
@@ -97,7 +119,7 @@ export default async function DocumentPage({
           <div className="flex items-center gap-2">
             <Link
               href={`/t/${tree.slug}/${docSlug}/historial`}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+              className={`flex items-center gap-1.5 text-sm text-gray-500 ${style.hoverTextCls} transition-colors`}
               title="Ver historial de versiones"
             >
               <GitBranch className="w-4 h-4" />

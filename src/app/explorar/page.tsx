@@ -3,7 +3,7 @@ import { GitFork, BookOpen, Search, Heart, TrendingUp, Clock } from "lucide-reac
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import Image from "next/image";
-import { CONTENT_TYPE_BADGE, CONTENT_TABS } from "@/lib/constants";
+import { CONTENT_TYPE_BADGE, CONTENT_TYPE_STYLE, CONTENT_TABS } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +50,7 @@ export default async function ExplorarPage({
   });
 
   const badge = CONTENT_TYPE_BADGE[contentType];
+  const style = CONTENT_TYPE_STYLE[contentType];
 
   const tabHref  = (t: string) => `/explorar?tipo=${t}${sort !== "trending" ? `&sort=${sort}` : ""}${q ? `&q=${q}` : ""}`;
   const sortHref = (s: string) => `/explorar?tipo=${contentType}&sort=${s}${q ? `&q=${q}` : ""}`;
@@ -63,17 +64,20 @@ export default async function ExplorarPage({
 
       {/* Content type tabs */}
       <div className="flex gap-2 flex-wrap">
-        {CONTENT_TABS.map((tab) => (
-          <Link key={tab.key} href={tabHref(tab.key)}
-            className={`flex items-center gap-1.5 text-sm px-4 py-2.5 rounded-xl border font-medium transition-colors ${
-              contentType === tab.key
-                ? "bg-green-700 text-white border-green-700"
-                : "bg-white text-gray-600 border-gray-200 hover:border-green-300"
-            }`}>
-            {tab.icon}
-            {tab.label}
-          </Link>
-        ))}
+        {CONTENT_TABS.map((tab) => {
+          const ts = CONTENT_TYPE_STYLE[tab.key];
+          return (
+            <Link key={tab.key} href={tabHref(tab.key)}
+              className={`flex items-center gap-1.5 text-sm px-4 py-2.5 rounded-xl border font-medium transition-colors ${
+                contentType === tab.key
+                  ? `${ts.btnCls} border-transparent`
+                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+              }`}>
+              {tab.icon}
+              {tab.label}
+            </Link>
+          );
+        })}
       </div>
 
       {/* Search */}
@@ -84,12 +88,12 @@ export default async function ExplorarPage({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input name="q" defaultValue={q}
             placeholder={`Buscar ${badge.label.toLowerCase()}s...`}
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white" />
+            className={`w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 ${style.ringCls} bg-white`} />
         </div>
-        <button type="submit" className="bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm hover:bg-green-800 transition-colors">
+        <button type="submit" className={`px-4 py-2.5 rounded-xl text-sm transition-colors ${style.btnCls}`}>
           Buscar
         </button>
-        <Link href="/nuevo" className="flex items-center gap-1.5 border border-green-200 text-green-700 px-4 py-2.5 rounded-xl text-sm hover:bg-green-50 transition-colors">
+        <Link href="/nuevo" className={`flex items-center gap-1.5 border px-4 py-2.5 rounded-xl text-sm transition-colors ${style.borderCls} ${style.textCls} ${style.lightBgCls} hover:opacity-80`}>
           {badge.icon}
           Crear {badge.label.toLowerCase()}
         </Link>
@@ -118,7 +122,7 @@ export default async function ExplorarPage({
         <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
           <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p className="text-gray-500">No se encontraron {badge.label.toLowerCase()}s.</p>
-          <Link href="/nuevo" className="inline-flex items-center gap-2 mt-4 bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm hover:bg-green-800 transition-colors">
+          <Link href="/nuevo" className={`inline-flex items-center gap-2 mt-4 px-5 py-2.5 rounded-xl text-sm transition-colors ${style.btnCls}`}>
             Crear el primero
           </Link>
         </div>
@@ -126,8 +130,9 @@ export default async function ExplorarPage({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {sorted.map((tree) => {
             const tb = CONTENT_TYPE_BADGE[tree.contentType];
+            const ts = CONTENT_TYPE_STYLE[tree.contentType];
             return (
-              <div key={tree.id} className="relative bg-white rounded-2xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-sm transition-all group flex flex-col">
+              <div key={tree.id} className={`relative bg-white rounded-2xl border border-gray-200 p-5 ${ts.hoverBorderCls} hover:shadow-sm transition-all group flex flex-col`}>
                 <Link href={`/t/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
                 <div className="flex items-center gap-2 mb-3">
@@ -142,7 +147,7 @@ export default async function ExplorarPage({
                   )}
                 </div>
 
-                <h3 className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors line-clamp-2 mb-1 flex-1">
+                <h3 className={`font-semibold text-gray-900 ${ts.groupHoverTextCls} transition-colors line-clamp-2 mb-1 flex-1`}>
                   {tree.title}
                 </h3>
                 {tree.description && (

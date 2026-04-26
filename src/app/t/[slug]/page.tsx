@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import { GitFork, BookOpen, Shield, ChevronRight, Plus, Settings, GitPullRequest } from "lucide-react";
+import { CONTENT_TYPE_STYLE, KERNEL_NEW_DOC_LABEL } from "@/lib/constants";
 import Link from "next/link";
 import Image from "next/image";
 import { ForkButton } from "@/components/trees/ForkButton";
@@ -107,6 +108,14 @@ export default async function TreePage({
   const isOwner = session?.user?.id === tree.ownerId;
   if (tree.visibility === "PRIVATE" && !isOwner) notFound();
 
+  // MODULE / RESOURCE are single-document entities — the tree page is invisible to users.
+  // Redirect straight to the document editor (auto-created on tree creation).
+  if (tree.contentType !== "KERNEL" && tree.documents.length > 0) {
+    redirect(`/t/${tree.slug}/${tree.documents[0].slug}`);
+  }
+
+  const style = CONTENT_TYPE_STYLE[tree.contentType];
+
   const [userLiked, openProposalsCount, userHasOpenProposal] = await Promise.all([
     session?.user?.id
       ? prisma.treeLike.findUnique({
@@ -189,7 +198,7 @@ export default async function TreePage({
           <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               {tree.contentType === "KERNEL" && (
-                <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full font-medium">
+                <span className={`${style.badgeCls} text-xs px-2 py-0.5 rounded-full font-medium`}>
                   Kernel oficial
                 </span>
               )}
@@ -240,9 +249,9 @@ export default async function TreePage({
                   Configurar
                 </Link>
                 <Link href={`/t/${tree.slug}/nuevo`}
-                  className="flex items-center gap-1.5 bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 transition-colors">
+                  className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg transition-colors ${style.btnCls}`}>
                   <Plus className="w-4 h-4" />
-                  Nuevo doc
+                  {KERNEL_NEW_DOC_LABEL}
                 </Link>
               </>
             )}
@@ -271,8 +280,8 @@ export default async function TreePage({
             <BookOpen className="w-10 h-10 mx-auto mb-2 opacity-40" />
             <p>Todavía no hay documentos.</p>
             {isOwner && (
-              <Link href={`/t/${tree.slug}/nuevo`} className="mt-3 inline-block text-sm text-green-700 hover:underline">
-                + Crear primer documento
+              <Link href={`/t/${tree.slug}/nuevo`} className={`mt-3 inline-block text-sm ${style.textCls} hover:underline`}>
+                + {KERNEL_NEW_DOC_LABEL}
               </Link>
             )}
           </div>
@@ -284,21 +293,21 @@ export default async function TreePage({
             const progress = totalSections > 0 ? Math.round((completeSections / totalSections) * 100) : 0;
             return (
               <Link key={doc.id} href={`/t/${tree.slug}/${doc.slug}`}
-                className="bg-white rounded-xl border border-gray-200 p-5 hover:border-green-300 transition-all block group">
+                className={`bg-white rounded-xl border border-gray-200 p-5 ${style.hoverBorderCls} transition-all block group`}>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-gray-900 group-hover:text-green-700">{doc.title}</h3>
-                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-green-600" />
+                  <h3 className={`font-medium text-gray-900 ${style.groupHoverTextCls}`}>{doc.title}</h3>
+                  <ChevronRight className="w-4 h-4 text-gray-400" />
                 </div>
                 <div className="flex flex-wrap gap-1 mb-3">
                   {latestVersion?.sections.map((s) => (
-                    <span key={s.id} className={`text-xs px-2 py-0.5 rounded-full ${s.isComplete ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"}`}>
+                    <span key={s.id} className={`text-xs px-2 py-0.5 rounded-full ${s.isComplete ? style.badgeCls : "bg-gray-100 text-gray-400"}`}>
                       {s.sectionType}
                     </span>
                   ))}
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 bg-gray-100 rounded-full h-1.5">
-                    <div className="bg-green-500 h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }} />
+                    <div className={`${style.progressCls} h-1.5 rounded-full transition-all`} style={{ width: `${progress}%` }} />
                   </div>
                   <span className="text-xs text-gray-400">{progress}%</span>
                 </div>

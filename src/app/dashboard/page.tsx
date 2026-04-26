@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { DeleteTreeButton } from "@/components/trees/DeleteTreeButton";
 import { formatDate } from "@/lib/utils";
-import { CONTENT_TYPE_BADGE, CONTENT_TABS } from "@/lib/constants";
+import { CONTENT_TYPE_BADGE, CONTENT_TYPE_STYLE, CONTENT_TABS } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -82,48 +82,45 @@ export default async function DashboardPage({
 
       {/* Stats bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          ...CONTENT_TABS.map(t => ({
-            label: t.label,
-            value: byType[t.key].length,
-            icon:  CONTENT_TABS.find(x => x.key === t.key)!.icon,
-            href:  `/dashboard?tab=${t.key}`,
-          })),
-          { label: "Forks recibidos", value: totalForks, icon: <GitFork className="w-4 h-4 text-gray-500" />, href: null as string | null },
-        ].map((stat) =>
-          stat.href ? (
-            <Link key={stat.label} href={stat.href}
-              className="bg-white rounded-2xl border border-gray-200 px-4 py-3 hover:border-green-300 transition-colors">
-              <div className="flex items-center gap-2 mb-1">{stat.icon}<span className="text-xs text-gray-500">{stat.label}</span></div>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+        {CONTENT_TABS.map((t) => {
+          const ts = CONTENT_TYPE_STYLE[t.key];
+          return (
+            <Link key={t.key} href={`/dashboard?tab=${t.key}`}
+              className={`bg-white rounded-2xl border border-gray-200 px-4 py-3 ${ts.hoverBorderCls} transition-colors`}>
+              <div className="flex items-center gap-2 mb-1">{t.icon}<span className="text-xs text-gray-500">{t.label}</span></div>
+              <p className="text-2xl font-bold text-gray-900">{byType[t.key].length}</p>
             </Link>
-          ) : (
-            <div key={stat.label} className="bg-white rounded-2xl border border-gray-200 px-4 py-3">
-              <div className="flex items-center gap-2 mb-1">{stat.icon}<span className="text-xs text-gray-500">{stat.label}</span></div>
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-            </div>
-          )
-        )}
+          );
+        })}
+        <div className="bg-white rounded-2xl border border-gray-200 px-4 py-3">
+          <div className="flex items-center gap-2 mb-1">
+            <GitFork className="w-4 h-4 text-gray-500" />
+            <span className="text-xs text-gray-500">Forks recibidos</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">{totalForks}</p>
+        </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-200 pb-0">
-        {CONTENT_TABS.map((t) => (
-          <Link key={t.key} href={`/dashboard?tab=${t.key}`}
-            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              activeTab === t.key
-                ? "border-green-600 text-green-700"
-                : "border-transparent text-gray-500 hover:text-gray-900"
-            }`}>
-            {t.icon}
-            {t.label}
-            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-              activeTab === t.key ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
-            }`}>
-              {byType[t.key].length}
-            </span>
-          </Link>
-        ))}
+        {CONTENT_TABS.map((t) => {
+          const ts       = CONTENT_TYPE_STYLE[t.key];
+          const isActive = activeTab === t.key;
+          return (
+            <Link key={t.key} href={`/dashboard?tab=${t.key}`}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                isActive
+                  ? `${ts.accentBorderCls} ${ts.textCls}`
+                  : "border-transparent text-gray-500 hover:text-gray-900"
+              }`}>
+              {t.icon}
+              {t.label}
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? ts.badgeCls : "bg-gray-100 text-gray-500"}`}>
+                {byType[t.key].length}
+              </span>
+            </Link>
+          );
+        })}
       </div>
 
       {/* Content */}
@@ -155,8 +152,9 @@ export default async function DashboardPage({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {activeTrees.map((tree) => {
             const badge = CONTENT_TYPE_BADGE[tree.contentType];
+            const ts    = CONTENT_TYPE_STYLE[tree.contentType];
             return (
-              <div key={tree.id} className="relative bg-white rounded-2xl border border-gray-200 hover:border-green-300 hover:shadow-sm transition-all group flex flex-col">
+              <div key={tree.id} className={`relative bg-white rounded-2xl border border-gray-200 ${ts.hoverBorderCls} hover:shadow-sm transition-all group flex flex-col`}>
                 <Link href={`/t/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
                 <div className="p-5 flex flex-col gap-3 flex-1">
@@ -179,7 +177,7 @@ export default async function DashboardPage({
                     </span>
                   </div>
 
-                  <h3 className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors line-clamp-2 flex-1">
+                  <h3 className={`font-semibold text-gray-900 ${ts.groupHoverTextCls} transition-colors line-clamp-2 flex-1`}>
                     {tree.title}
                   </h3>
 

@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { EditProfileButton } from "@/components/profile/EditProfileButton";
 import { FollowButton } from "@/components/profile/FollowButton";
-import { CONTENT_TYPE_BADGE } from "@/lib/constants";
+import { CONTENT_TYPE_BADGE, CONTENT_TYPE_STYLE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -169,9 +169,10 @@ export default async function UserProfilePage({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {user.ownedTrees.map((tree) => {
               const badge = CONTENT_TYPE_BADGE[tree.contentType] ?? CONTENT_TYPE_BADGE.KERNEL;
+              const ts    = CONTENT_TYPE_STYLE[tree.contentType];
               return (
                 <Link key={tree.id} href={`/t/${tree.slug}`}
-                  className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-sm transition-all group block">
+                  className={`bg-white rounded-2xl border border-gray-200 p-5 ${ts.hoverBorderCls} hover:shadow-sm transition-all group block`}>
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
                       {badge.icon}
@@ -184,7 +185,7 @@ export default async function UserProfilePage({
                       </span>
                     )}
                   </div>
-                  <h3 className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors mb-1 line-clamp-2">
+                  <h3 className={`font-semibold text-gray-900 ${ts.groupHoverTextCls} transition-colors mb-1 line-clamp-2`}>
                     {tree.title}
                   </h3>
                   {tree.description && (
