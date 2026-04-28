@@ -98,11 +98,8 @@ export function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link href="/login"    className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-xl hover:bg-gray-50 transition-colors">
-                    Ingresar
-                  </Link>
-                  <Link href="/registro" className="bg-green-700 text-white text-sm px-4 py-2 rounded-xl hover:bg-green-800 transition-colors font-medium">
-                    Registrarse
+                  <Link href="/login" className="bg-green-700 text-white text-sm px-4 py-2 rounded-xl hover:bg-green-800 transition-colors font-medium">
+                    Ingresar con Google
                   </Link>
                 </>
               )}
@@ -148,9 +145,8 @@ export function Navbar() {
                 </>
               ) : (
                 <>
-                  <MobileLink href="/explorar" icon={<Search className="w-4 h-4" />} label="Explorar"    onClick={() => setOpen(false)} />
-                  <MobileLink href="/login"    icon={null}                            label="Ingresar"     onClick={() => setOpen(false)} />
-                  <MobileLink href="/registro" icon={null}                            label="Registrarse"  onClick={() => setOpen(false)} />
+                  <MobileLink href="/explorar" icon={<Search className="w-4 h-4" />} label="Explorar"           onClick={() => setOpen(false)} />
+                  <MobileLink href="/login"    icon={null}                            label="Ingresar con Google" onClick={() => setOpen(false)} />
                 </>
               )}
             </div>
