@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import {
   BookOpen, Search, LogOut, Menu, X, AlertCircle,
-  LayoutDashboard, Home, Users, GitPullRequest,
+  LayoutDashboard, Home,
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
@@ -15,23 +15,15 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const refreshedRef = useRef(false);
 
-  // If the JWT is stale (authenticated but no username in token),
-  // force one refresh so the server re-reads the username from DB.
   useEffect(() => {
-    if (
-      status === "authenticated" &&
-      !session?.user?.username &&
-      !refreshedRef.current
-    ) {
+    if (status === "authenticated" && !session?.user?.username && !refreshedRef.current) {
       refreshedRef.current = true;
       update();
     }
   }, [status, session?.user?.username, update]);
 
   const needsUsername = status === "authenticated" && !session?.user?.username;
-  const profileHref = session?.user?.username
-    ? `/u/${session.user.username}`
-    : "/dashboard";
+  const profileHref   = session?.user?.username ? `/u/${session.user.username}` : "/dashboard";
 
   return (
     <>
@@ -58,45 +50,38 @@ export function Navbar() {
           <div className="flex items-center justify-between h-16">
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl text-green-700">
+            <Link href="/" className="flex items-center gap-2 font-bold text-xl text-green-700 shrink-0">
               <BookOpen className="w-6 h-6" />
               <span>EduHub</span>
             </Link>
 
-            {/* Desktop nav */}
-            <div className="hidden md:flex items-center gap-1">
-              {session ? (
-                <>
-                  <NavLink href="/" icon={<Home className="w-4 h-4" />} label="Inicio" />
-                  <NavLink href="/explorar" icon={<Search className="w-4 h-4" />} label="Explorar" />
-                  <NavLink href="/buscar"      icon={<Users          className="w-4 h-4" />} label="Personas"   />
-                  <NavLink href="/propuestas"  icon={<GitPullRequest className="w-4 h-4" />} label="Propuestas" />
-                  <NavLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Espacio de trabajo" />
-                </>
-              ) : (
-                <NavLink href="/explorar" icon={<Search className="w-4 h-4" />} label="Explorar" />
-              )}
-            </div>
+            {/* Desktop nav — 3 links only */}
+            {session && (
+              <div className="hidden md:flex items-center gap-1">
+                <NavLink href="/"          icon={<Home            className="w-4 h-4" />} label="Inicio"     />
+                <NavLink href="/explorar"  icon={<Search          className="w-4 h-4" />} label="Explorar"   />
+                <NavLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Mi espacio" />
+              </div>
+            )}
 
             {/* Auth section */}
             <div className="hidden md:flex items-center gap-2">
               {session ? (
                 <>
-                  {/* Avatar → profile */}
                   <Link
                     href={profileHref}
-                    className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 px-2 py-1.5 rounded-xl hover:bg-gray-50 transition-colors"
                   >
                     {session.user?.image ? (
                       <Image
                         src={session.user.image}
                         alt=""
-                        width={28}
-                        height={28}
+                        width={30}
+                        height={30}
                         className="rounded-full ring-2 ring-green-100"
                       />
                     ) : (
-                      <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xs font-bold">
+                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-sm font-bold">
                         {(session.user?.name ?? "?")[0]}
                       </div>
                     )}
@@ -105,20 +90,18 @@ export function Navbar() {
                   <NotificationBell />
                   <button
                     onClick={() => signOut()}
-                    className="text-sm text-gray-400 hover:text-red-600 flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                    title="Cerrar sesión"
+                    className="text-gray-400 hover:text-red-500 p-2 rounded-xl hover:bg-red-50 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
                 </>
               ) : (
                 <>
-                  <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5">
+                  <Link href="/login"    className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-xl hover:bg-gray-50 transition-colors">
                     Ingresar
                   </Link>
-                  <Link
-                    href="/registro"
-                    className="bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
-                  >
+                  <Link href="/registro" className="bg-green-700 text-white text-sm px-4 py-2 rounded-xl hover:bg-green-800 transition-colors font-medium">
                     Registrarse
                   </Link>
                 </>
@@ -126,7 +109,7 @@ export function Navbar() {
             </div>
 
             {/* Mobile toggle */}
-            <button className="md:hidden p-1" onClick={() => setOpen(!open)}>
+            <button className="md:hidden p-2 rounded-xl hover:bg-gray-50" onClick={() => setOpen(!open)}>
               {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
@@ -137,32 +120,37 @@ export function Navbar() {
               {session ? (
                 <>
                   {needsUsername && (
-                    <Link href="/bienvenida" className="flex items-center gap-2 px-3 py-2 text-amber-700 font-medium rounded-lg" onClick={() => setOpen(false)}>
-                      ⚠ Elegir username
+                    <Link href="/bienvenida" className="flex items-center gap-2 px-3 py-2.5 text-amber-700 font-medium rounded-xl bg-amber-50" onClick={() => setOpen(false)}>
+                      ⚠ Elegir nombre de usuario
                     </Link>
                   )}
-                  <MobileLink href="/"          icon={<Home className="w-4 h-4" />}            label="Inicio"              onClick={() => setOpen(false)} />
-                  <MobileLink href="/explorar"  icon={<Search className="w-4 h-4" />}          label="Explorar"            onClick={() => setOpen(false)} />
-                  <MobileLink href="/buscar"      icon={<Users          className="w-4 h-4" />} label="Personas"   onClick={() => setOpen(false)} />
-                  <MobileLink href="/propuestas"  icon={<GitPullRequest className="w-4 h-4" />} label="Propuestas" onClick={() => setOpen(false)} />
-                  <MobileLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Espacio de trabajo"  onClick={() => setOpen(false)} />
-                  <MobileLink href={profileHref} icon={
-                    session.user?.image
-                      ? <Image src={session.user.image} alt="" width={16} height={16} className="rounded-full" />
-                      : <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-[9px] font-bold">{(session.user?.name ?? "?")[0]}</div>
-                  } label="Mi perfil" onClick={() => setOpen(false)} />
-                  <button
-                    onClick={() => signOut()}
-                    className="flex items-center gap-2 px-3 py-2 text-red-600 rounded-lg hover:bg-red-50 w-full text-sm"
-                  >
-                    <LogOut className="w-4 h-4" /> Salir
-                  </button>
+                  <MobileLink href="/"          icon={<Home            className="w-4 h-4" />} label="Inicio"     onClick={() => setOpen(false)} />
+                  <MobileLink href="/explorar"  icon={<Search          className="w-4 h-4" />} label="Explorar"   onClick={() => setOpen(false)} />
+                  <MobileLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Mi espacio" onClick={() => setOpen(false)} />
+                  <div className="border-t border-gray-100 pt-2 mt-2">
+                    <MobileLink
+                      href={profileHref}
+                      icon={
+                        session.user?.image
+                          ? <Image src={session.user.image} alt="" width={18} height={18} className="rounded-full" />
+                          : <div className="w-[18px] h-[18px] rounded-full bg-green-100 flex items-center justify-center text-green-700 text-[9px] font-bold">{(session.user?.name ?? "?")[0]}</div>
+                      }
+                      label="Mi perfil"
+                      onClick={() => setOpen(false)}
+                    />
+                    <button
+                      onClick={() => signOut()}
+                      className="flex items-center gap-2 px-3 py-2.5 text-red-500 rounded-xl hover:bg-red-50 w-full text-sm transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" /> Cerrar sesión
+                    </button>
+                  </div>
                 </>
               ) : (
                 <>
-                  <MobileLink href="/explorar" icon={<Search className="w-4 h-4" />} label="Explorar" onClick={() => setOpen(false)} />
-                  <MobileLink href="/login"    icon={null}                            label="Ingresar"  onClick={() => setOpen(false)} />
-                  <MobileLink href="/registro" icon={null}                            label="Registrarse" onClick={() => setOpen(false)} />
+                  <MobileLink href="/explorar" icon={<Search className="w-4 h-4" />} label="Explorar"    onClick={() => setOpen(false)} />
+                  <MobileLink href="/login"    icon={null}                            label="Ingresar"     onClick={() => setOpen(false)} />
+                  <MobileLink href="/registro" icon={null}                            label="Registrarse"  onClick={() => setOpen(false)} />
                 </>
               )}
             </div>
@@ -177,7 +165,7 @@ function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; l
   return (
     <Link
       href={href}
-      className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 font-medium px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+      className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 font-medium px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors"
     >
       {icon}
       {label}
@@ -197,7 +185,7 @@ function MobileLink({
     <Link
       href={href}
       onClick={onClick}
-      className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+      className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
     >
       {icon}
       {label}
