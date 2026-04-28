@@ -13,6 +13,7 @@ import { ExtensionsPanel } from "@/components/trees/ExtensionsPanel";
 import { ForkTree } from "@/components/trees/ForkTree";
 import { AttachmentsPanel } from "@/components/trees/AttachmentsPanel";
 import { CreateProposalButton } from "@/components/proposals/CreateProposalButton";
+import { QuickAddDocument } from "@/components/trees/QuickAddDocument";
 
 export const dynamic = "force-dynamic";
 
@@ -296,58 +297,24 @@ export default async function TreePage({
 
         {/* ── Documents (inside the card — kernel + docs = one visual unit) ── */}
         <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Documentos</p>
-        {tree.documents.length === 0 ? (
-          <div className={`rounded-xl border border-dashed ${isOwner ? "border-gray-200" : "border-gray-100"} p-8 text-center text-gray-400`}>
-            <BookOpen className="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">Todavía no hay unidades.</p>
-            {isOwner && (
-              <Link href={`/t/${tree.slug}/nuevo`} className={`mt-2 inline-block text-sm ${style.textCls} hover:underline`}>
-                + {KERNEL_NEW_DOC_LABEL}
-              </Link>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {tree.documents.map((doc) => {
-              const latestVersion   = doc.versions[0];
-              const totalSections   = latestVersion?.sections.length ?? 0;
-              const completeSections = latestVersion?.sections.filter((s) => s.isComplete).length ?? 0;
-              const progress        = totalSections > 0 ? Math.round((completeSections / totalSections) * 100) : 0;
-              const isDraft         = latestVersion?.status === "DRAFT";
-              return (
-                <Link key={doc.id} href={`/t/${tree.slug}/${doc.slug}`}
-                  className={`bg-gray-50 rounded-xl border border-gray-100 p-4 ${style.hoverBorderCls} hover:bg-white transition-all block group`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className={`font-medium text-gray-900 text-sm ${style.groupHoverTextCls}`}>{doc.title}</h3>
-                      {isDraft && isOwner && (
-                        <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
-                          Borrador
-                        </span>
-                      )}
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
-                  </div>
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {latestVersion?.sections.map((s) => (
-                      <span key={s.id} className={`text-xs px-1.5 py-0.5 rounded-full ${s.isComplete ? style.badgeCls : "bg-gray-200 text-gray-400"}`}>
-                        {s.sectionType}
-                      </span>
-                    ))}
-                  </div>
-                  {totalSections > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-gray-200 rounded-full h-1">
-                        <div className={`${style.progressCls} h-1 rounded-full transition-all`} style={{ width: `${progress}%` }} />
-                      </div>
-                      <span className="text-xs text-gray-400">{progress}%</span>
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        <QuickAddDocument
+          treeSlug={tree.slug}
+          isOwner={isOwner}
+          style={style}
+          initialDocs={tree.documents.map((doc) => {
+            const lv              = doc.versions[0];
+            const total           = lv?.sections.length ?? 0;
+            const complete        = lv?.sections.filter((s) => s.isComplete).length ?? 0;
+            return {
+              id:       doc.id,
+              slug:     doc.slug,
+              title:    doc.title,
+              isDraft:  lv?.status === "DRAFT",
+              progress: total > 0 ? Math.round((complete / total) * 100) : 0,
+              sections: lv?.sections ?? [],
+            };
+          })}
+        />
 
       </div>
 
