@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { copySectionFields } from "@/lib/sections";
+import { getSession, unauthorized } from "@/lib/api-helpers";
 import type { DocumentSection, VersionStatus } from "@prisma/client";
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
@@ -73,8 +73,8 @@ async function forkToDraft(
 
 // ── POST — add a new section ──────────────────────────────────────────────────
 export async function POST(req: NextRequest, { params }: Params) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
   const { slug, docSlug } = await params;
   const result = await getOwnerDoc(slug, docSlug, session.user.id);
@@ -104,9 +104,23 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ ...newSection, draftCreated: false, sectionIdMap: {} });
   }
 
-  // ── Case 2: Current version is PUBLISHED → fork first, then add section ──
-  const base = latestVersion ?? { id: null as unknown as string, sections: [] };
-  const { draft, sectionIdMap } = await forkToDraft(doc.id, session.user.id, base);
+  // ── Case 2: No version yet → create a fresh DRAFT then add section ───────
+  if (!latestVersion) {
+    const freshDraft = await prisma.$transaction(async (tx) => {
+      const d = await tx.documentVersion.create({
+        data: { documentId: doc.id, authorId: session.user.id, status: "DRAFT" as VersionStatus },
+      });
+      await tx.document.update({ where: { id: doc.id }, data: { currentVersionId: d.id } });
+      return d;
+    });
+    const newSection = await prisma.documentSection.create({
+      data: { versionId: freshDraft.id, ...newSectionData },
+    });
+    return NextResponse.json({ ...newSection, draftCreated: true, sectionIdMap: {} });
+  }
+
+  // ── Case 3: Current version is PUBLISHED → fork first, then add section ──
+  const { draft, sectionIdMap } = await forkToDraft(doc.id, session.user.id, latestVersion);
 
   const newSection = await prisma.documentSection.create({
     data: { versionId: draft.id, ...newSectionData },
@@ -117,8 +131,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
 // ── PATCH — update a section's content / meta ─────────────────────────────────
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
   const { slug, docSlug } = await params;
   const result = await getOwnerDoc(slug, docSlug, session.user.id);
@@ -183,8 +197,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 // ── DELETE — remove a section ─────────────────────────────────────────────────
 export async function DELETE(req: NextRequest, { params }: Params) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
   const { slug, docSlug } = await params;
   const result = await getOwnerDoc(slug, docSlug, session.user.id);

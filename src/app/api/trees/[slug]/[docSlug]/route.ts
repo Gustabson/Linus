@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getSession, unauthorized } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
 
@@ -10,9 +10,8 @@ type Params = { params: Promise<{ slug: string; docSlug: string }> };
  * Only the tree owner can delete documents.
  */
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
   const { slug, docSlug } = await params;
 

@@ -77,8 +77,8 @@ export async function POST(req: NextRequest) {
           data: {
             documentId:      newDoc.id,
             authorId:        session.user.id,
+            status:          "DRAFT",
             commitMessage:   `Fork desde "${source.title}"`,
-            contentHash:     latest.contentHash,
             parentVersionId: latest.id,
             sections: {
               create: latest.sections.map((s) => ({

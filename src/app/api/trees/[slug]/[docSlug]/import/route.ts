@@ -1,53 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { splitTextIntoSections, pdfEmbedContent } from "@/lib/importUtils";
-import type { VersionStatus } from "@prisma/client";
-import { copySectionFields } from "@/lib/sections";
+import { ensureDraft } from "@/lib/sections";
+import { getSession, unauthorized } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
 
 // ── helpers ───────────────────────────────────────────────────────────────────
-
-/** Ensure there is a DRAFT version to add sections to. Returns the draft. */
-async function ensureDraft(docId: string, authorId: string) {
-  const latest = await prisma.documentVersion.findFirst({
-    where:   { documentId: docId },
-    orderBy: { createdAt: "desc" },
-    include: { sections: { orderBy: { sectionOrder: "asc" } } },
-  });
-
-  if (!latest) {
-    // No version at all — create a fresh DRAFT
-    const draft = await prisma.documentVersion.create({
-      data: { documentId: docId, authorId, status: "DRAFT" as VersionStatus },
-      include: { sections: { orderBy: { sectionOrder: "asc" } } },
-    });
-    await prisma.document.update({ where: { id: docId }, data: { currentVersionId: draft.id } });
-    return draft;
-  }
-
-  if (latest.status === "DRAFT") return latest;
-
-  // Latest is PUBLISHED — fork to a new DRAFT
-  const draft = await prisma.$transaction(async (tx) => {
-    const newDraft = await tx.documentVersion.create({
-      data: {
-        documentId:      docId,
-        authorId,
-        status:          "DRAFT" as VersionStatus,
-        parentVersionId: latest.id,
-        sections: {
-          create: latest.sections.map((s) => copySectionFields(s)),
-        },
-      },
-      include: { sections: { orderBy: { sectionOrder: "asc" } } },
-    });
-    await tx.document.update({ where: { id: docId }, data: { currentVersionId: newDraft.id } });
-    return newDraft;
-  });
-  return draft;
-}
 
 /** Append new sections to an existing draft version. */
 async function appendSections(
@@ -85,9 +44,8 @@ async function appendSections(
  *   { error: string }                     – something went wrong
  */
 export async function POST(req: NextRequest, { params }: Params) {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
   const { slug, docSlug } = await params;
 
@@ -108,8 +66,8 @@ export async function POST(req: NextRequest, { params }: Params) {
   const formData = await req.formData();
 
   // ── Case A: finalise a pending PDF embed (client sends title + blobUrl) ──
-  const pendingBlobUrl  = formData.get("blobUrl") as string | null;
-  const pendingTitle    = formData.get("sectionTitle") as string | null;
+  const pendingBlobUrl = formData.get("blobUrl") as string | null;
+  const pendingTitle   = formData.get("sectionTitle") as string | null;
 
   if (pendingBlobUrl && pendingTitle) {
     const draft      = await ensureDraft(doc.id, session.user.id);
@@ -138,7 +96,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       const pdfParseMod = await import("pdf-parse") as any;
       const pdfParse    = pdfParseMod.default ?? pdfParseMod;
       const data        = await pdfParse(buffer);
-      text           = data.text ?? "";
+      text              = data.text ?? "";
     } catch {
       // parse error — treat as non-extractable
     }
@@ -165,9 +123,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   // ── DOCX ─────────────────────────────────────────────────────────────────
   } else if (filename.endsWith(".docx")) {
     try {
-      const mammoth  = await import("mammoth");
-      const result   = await mammoth.extractRawText({ buffer });
-      const text     = result.value ?? "";
+      const mammoth = await import("mammoth");
+      const result  = await mammoth.extractRawText({ buffer });
+      const text    = result.value ?? "";
       if (!text.trim()) {
         return NextResponse.json({ error: "El archivo Word parece estar vacío." }, { status: 422 });
       }

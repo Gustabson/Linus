@@ -142,16 +142,19 @@ export default async function TreePage({
         : Promise.resolve(false),
   ]);
 
-  // Build ancestor chain (walk up to find root)
+  // Build ancestor chain (walk up to find root; cap at 10 to guard against cycles)
+  const MAX_ANCESTOR_DEPTH = 10;
   const ancestors: { id: string; slug: string; title: string; contentType: string }[] = [];
   let current = tree.parentTree as typeof tree.parentTree & { parentTreeId?: string | null } | null;
-  while (current) {
+  let ancestorDepth = 0;
+  while (current && ancestorDepth < MAX_ANCESTOR_DEPTH) {
     ancestors.unshift({ id: current.id, slug: current.slug, title: current.title, contentType: current.contentType ?? "KERNEL" });
     if (!current.parentTreeId) break;
     current = await prisma.documentTree.findUnique({
       where: { id: current.parentTreeId },
       select: { id: true, slug: true, title: true, contentType: true, parentTreeId: true },
     }) as typeof current;
+    ancestorDepth++;
   }
 
   // Build fork tree from current tree (3 levels deep)

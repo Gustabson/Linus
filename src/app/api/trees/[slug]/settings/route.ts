@@ -77,8 +77,8 @@ export async function PATCH(
   let newSlug = tree.slug;
   if (title && title.trim() !== tree.title) {
     newSlug = await uniqueSlug(title, async (s) => {
-      if (s === tree.slug) return false; // keep own slug if available
-      return prisma.documentTree.findUnique({ where: { slug: s }, select: { id: true } }).then(Boolean);
+      const existing = await prisma.documentTree.findUnique({ where: { slug: s }, select: { id: true } });
+      return existing !== null && existing.id !== tree.id;
     });
   }
 

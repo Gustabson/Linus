@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeLedgerEntry } from "@/lib/ledger";
+import { getSession, unauthorized } from "@/lib/api-helpers";
 import type { VersionStatus } from "@prisma/client";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -24,8 +24,8 @@ const sha256 = (data: string) => createHash("sha256").update(data).digest("hex")
  * historial page stays meaningful (shows "included in this tree publish").
  */
 export async function POST(req: NextRequest, { params }: Params) {
-  const session = await auth();
-  if (!session?.user?.id) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
   const { slug } = await params;
 

@@ -23,8 +23,8 @@ export async function POST(
       type:        type ?? "LINK",
       title:       title.trim(),
       description: description?.trim() || null,
-      url:         url?.trim()      || null,
-      imageUrl:    imageUrl?.trim() || null,
+      url:         url?.trim()         || null,
+      imageUrl:    imageUrl?.trim()    || null,
     },
     include: { author: { select: { name: true, image: true } } },
   });
@@ -34,16 +34,25 @@ export async function POST(
 
 export async function DELETE(
   req: NextRequest,
-  { params: _params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   const session = await getSession();
   if (!session) return unauthorized();
 
+  const { slug }        = await params;
   const { extensionId } = await req.json();
-  const ext = await prisma.treeExtension.findUnique({ where: { id: extensionId } });
 
-  // Extensions are owned by the author, not necessarily the tree owner
-  if (!ext || ext.authorId !== session.user.id) return forbidden();
+  const ext = await prisma.treeExtension.findUnique({
+    where:  { id: extensionId },
+    select: { id: true, treeId: true, authorId: true, tree: { select: { ownerId: true, slug: true } } },
+  });
+
+  if (!ext || ext.tree.slug !== slug)
+    return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+
+  // Either the author or the tree owner can delete an extension
+  const canDelete = ext.authorId === session.user.id || ext.tree.ownerId === session.user.id;
+  if (!canDelete) return forbidden();
 
   await prisma.treeExtension.delete({ where: { id: extensionId } });
   return NextResponse.json({ ok: true });

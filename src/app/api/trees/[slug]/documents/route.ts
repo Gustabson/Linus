@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { writeLedgerEntry } from "@/lib/ledger";
 import { getSession, getOwnedTree, unauthorized, forbidden, uniqueSlug } from "@/lib/api-helpers";
-import { createHash } from "crypto";
 
 export async function POST(
   req: NextRequest,
@@ -24,8 +23,6 @@ export async function POST(
       .then(Boolean)
   );
 
-  const contentHash = createHash("sha256").update(title + docSlug).digest("hex");
-
   const doc = await prisma.$transaction(async (tx) => {
     const newDoc = await tx.document.create({
       data: { treeId: tree.id, slug: docSlug, title: title.trim() },
@@ -34,8 +31,8 @@ export async function POST(
       data: {
         documentId:    newDoc.id,
         authorId:      session.user.id,
+        status:        "DRAFT",
         commitMessage: "Documento creado",
-        contentHash,
       },
     });
     await tx.document.update({
