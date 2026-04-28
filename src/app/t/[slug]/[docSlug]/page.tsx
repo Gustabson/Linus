@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
-import { ChevronRight, Clock, Users, Eye, GitBranch } from "lucide-react";
+import { Clock, Users, Eye, GitBranch } from "lucide-react";
 import { DocumentCommentsWrapper } from "@/components/documents/DocumentCommentsWrapper";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import { TreePublishButton } from "@/components/trees/TreePublishButton";
@@ -78,22 +78,16 @@ export default async function DocumentPage({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Breadcrumb — only for kernels (module/resource = single entity, no parent listing) */}
-      {isKernel && (
-        <nav className="flex items-center gap-2 text-sm text-gray-500">
-          <Link href={`/t/${tree.slug}`} className="hover:text-gray-900">
-            {tree.title}
-          </Link>
-          <ChevronRight className="w-4 h-4" />
-          <span className="text-gray-900">{doc.title}</span>
-        </nav>
-      )}
-
       {/* Header */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
         {isKernel && isOwner ? (
-          /* Kernel doc: action bar replaces the redundant title */
-          <DocActionBar treeSlug={tree.slug} docSlug={docSlug} docTitle={doc.title} />
+          /* Kernel doc: DocActionBar handles breadcrumb + title + actions */
+          <DocActionBar
+            treeSlug={tree.slug}
+            treeTitle={tree.title}
+            docSlug={docSlug}
+            docTitle={doc.title}
+          />
         ) : (
           /* Module / resource: keep the full header with title + actions */
           <div className="flex items-start justify-between gap-4 flex-wrap">

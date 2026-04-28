@@ -299,7 +299,16 @@ export default async function TreePage({
         </div>
 
         {/* ── Documents (inside the card — kernel + docs = one visual unit) ── */}
-        <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Documentos</p>
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Documentos</p>
+            {tree.documents.length > 0 && (
+              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">
+                {tree.documents.length}
+              </span>
+            )}
+          </div>
+        </div>
         <QuickAddDocument
           treeSlug={tree.slug}
           isOwner={isOwner}

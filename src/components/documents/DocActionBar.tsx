@@ -2,12 +2,16 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Trash2, Upload, Loader2, X, FileText, AlertTriangle } from "lucide-react";
+import {
+  ArrowLeft, Trash2, Upload, Loader2, X,
+  FileText, AlertTriangle, ChevronRight,
+} from "lucide-react";
 
 interface Props {
-  treeSlug: string;
-  docSlug:  string;
-  docTitle: string;
+  treeSlug:  string;
+  treeTitle: string;
+  docSlug:   string;
+  docTitle:  string;
 }
 
 type ImportState =
@@ -17,7 +21,7 @@ type ImportState =
   | { step: "done"; count: number }
   | { step: "error"; message: string };
 
-export function DocActionBar({ treeSlug, docSlug, docTitle }: Props) {
+export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle }: Props) {
   const router = useRouter();
 
   // ── Delete state ──────────────────────────────────────────────────────────
@@ -31,10 +35,17 @@ export function DocActionBar({ treeSlug, docSlug, docTitle }: Props) {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
+  function handleBack() {
+    // Invalidate router cache before navigating so the kernel page re-fetches
+    router.refresh();
+    router.push(`/t/${treeSlug}`);
+  }
+
   async function handleDelete() {
     setDeleting(true);
     const res = await fetch(`/api/trees/${treeSlug}/${docSlug}`, { method: "DELETE" });
     if (res.ok) {
+      router.refresh();
       router.push(`/t/${treeSlug}`);
     } else {
       setDeleting(false);
@@ -46,7 +57,7 @@ export function DocActionBar({ treeSlug, docSlug, docTitle }: Props) {
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    e.target.value = ""; // reset so same file can be re-selected
+    e.target.value = "";
 
     setImportState({ step: "uploading" });
 
@@ -70,7 +81,6 @@ export function DocActionBar({ treeSlug, docSlug, docTitle }: Props) {
     }
 
     setImportState({ step: "done", count: data.count });
-    // Reload page so the new sections appear
     setTimeout(() => {
       router.refresh();
       setImportState({ step: "idle" });
@@ -111,63 +121,62 @@ export function DocActionBar({ treeSlug, docSlug, docTitle }: Props) {
 
   return (
     <>
-      {/* Action bar */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {/* Back */}
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">Volver</span>
-        </button>
+      {/* ── Row 1: breadcrumb ── */}
+      <button
+        onClick={handleBack}
+        className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors group"
+      >
+        <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+        <span>{treeTitle}</span>
+        <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+        <span className="text-gray-500">{docTitle}</span>
+      </button>
 
-        <span className="text-gray-200 select-none">|</span>
+      {/* ── Row 2: title + actions ── */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h1 className="text-2xl font-bold text-gray-900 leading-tight">{docTitle}</h1>
 
-        {/* Title (subtle) */}
-        <span className="text-sm font-medium text-gray-700 truncate max-w-[200px]">{docTitle}</span>
+        <div className="flex items-center gap-2">
+          {/* Upload Word/PDF */}
+          <div className="relative">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importState.step === "uploading"}
+              className="flex items-center gap-2 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-xl hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 transition-colors"
+            >
+              {importState.step === "uploading"
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <Upload  className="w-4 h-4" />
+              }
+              <span className="hidden sm:inline">
+                {importState.step === "uploading" ? "Importando…" : "Subir Word / PDF"}
+              </span>
+            </button>
+          </div>
 
-        <div className="flex-1" />
-
-        {/* Upload Word/PDF */}
-        <div className="relative">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.docx"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+          {/* Delete */}
           <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={importState.step === "uploading"}
-            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex items-center gap-2 text-sm text-red-500 border border-red-100 px-3 py-2 rounded-xl hover:bg-red-50 hover:border-red-200 transition-colors"
           >
-            {importState.step === "uploading"
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <Upload className="w-4 h-4" />
-            }
-            <span className="hidden sm:inline">
-              {importState.step === "uploading" ? "Importando…" : "Subir Word/PDF"}
-            </span>
+            <Trash2 className="w-4 h-4" />
+            <span className="hidden sm:inline">Eliminar</span>
           </button>
         </div>
-
-        {/* Delete */}
-        <button
-          onClick={() => setShowDeleteConfirm(true)}
-          className="flex items-center gap-1.5 text-sm text-red-500 border border-red-100 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors"
-        >
-          <Trash2 className="w-4 h-4" />
-          <span className="hidden sm:inline">Eliminar</span>
-        </button>
       </div>
 
-      {/* Import feedback strip */}
+      {/* ── Import feedback ── */}
       {importState.step === "done" && (
         <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 flex items-center gap-2">
           <FileText className="w-4 h-4 shrink-0" />
-          Se crearon {importState.count} sección{importState.count !== 1 ? "es" : ""} a partir del archivo. Podés editarlas abajo.
+          Se crearon <strong>{importState.count}</strong> sección{importState.count !== 1 ? "es" : ""} a partir del archivo. Podés editarlas abajo.
         </div>
       )}
 
@@ -177,38 +186,37 @@ export function DocActionBar({ treeSlug, docSlug, docTitle }: Props) {
             <AlertTriangle className="w-4 h-4 shrink-0" />
             {importState.message}
           </span>
-          <button onClick={() => setImportState({ step: "idle" })} className="shrink-0">
+          <button onClick={() => setImportState({ step: "idle" })} className="shrink-0 hover:text-red-900">
             <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
-      {/* PDF embed title form */}
       {importState.step === "needsTitle" && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
           <p className="text-sm text-amber-800 flex items-center gap-2">
             <FileText className="w-4 h-4 shrink-0" />
-            Este PDF no tiene texto seleccionable (es una imagen escaneada). Se va a mostrar incrustado — poné un título para la sección:
+            Este PDF no tiene texto seleccionable (imagen escaneada). Se va a mostrar incrustado — ponele un nombre a la sección:
           </p>
           <form onSubmit={handleEmbedSubmit} className="flex gap-2">
             <input
               autoFocus
               value={embedTitle}
               onChange={(e) => setEmbedTitle(e.target.value)}
-              placeholder="Ej: Contenido del documento"
-              className="flex-1 border border-amber-200 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400"
+              placeholder="Ej: Material de lectura"
+              className="flex-1 border border-amber-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400"
             />
             <button
               type="submit"
               disabled={!embedTitle.trim()}
-              className="bg-amber-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-amber-700 disabled:opacity-50 transition-colors"
+              className="bg-amber-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-amber-700 disabled:opacity-50 transition-colors"
             >
               Agregar
             </button>
             <button
               type="button"
               onClick={() => setImportState({ step: "idle" })}
-              className="text-gray-500 px-3 py-2 rounded-lg hover:bg-amber-100"
+              className="text-gray-500 px-3 py-2 rounded-xl hover:bg-amber-100 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -216,34 +224,35 @@ export function DocActionBar({ treeSlug, docSlug, docTitle }: Props) {
         </div>
       )}
 
-      {/* Delete confirmation modal */}
+      {/* ── Delete confirmation modal ── */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="bg-red-100 p-2 rounded-full shrink-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+            <div className="flex items-start gap-4">
+              <div className="bg-red-100 p-3 rounded-2xl shrink-0">
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h2 className="font-bold text-gray-900">Eliminar documento</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  ¿Eliminar <span className="font-medium text-gray-900">"{docTitle}"</span>?
-                  Esta acción no se puede deshacer — se pierden todas las secciones y el historial.
+                <h2 className="font-bold text-gray-900 text-lg">Eliminar documento</h2>
+                <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                  ¿Eliminar{" "}
+                  <span className="font-semibold text-gray-800">"{docTitle}"</span>?{" "}
+                  Se perderán todas las secciones y el historial. Esta acción no se puede deshacer.
                 </p>
               </div>
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-1">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="text-sm text-gray-500 px-4 py-2 rounded-xl hover:bg-gray-50"
+                className="text-sm text-gray-500 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex items-center gap-2 text-sm bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 text-sm bg-red-600 text-white px-4 py-2.5 rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors"
               >
                 {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 {deleting ? "Eliminando…" : "Sí, eliminar"}

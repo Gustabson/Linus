@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Loader2, ChevronRight } from "lucide-react";
+import { Plus, Loader2, ChevronRight, BookOpen } from "lucide-react";
 import Link from "next/link";
 import type { ContentTypeStyle } from "@/lib/constants";
 
@@ -16,9 +16,9 @@ interface DocCard {
 }
 
 interface Props {
-  treeSlug: string;
-  isOwner:  boolean;
-  style:    ContentTypeStyle;
+  treeSlug:    string;
+  isOwner:     boolean;
+  style:       ContentTypeStyle;
   initialDocs: DocCard[];
 }
 
@@ -54,113 +54,158 @@ export function QuickAddDocument({ treeSlug, isOwner, style, initialDocs }: Prop
     setDocs((prev) => [
       ...prev,
       { id: data.id, slug: data.slug, title: title.trim(),
-        isDraft: false, progress: 0, sections: [] },
+        isDraft: true, progress: 0, sections: [] },
     ]);
     setTitle("");
     setShowForm(false);
     setAdding(false);
 
-    // Navigate to the new document to start editing
+    // Navigate to the new document
     router.push(`/t/${treeSlug}/${data.slug}`);
   }
 
+  const completedCount = (doc: DocCard) => doc.sections.filter((s) => s.isComplete).length;
+  const totalCount     = (doc: DocCard) => doc.sections.length;
+
   return (
-    <div className="space-y-2">
-      {/* Document cards */}
-      {docs.length === 0 && !showForm ? (
-        <div className={`rounded-xl border border-dashed border-gray-200 p-8 text-center text-gray-400`}>
-          <p className="text-sm">Todavía no hay documentos.</p>
+    <div className="space-y-3">
+
+      {/* ── Empty state ── */}
+      {docs.length === 0 && !showForm && (
+        <div className="rounded-2xl border-2 border-dashed border-gray-200 p-10 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto">
+            <BookOpen className="w-6 h-6 text-gray-400" />
+          </div>
+          <div>
+            <p className="font-medium text-gray-700">Todavía no hay documentos</p>
+            <p className="text-sm text-gray-400 mt-0.5">
+              Agregá el primer documento para empezar a organizar el contenido.
+            </p>
+          </div>
+          {isOwner && (
+            <button
+              onClick={() => setShowForm(true)}
+              className={`inline-flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl transition-colors ${style.btnCls}`}
+            >
+              <Plus className="w-4 h-4" />
+              Nuevo documento
+            </button>
+          )}
         </div>
-      ) : (
-        docs.map((doc) => (
+      )}
+
+      {/* ── Document cards ── */}
+      {docs.map((doc, idx) => {
+        const done  = completedCount(doc);
+        const total = totalCount(doc);
+
+        return (
           <Link
             key={doc.id}
             href={`/t/${treeSlug}/${doc.slug}`}
-            className={`bg-gray-50 rounded-xl border border-gray-100 p-4 ${style.hoverBorderCls} hover:bg-white transition-all block group`}
+            className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-gray-300 hover:shadow-sm transition-all block group"
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <h3 className={`font-medium text-gray-900 text-sm ${style.groupHoverTextCls}`}>
-                  {doc.title}
-                </h3>
-                {doc.isDraft && isOwner && (
-                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">
-                    Borrador
-                  </span>
+            <div className="flex items-start gap-4">
+              {/* Number circle */}
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold mt-0.5 ${style.iconBgCls}`}>
+                {idx + 1}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 justify-between">
+                  <h3 className={`font-semibold text-gray-900 text-base leading-snug ${style.groupHoverTextCls} transition-colors`}>
+                    {doc.title}
+                  </h3>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {doc.isDraft && isOwner && (
+                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                        Borrador
+                      </span>
+                    )}
+                    <ChevronRight className={`w-4 h-4 text-gray-300 ${style.groupHoverTextCls} transition-colors`} />
+                  </div>
+                </div>
+
+                {/* Progress */}
+                {total > 0 ? (
+                  <div className="mt-2.5 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400">
+                        {done === total
+                          ? <span className="text-green-600 font-medium">✓ Todo completo</span>
+                          : <>{done} de {total} sección{total !== 1 ? "es" : ""} completa{done !== 1 ? "s" : ""}</>
+                        }
+                      </span>
+                      <span className="text-xs text-gray-400">{doc.progress}%</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`${style.progressCls} h-full rounded-full transition-all`}
+                        style={{ width: `${doc.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 mt-1.5">Sin secciones todavía</p>
                 )}
               </div>
-              <ChevronRight className="w-4 h-4 text-gray-400 shrink-0" />
             </div>
-            {doc.sections.length > 0 && (
-              <>
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {doc.sections.map((s) => (
-                    <span
-                      key={s.id}
-                      className={`text-xs px-1.5 py-0.5 rounded-full ${
-                        s.isComplete ? style.badgeCls : "bg-gray-200 text-gray-400"
-                      }`}
-                    >
-                      {s.sectionType}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-gray-200 rounded-full h-1">
-                    <div
-                      className={`${style.progressCls} h-1 rounded-full transition-all`}
-                      style={{ width: `${doc.progress}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-gray-400">{doc.progress}%</span>
-                </div>
-              </>
-            )}
           </Link>
-        ))
-      )}
+        );
+      })}
 
-      {/* Inline add form */}
+      {/* ── Inline add form ── */}
       {isOwner && (
         showForm ? (
           <form
             onSubmit={handleSubmit}
-            className={`rounded-xl border-2 border-dashed ${style.accentBorderCls} bg-white p-4 flex items-center gap-2`}
+            className={`rounded-2xl border-2 border-dashed ${style.accentBorderCls} bg-white p-5 space-y-3`}
           >
-            <Plus className={`w-4 h-4 shrink-0 ${style.textCls}`} />
+            <label className="block text-sm font-medium text-gray-700">
+              Nombre del documento
+            </label>
             <input
               autoFocus
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Nombre de la temática…"
-              className="flex-1 text-sm bg-transparent focus:outline-none text-gray-800 placeholder-gray-400"
+              onKeyDown={(e) => e.key === "Escape" && (setShowForm(false), setTitle(""), setError(""))}
+              placeholder="Ej: Introducción, Unidad 1, Clase 3…"
+              className={`w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-current ${style.textCls} placeholder-gray-300 text-gray-800`}
             />
-            {error && <span className="text-xs text-red-500 shrink-0">{error}</span>}
-            <button
-              type="submit"
-              disabled={adding || !title.trim()}
-              className={`flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors ${style.btnCls}`}
-            >
-              {adding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-              {adding ? "Creando…" : "Crear"}
-            </button>
-            <button
-              type="button"
-              onClick={() => { setShowForm(false); setTitle(""); setError(""); }}
-              className="text-sm text-gray-400 hover:text-gray-600 px-2"
-            >
-              ✕
-            </button>
+            {error && (
+              <p className="text-xs text-red-500">{error}</p>
+            )}
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setShowForm(false); setTitle(""); setError(""); }}
+                className="text-sm text-gray-500 px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={adding || !title.trim()}
+                className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl disabled:opacity-50 transition-colors ${style.btnCls}`}
+              >
+                {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                {adding ? "Creando…" : "Crear documento"}
+              </button>
+            </div>
           </form>
-        ) : (
+        ) : docs.length > 0 ? (
+          /* Add button — card style */
           <button
             onClick={() => setShowForm(true)}
-            className={`w-full flex items-center justify-center gap-2 text-sm text-gray-400 ${style.hoverTextCls} border border-dashed border-gray-200 ${style.hoverBorderCls} rounded-xl py-3 transition-colors`}
+            className={`w-full flex items-center justify-center gap-2.5 text-sm border-2 border-dashed border-gray-200 rounded-2xl py-4 transition-all ${style.hoverTextCls} ${style.hoverBorderCls} text-gray-400 hover:bg-gray-50`}
           >
-            <Plus className="w-4 h-4" />
-            Nueva temática
+            <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${style.lightBgCls}`}>
+              <Plus className={`w-3.5 h-3.5 ${style.textCls}`} />
+            </div>
+            Nuevo documento
           </button>
-        )
+        ) : null
       )}
     </div>
   );

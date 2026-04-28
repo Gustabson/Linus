@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, LayoutList } from "lucide-react";
 import { SectionCard } from "./SectionCard";
 import type { DocumentSection } from "@prisma/client";
 
@@ -49,13 +49,14 @@ export function DocumentEditor({
     });
     if (res.ok) {
       const data = await res.json();
-      // If the first edit after a publish triggered a fork, remap surviving section IDs
       setSections((prev) => [
         ...applySectionIdMap(prev, data.sectionIdMap ?? {}),
-        { id: data.id, sectionType: data.sectionType, sectionOrder: data.sectionOrder,
+        {
+          id: data.id, sectionType: data.sectionType, sectionOrder: data.sectionOrder,
           isComplete: false, richTextContent: data.richTextContent,
           difficultyLevel: data.difficultyLevel, ageRangeMin: null, ageRangeMax: null,
-          gradeLevel: null, durationMinutes: null, createdAt: new Date(), versionId: data.versionId } as DocumentSection,
+          gradeLevel: null, durationMinutes: null, createdAt: new Date(), versionId: data.versionId,
+        } as DocumentSection,
       ]);
       setOpenId(data.id);
       setNewTitle("");
@@ -115,9 +116,7 @@ export function DocumentEditor({
     if (res.ok) {
       const data = await res.json();
       const map  = data.sectionIdMap ?? {};
-      setSections((prev) =>
-        applySectionIdMap(prev.filter((s) => s.id !== sectionId), map)
-      );
+      setSections((prev) => applySectionIdMap(prev.filter((s) => s.id !== sectionId), map));
       if (openId === sectionId) setOpenId("");
     }
   }
@@ -127,14 +126,22 @@ export function DocumentEditor({
   return (
     <div className="space-y-3">
 
-      {/* ── Sections ── */}
+      {/* ── Empty state ── */}
       {sections.length === 0 && !showAdd && (
-        <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center">
-          <p className="text-gray-400 mb-4">Este documento todavía no tiene secciones.</p>
+        <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center mx-auto">
+            <LayoutList className="w-7 h-7 text-gray-300" />
+          </div>
+          <div>
+            <p className="font-semibold text-gray-700">Este documento no tiene secciones</p>
+            <p className="text-sm text-gray-400 mt-1">
+              Las secciones son las partes del documento: introducción, objetivos, actividades, etc.
+            </p>
+          </div>
           {isOwner && (
             <button
               onClick={() => setShowAdd(true)}
-              className="inline-flex items-center gap-2 bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 transition-colors"
+              className="inline-flex items-center gap-2 bg-gray-900 text-white text-sm px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-colors font-medium"
             >
               <Plus className="w-4 h-4" />
               Agregar primera sección
@@ -143,6 +150,7 @@ export function DocumentEditor({
         </div>
       )}
 
+      {/* ── Section list ── */}
       {sections.map((section, idx) => (
         <SectionCard
           key={section.id}
@@ -159,47 +167,59 @@ export function DocumentEditor({
         />
       ))}
 
-      {isOwner && sections.length > 0 && !showAdd && (
-        <button
-          onClick={() => setShowAdd(true)}
-          className="w-full flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-green-700 border border-dashed border-gray-200 hover:border-green-300 rounded-2xl py-4 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Agregar sección
-        </button>
-      )}
-
+      {/* ── Add section form ── */}
       {showAdd && isOwner && (
         <form
           onSubmit={handleAddSection}
-          className="bg-white rounded-2xl border border-green-200 p-5 space-y-3"
+          className="bg-white rounded-2xl border-2 border-dashed border-gray-300 p-5 space-y-4"
         >
-          <label className="block text-sm font-medium text-gray-700">Nombre de la sección</label>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-gray-700">
+              Nombre de la sección
+            </label>
+            <p className="text-xs text-gray-400">
+              Describí de qué trata esta parte del documento.
+            </p>
+          </div>
           <input
             autoFocus
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="Ej: Filosofía Educativa, Objetivos, Actividades..."
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400"
+            onKeyDown={(e) => e.key === "Escape" && (setShowAdd(false), setNewTitle(""))}
+            placeholder="Ej: Introducción, Objetivos, Actividades…"
+            className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-100 transition-all"
           />
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => { setShowAdd(false); setNewTitle(""); }}
-              className="text-sm text-gray-500 px-3 py-2 rounded-lg hover:bg-gray-50"
+              className="text-sm text-gray-500 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={adding || !newTitle.trim()}
-              className="flex items-center gap-2 bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 bg-gray-900 text-white text-sm px-5 py-2.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-colors font-medium"
             >
               {adding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              {adding ? "Agregando..." : "Agregar"}
+              {adding ? "Agregando…" : "Agregar sección"}
             </button>
           </div>
         </form>
+      )}
+
+      {/* ── Add section button (card-style, only when sections exist) ── */}
+      {isOwner && sections.length > 0 && !showAdd && (
+        <button
+          onClick={() => setShowAdd(true)}
+          className="w-full flex items-center justify-center gap-2.5 text-sm text-gray-400 hover:text-gray-700 border-2 border-dashed border-gray-200 hover:border-gray-300 hover:bg-gray-50 rounded-2xl py-4 transition-all group"
+        >
+          <div className="w-6 h-6 rounded-lg bg-gray-100 group-hover:bg-gray-200 flex items-center justify-center transition-colors">
+            <Plus className="w-3.5 h-3.5" />
+          </div>
+          Agregar sección
+        </button>
       )}
 
     </div>

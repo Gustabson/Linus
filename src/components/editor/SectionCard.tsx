@@ -1,20 +1,23 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { ChevronDown, ChevronUp, CheckCircle, Circle, Save, Quote, Trash2, Pencil } from "lucide-react";
+import {
+  ChevronDown, ChevronUp, CheckCircle2, Circle,
+  Save, Quote, Trash2, Pencil, Loader2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SectionEditor } from "./SectionEditor";
 import { SectionMetaFields } from "./SectionMetaFields";
 import type { DocumentSection } from "@prisma/client";
 
 interface SectionCardProps {
-  section: DocumentSection;
-  index: number;
-  isOpen: boolean;
-  isOwner: boolean;
+  section:         DocumentSection;
+  index:           number;
+  isOpen:          boolean;
+  isOwner:         boolean;
   isAuthenticated: boolean;
-  onToggle: () => void;
-  onSave: (sectionId: string, content: object, meta: Record<string, string | number | null>) => Promise<void>;
+  onToggle:        () => void;
+  onSave:   (sectionId: string, content: object, meta: Record<string, string | number | null>) => Promise<void>;
   onRename: (sectionId: string, newTitle: string) => Promise<void>;
   onDelete: (sectionId: string) => Promise<void>;
   onQuote?: (text: string, sectionTitle: string) => void;
@@ -32,19 +35,18 @@ export function SectionCard({
   onDelete,
   onQuote,
 }: SectionCardProps) {
-  const [content, setContent]           = useState<object | null>(null);
-  const [meta, setMeta]                 = useState<Record<string, string | number | null>>({});
-  const [saving, setSaving]             = useState(false);
-  const [saved, setSaved]               = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting]         = useState(false);
+  const [content, setContent]               = useState<object | null>(null);
+  const [meta, setMeta]                     = useState<Record<string, string | number | null>>({});
+  const [saving, setSaving]                 = useState(false);
+  const [saved, setSaved]                   = useState(false);
+  const [confirmDelete, setConfirmDelete]   = useState(false);
+  const [deleting, setDeleting]             = useState(false);
+  const [editingTitle, setEditingTitle]     = useState(false);
+  const [titleValue, setTitleValue]         = useState(section.sectionType);
+  const titleInputRef                       = useRef<HTMLInputElement>(null);
 
-  // Title editing
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [titleValue, setTitleValue]     = useState(section.sectionType);
-  const titleInputRef                   = useRef<HTMLInputElement>(null);
-
-  const isDirty = content !== null;
+  const isDirty   = content !== null;
+  const isPdfEmbed = (section.richTextContent as Record<string, unknown>)?.__type === "pdf_embed";
 
   function handleMetaChange(field: string, value: string | number | null) {
     setMeta((prev) => ({ ...prev, [field]: value }));
@@ -85,21 +87,33 @@ export function SectionCard({
 
   return (
     <div className={cn(
-      "bg-white rounded-2xl border transition-all",
-      isOpen ? "border-green-300 shadow-sm" : "border-gray-200"
+      "bg-white rounded-2xl border transition-all duration-200",
+      isOpen
+        ? "border-gray-300 shadow-sm"
+        : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
     )}>
-      {/* Header */}
-      <div className="flex items-center">
+
+      {/* ── Header ── */}
+      <div className="flex items-stretch">
+
+        {/* Toggle area */}
         <button
           type="button"
           onClick={onToggle}
-          className="flex-1 flex items-center gap-3 px-5 py-4 text-left"
+          className="flex-1 flex items-center gap-4 px-5 py-4 text-left min-w-0"
         >
-          <span className="w-7 h-7 rounded-full bg-gray-100 text-gray-500 text-xs font-medium flex items-center justify-center shrink-0">
+          {/* Number badge */}
+          <div className={cn(
+            "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold transition-colors",
+            isOpen
+              ? "bg-gray-900 text-white"
+              : "bg-gray-100 text-gray-500"
+          )}>
             {index + 1}
-          </span>
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {/* Editable title — only when open and owner */}
+          </div>
+
+          {/* Title + status */}
+          <div className="flex items-center gap-2.5 flex-1 min-w-0">
             {isOwner && isOpen && editingTitle ? (
               <input
                 ref={titleInputRef}
@@ -108,75 +122,83 @@ export function SectionCard({
                 onBlur={commitTitle}
                 onKeyDown={handleTitleKeyDown}
                 onClick={(e) => e.stopPropagation()}
-                className="font-medium text-gray-900 bg-transparent border-b border-green-400 focus:outline-none min-w-0 flex-1"
+                className="font-semibold text-gray-900 text-base bg-transparent border-b-2 border-gray-900 focus:outline-none min-w-0 flex-1 pb-0.5"
               />
             ) : (
-              <span className="font-medium text-gray-900 truncate">{titleValue}</span>
+              <span className="font-semibold text-gray-900 text-base truncate leading-snug">
+                {titleValue}
+              </span>
             )}
-            {section.isComplete
-              ? <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-              : <Circle      className="w-4 h-4 text-gray-300 shrink-0" />}
-            {isDirty && !saved && (
-              <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded shrink-0">
+
+            {/* Unsaved indicator */}
+            {isDirty && !saved && !saving && (
+              <span className="hidden sm:inline text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium shrink-0">
                 Sin guardar
               </span>
             )}
-            {/* Rename button — only when open and owner */}
-            {isOwner && isOpen && !editingTitle && (
-              <button
-                type="button"
-                title="Renombrar sección"
-                onClick={startEditTitle}
-                className="p-1 text-gray-300 hover:text-green-600 transition-colors shrink-0"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
-            )}
+          </div>
+
+          {/* Completion icon + chevron */}
+          <div className="flex items-center gap-2 shrink-0">
+            {section.isComplete
+              ? <CheckCircle2 className="w-5 h-5 text-green-500" />
+              : <Circle       className="w-5 h-5 text-gray-200"  />
+            }
+            {isOpen
+              ? <ChevronUp   className="w-4 h-4 text-gray-400" />
+              : <ChevronDown className="w-4 h-4 text-gray-400" />
+            }
           </div>
         </button>
 
-        {/* Actions */}
-        {isOwner && (
-          <div className="pr-4 flex items-center gap-2 shrink-0">
+        {/* Owner actions — only visible when open */}
+        {isOwner && isOpen && (
+          <div className="flex items-center gap-1 pr-4 border-l border-gray-100 pl-3">
+            {!editingTitle && (
+              <button
+                type="button"
+                title="Renombrar"
+                onClick={startEditTitle}
+                className="p-2 text-gray-300 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            )}
             {confirmDelete ? (
-              <>
-                <span className="text-xs text-red-600">¿Eliminar?</span>
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-red-600 font-medium whitespace-nowrap">¿Eliminar?</span>
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="text-xs bg-red-600 text-white px-2 py-1 rounded-lg hover:bg-red-700 disabled:opacity-50"
+                  className="text-xs bg-red-600 text-white px-2.5 py-1 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
                 >
-                  {deleting ? "..." : "Sí"}
+                  {deleting ? <Loader2 className="w-3 h-3 animate-spin" /> : "Sí"}
                 </button>
                 <button
                   onClick={() => setConfirmDelete(false)}
-                  className="text-xs text-gray-500 px-2 py-1 rounded-lg hover:bg-gray-100"
+                  className="text-xs text-gray-500 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   No
                 </button>
-              </>
+              </div>
             ) : (
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 title="Eliminar sección"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
-            {isOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
-          </div>
-        )}
-        {!isOwner && (
-          <div className="pr-5">
-            {isOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </div>
         )}
       </div>
 
-      {/* Body */}
+      {/* ── Body ── */}
       {isOpen && (
-        <div className="px-5 pb-5 space-y-4">
+        <div className="border-t border-gray-100 px-5 pb-6 pt-5 space-y-5">
+
+          {/* Metadata (owner only) */}
           {isOwner && (
             <SectionMetaFields
               difficultyLevel={section.difficultyLevel}
@@ -187,8 +209,8 @@ export function SectionCard({
             />
           )}
 
-          {(section.richTextContent as Record<string, unknown>)?.__type === "pdf_embed" ? (
-            /* PDF embed section — show iframe, not TipTap editor */
+          {/* Content */}
+          {isPdfEmbed ? (
             <div className="space-y-2">
               <iframe
                 src={(section.richTextContent as Record<string, unknown>).url as string}
@@ -205,62 +227,66 @@ export function SectionCard({
           ) : (
             <SectionEditor
               content={section.richTextContent as object ?? null}
-              placeholder={`Escribí el contenido de "${titleValue}"...`}
+              placeholder={`Escribí el contenido de "${titleValue}"…`}
               editable={isOwner}
               onChange={setContent}
             />
           )}
 
-          {/* Save button — not shown for PDF embeds */}
-          {isOwner && (isDirty || saved) && (section.richTextContent as Record<string, unknown>)?.__type !== "pdf_embed" && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving || saved}
-                className={cn(
-                  "flex items-center gap-2 text-sm px-4 py-2 rounded-lg transition-colors",
-                  saved
-                    ? "bg-green-100 text-green-700 cursor-default"
-                    : "bg-green-700 text-white hover:bg-green-800 disabled:opacity-50"
-                )}
-              >
-                <Save className="w-4 h-4" />
-                {saving ? "Guardando..." : saved ? "¡Guardado!" : "Guardar"}
-              </button>
-            </div>
-          )}
-
-          {/* Quote for non-owners */}
-          {!isOwner && isAuthenticated && onQuote && section.richTextContent && (
-            <div className="flex justify-end">
+          {/* Footer actions */}
+          <div className="flex items-center justify-between gap-3 pt-1">
+            {/* Quote for non-owners */}
+            {!isOwner && isAuthenticated && onQuote && section.richTextContent && (
               <button
                 type="button"
                 onClick={() => {
                   const extractText = (node: Record<string, unknown>): string => {
                     if (node.type === "text") return (node.text as string) ?? "";
-                    if (Array.isArray(node.content)) {
+                    if (Array.isArray(node.content))
                       return (node.content as Record<string, unknown>[]).map(extractText).join(" ");
-                    }
                     return "";
                   };
-                  const text = extractText(section.richTextContent as Record<string, unknown>).trim().slice(0, 300);
+                  const text = extractText(section.richTextContent as Record<string, unknown>)
+                    .trim().slice(0, 300);
                   if (text) onQuote(text, titleValue);
                 }}
-                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-green-700 border border-gray-200 hover:border-green-300 px-3 py-1.5 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-green-700 border border-gray-200 hover:border-green-300 px-3 py-2 rounded-xl transition-colors"
               >
-                <Quote className="w-3 h-3" />
+                <Quote className="w-3.5 h-3.5" />
                 Citar y comentar
               </button>
-            </div>
-          )}
+            )}
 
-          {!isOwner && !isAuthenticated && (
-            <p className="text-center text-sm text-gray-400 py-2">
-              <a href="/login" className="text-green-700 hover:underline">Iniciá sesión</a>{" "}
-              para forkear y editar este currículo.
-            </p>
-          )}
+            {!isOwner && !isAuthenticated && (
+              <p className="text-sm text-gray-400">
+                <a href="/login" className="text-green-700 hover:underline font-medium">Iniciá sesión</a>{" "}
+                para forkear y editar este currículo.
+              </p>
+            )}
+
+            {/* Save button — owner, not pdf embed, dirty or just saved */}
+            {isOwner && !isPdfEmbed && (isDirty || saved) && (
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving || saved}
+                className={cn(
+                  "ml-auto flex items-center gap-2 text-sm px-5 py-2.5 rounded-xl font-medium transition-colors",
+                  saved
+                    ? "bg-green-100 text-green-700 cursor-default"
+                    : saving
+                    ? "bg-gray-100 text-gray-500 cursor-wait"
+                    : "bg-gray-900 text-white hover:bg-gray-800"
+                )}
+              >
+                {saving
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <Save    className="w-4 h-4" />
+                }
+                {saving ? "Guardando…" : saved ? "¡Guardado!" : "Guardar"}
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

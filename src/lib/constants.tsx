@@ -121,8 +121,8 @@ export const CONTENT_TABS: {
 
 // ─── Document naming helpers ──────────────────────────────────────────────────
 
-/** What to call the "units" inside a Kernel */
-export const KERNEL_DOC_PLACEHOLDER = "Ej: Unidad 1, Clase 3, Módulo de introducción…";
+/** Placeholder for new-document name input inside a Kernel */
+export const KERNEL_DOC_PLACEHOLDER = "Ej: Introducción, Unidad 1, Clase 3…";
 
 /** Label for the action button that creates a doc inside a Kernel */
-export const KERNEL_NEW_DOC_LABEL = "Nueva unidad";
+export const KERNEL_NEW_DOC_LABEL = "Nuevo documento";
