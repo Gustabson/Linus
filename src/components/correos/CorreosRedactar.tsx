@@ -1,0 +1,269 @@
+"use client";
+
+import { useState, useCallback, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import TextAlign from "@tiptap/extension-text-align";
+import TiptapLink from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import {
+  Send, Save, Loader2, Trash2,
+  Bold, Italic, Underline as UnderlineIcon,
+  List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
+  Link as LinkIcon, Heading2, Heading3,
+} from "lucide-react";
+import { UserSearchInput } from "./UserSearchInput";
+
+export function CorreosRedactar() {
+  const router = useRouter();
+
+  const [subject, setSubject]     = useState("");
+  const [recipient, setRecipient] = useState<{ username: string; name: string } | null>(null);
+  const [sending,  startSend]     = useTransition();
+  const [saving,   startSave]     = useTransition();
+  const [error, setError]         = useState("");
+  const [sent, setSent]           = useState(false);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      TiptapLink.configure({
+        openOnClick:    false,
+        HTMLAttributes: { target: "_blank", rel: "noopener noreferrer" },
+      }),
+      Placeholder.configure({ placeholder: "Escribí tu mensaje acá..." }),
+    ],
+    editorProps: {
+      attributes: {
+        class: "prose prose-base max-w-none focus:outline-none min-h-[320px] px-1 py-2 text-gray-800",
+      },
+    },
+  });
+
+  const handleSend = useCallback(() => {
+    if (!editor) return;
+    setError("");
+    const htmlBody = editor.getHTML();
+
+    startSend(async () => {
+      const res = await fetch("/api/correos", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          subject:           subject.trim(),
+          htmlBody,
+          recipientUsername: recipient?.username ?? null,
+          isDraft:           false,
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error ?? "Error al enviar el correo.");
+        return;
+      }
+
+      setSent(true);
+      setTimeout(() => router.push("/correos/enviados"), 1200);
+    });
+  }, [editor, subject, recipient, router]);
+
+  const handleSaveDraft = useCallback(() => {
+    if (!editor) return;
+    setError("");
+    const htmlBody = editor.getHTML();
+
+    startSave(async () => {
+      const res = await fetch("/api/correos", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          subject:           subject.trim() || "Borrador sin título",
+          htmlBody,
+          recipientUsername: recipient?.username ?? null,
+          isDraft:           true,
+        }),
+      });
+
+      if (res.ok) {
+        router.push("/correos/borradores");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Error al guardar el borrador.");
+      }
+    });
+  }, [editor, subject, recipient, router]);
+
+  function setLink() {
+    if (!editor) return;
+    const prev = editor.getAttributes("link").href as string | undefined;
+    const url  = window.prompt("URL del enlace:", prev ?? "https://");
+    if (url === null) return;
+    if (!url) { editor.chain().focus().unsetLink().run(); return; }
+    editor.chain().focus().setLink({ href: url }).run();
+  }
+
+  const ToolBtn = ({
+    onClick, active = false, title, children,
+  }: {
+    onClick: () => void; active?: boolean; title: string; children: React.ReactNode;
+  }) => (
+    <button
+      type="button"
+      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+      title={title}
+      className={`p-2 rounded-lg transition-colors ${
+        active
+          ? "bg-green-100 text-green-700"
+          : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+      }`}
+    >
+      {children}
+    </button>
+  );
+
+  return (
+    <div className="flex flex-col h-full">
+
+      {/* ── Page header ───────────────────────────────────────────── */}
+      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 className="font-semibold text-gray-900 text-base">Nuevo correo</h2>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push("/correos")}
+            disabled={sending || saving}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            Descartar
+          </button>
+          <button
+            onClick={handleSaveDraft}
+            disabled={saving || sending}
+            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          >
+            {saving
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+              : <><Save className="w-4 h-4" /> Guardar borrador</>
+            }
+          </button>
+          <button
+            onClick={handleSend}
+            disabled={sending || saving}
+            className="flex items-center gap-1.5 text-sm font-semibold bg-green-700 text-white px-5 py-2 rounded-xl hover:bg-green-800 disabled:opacity-50 transition-colors shadow-sm"
+          >
+            {sending
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>
+              : <><Send className="w-4 h-4" /> Enviar</>
+            }
+          </button>
+        </div>
+      </div>
+
+      {/* ── Fields ────────────────────────────────────────────────── */}
+      <div className="border-b border-gray-100 divide-y divide-gray-100">
+
+        {/* Para */}
+        <div className="flex items-center gap-3 px-6 py-3">
+          <span className="text-sm text-gray-400 w-16 shrink-0">Para</span>
+          <UserSearchInput value={recipient} onChange={setRecipient} />
+        </div>
+
+        {/* Asunto */}
+        <div className="flex items-center gap-3 px-6 py-3">
+          <span className="text-sm text-gray-400 w-16 shrink-0">Asunto</span>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Asunto del correo"
+            maxLength={200}
+            className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none"
+          />
+        </div>
+      </div>
+
+      {/* ── Toolbar ───────────────────────────────────────────────── */}
+      {editor && (
+        <div className="flex items-center gap-0.5 px-4 py-2 border-b border-gray-100 flex-wrap bg-gray-50/60">
+          <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()}
+            active={editor.isActive("bold")} title="Negrita (Ctrl+B)">
+            <Bold className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()}
+            active={editor.isActive("italic")} title="Cursiva (Ctrl+I)">
+            <Italic className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleUnderline().run()}
+            active={editor.isActive("underline")} title="Subrayado (Ctrl+U)">
+            <UnderlineIcon className="w-4 h-4" />
+          </ToolBtn>
+
+          <div className="w-px h-5 bg-gray-200 mx-1" />
+
+          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            active={editor.isActive("heading", { level: 2 })} title="Título H2">
+            <Heading2 className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            active={editor.isActive("heading", { level: 3 })} title="Título H3">
+            <Heading3 className="w-4 h-4" />
+          </ToolBtn>
+
+          <div className="w-px h-5 bg-gray-200 mx-1" />
+
+          <ToolBtn onClick={() => editor.chain().focus().toggleBulletList().run()}
+            active={editor.isActive("bulletList")} title="Lista con viñetas">
+            <List className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            active={editor.isActive("orderedList")} title="Lista numerada">
+            <ListOrdered className="w-4 h-4" />
+          </ToolBtn>
+
+          <div className="w-px h-5 bg-gray-200 mx-1" />
+
+          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("left").run()}
+            active={editor.isActive({ textAlign: "left" })} title="Alinear a la izquierda">
+            <AlignLeft className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("center").run()}
+            active={editor.isActive({ textAlign: "center" })} title="Centrar">
+            <AlignCenter className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("right").run()}
+            active={editor.isActive({ textAlign: "right" })} title="Alinear a la derecha">
+            <AlignRight className="w-4 h-4" />
+          </ToolBtn>
+
+          <div className="w-px h-5 bg-gray-200 mx-1" />
+
+          <ToolBtn onClick={setLink}
+            active={editor.isActive("link")} title="Insertar enlace">
+            <LinkIcon className="w-4 h-4" />
+          </ToolBtn>
+        </div>
+      )}
+
+      {/* ── Editor body ───────────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        <EditorContent editor={editor} />
+      </div>
+
+      {/* ── Feedback ──────────────────────────────────────────────── */}
+      {(error || sent) && (
+        <div className={`px-6 py-3 border-t text-sm font-medium ${
+          sent  ? "bg-green-50 border-green-100 text-green-700"
+                : "bg-red-50 border-red-100 text-red-600"
+        }`}>
+          {sent ? "✓ Correo enviado. Redirigiendo..." : error}
+        </div>
+      )}
+    </div>
+  );
+}
