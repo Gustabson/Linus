@@ -47,7 +47,8 @@
       "Bash(sed -i 's/Docentes para seguir/Personas para seguir/g; s/Ver más docentes/Ver más personas/g' src/components/social/SocialFeed.tsx)",
       "Bash(sed -i 's/Seguí a otros docentes para ver sus publicaciones acá\\\\./Seguí a otras personas para ver sus publicaciones acá./g' src/components/social/PostFeed.tsx)",
       "Bash(sed -i 's/Elegí un nombre de usuario para que otros maestros puedan encontrarte\\\\./Elegí un nombre de usuario para que otros puedan encontrarte./g' src/components/layout/Navbar.tsx)",
-      "Bash(sed -i 's/El currículo base de tu escuela o institución\\\\. Otros maestros lo pueden forkear y adaptar\\\\./El currículo base de tu escuela o institución. Cualquiera puede forkearlo y adaptarlo./g' src/components/trees/NewTreeForm.tsx)"
+      "Bash(sed -i 's/El currículo base de tu escuela o institución\\\\. Otros maestros lo pueden forkear y adaptar\\\\./El currículo base de tu escuela o institución. Cualquiera puede forkearlo y adaptarlo./g' src/components/trees/NewTreeForm.tsx)",
+      "Bash(npm uninstall *)"
     ]
   }
 }
