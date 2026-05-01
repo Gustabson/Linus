@@ -59,7 +59,7 @@ export function Navbar() {
             {session && (
               <div className="hidden md:flex items-center gap-1">
                 <NavLink href="/"          icon={<Home            className="w-4 h-4" />} label="Inicio"     />
-                <NavLink href="/explorar"  icon={<Search          className="w-4 h-4" />} label="Explorar"   />
+                <NavLink href="/buscar"  icon={<Search          className="w-4 h-4" />} label="Buscar"   />
                 <NavLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Mi espacio" />
               </div>
             )}
@@ -122,7 +122,7 @@ export function Navbar() {
                     </Link>
                   )}
                   <MobileLink href="/"          icon={<Home            className="w-4 h-4" />} label="Inicio"     onClick={() => setOpen(false)} />
-                  <MobileLink href="/explorar"  icon={<Search          className="w-4 h-4" />} label="Explorar"   onClick={() => setOpen(false)} />
+                  <MobileLink href="/buscar"  icon={<Search          className="w-4 h-4" />} label="Buscar"   onClick={() => setOpen(false)} />
                   <MobileLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Mi espacio" onClick={() => setOpen(false)} />
                   <div className="border-t border-gray-100 pt-2 mt-2">
                     <MobileLink
@@ -145,7 +145,7 @@ export function Navbar() {
                 </>
               ) : (
                 <>
-                  <MobileLink href="/explorar" icon={<Search className="w-4 h-4" />} label="Explorar"           onClick={() => setOpen(false)} />
+                  <MobileLink href="/buscar" icon={<Search className="w-4 h-4" />} label="Buscar"           onClick={() => setOpen(false)} />
                   <MobileLink href="/login"    icon={null}                            label="Ingresar con Google" onClick={() => setOpen(false)} />
                 </>
               )}

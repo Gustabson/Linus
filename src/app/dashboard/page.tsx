@@ -140,7 +140,7 @@ export default async function DashboardPage({
               : "Creá materiales de apoyo que podés adjuntar a cualquier kernel."}
           </p>
           <div className="flex items-center justify-center gap-3">
-            <Link href="/explorar" className="text-sm text-green-700 hover:underline">
+            <Link href="/buscar" className="text-sm text-green-700 hover:underline">
               Explorar {CONTENT_TYPE_BADGE[activeTab].label.toLowerCase()}s de otros
             </Link>
             <Link href="/nuevo" className="bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 transition-colors">

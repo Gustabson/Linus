@@ -20,7 +20,7 @@ export function LandingPage() {
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link
-            href="/explorar"
+            href="/buscar"
             className="bg-green-700 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-800 transition-colors flex items-center gap-2"
           >
             Explorar currículos

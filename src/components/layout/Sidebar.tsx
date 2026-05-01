@@ -4,16 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
-  BookOpen, Home, LayoutDashboard, Compass,
-  Plus, Settings, LogOut, AlertCircle,
+  BookOpen, Home, LayoutDashboard, Search,
+  Plus, Settings, LogOut, AlertCircle, GitPullRequest,
 } from "lucide-react";
 import Image from "next/image";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 
 const NAV_ITEMS = [
-  { href: "/",          icon: Home,            label: "Inicio"     },
-  { href: "/dashboard", icon: LayoutDashboard, label: "Mi espacio" },
-  { href: "/explorar",  icon: Compass,         label: "Explorar"   },
+  { href: "/",            icon: Home,            label: "Inicio"      },
+  { href: "/dashboard",   icon: LayoutDashboard, label: "Mi espacio"  },
+  { href: "/buscar",      icon: Search,          label: "Buscar"      },
+  { href: "/propuestas",  icon: GitPullRequest,  label: "Propuestas"  },
 ];
 
 export function Sidebar() {
