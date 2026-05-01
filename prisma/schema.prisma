@@ -65,6 +65,13 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Notification email preferences
+  notifCorreos      Boolean @default(true)
+  notifComentarios  Boolean @default(true)
+  notifLikes        Boolean @default(false)
+  notifSeguidores   Boolean @default(true)
+  notifPropuestas   Boolean @default(true)
+
   accounts            Account[]
   sessions            Session[]
   ownedTrees          DocumentTree[]    @relation("TreeOwner")

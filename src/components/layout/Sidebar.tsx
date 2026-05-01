@@ -88,8 +88,8 @@ export function Sidebar() {
 
         {/* Configuración */}
         <Link
-          href="/bienvenida"
-          className={itemCls("/bienvenida").replace("py-3 text-base", "py-2.5 text-sm")}
+          href="/configuracion"
+          className={itemCls("/configuracion").replace("py-3 text-base", "py-2.5 text-sm")}
         >
           <Settings className="w-5 h-5 shrink-0" />
           Configuración

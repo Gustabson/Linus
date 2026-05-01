@@ -4,6 +4,7 @@ import { auth }            from "@/lib/auth";
 import { SessionProvider } from "@/components/layout/SessionProvider";
 import { LayoutShell }     from "@/components/layout/LayoutShell";
 import { Toaster }         from "@/components/ui/Toaster";
+import { ThemeProvider }   from "@/components/layout/ThemeProvider";
 
 export const dynamic = "force-dynamic";
 
@@ -34,14 +35,16 @@ export default async function RootLayout({
   const isLoggedIn = !!session?.user?.id;
 
   return (
-    <html lang="es">
-      <body className="min-h-screen bg-gray-50">
-        <SessionProvider session={session}>
-          <LayoutShell isLoggedIn={isLoggedIn}>
-            {children}
-          </LayoutShell>
-          <Toaster />
-        </SessionProvider>
+    <html lang="es" suppressHydrationWarning>
+      <body className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          <SessionProvider session={session}>
+            <LayoutShell isLoggedIn={isLoggedIn}>
+              {children}
+            </LayoutShell>
+            <Toaster />
+          </SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
