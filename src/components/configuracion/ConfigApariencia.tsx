@@ -18,6 +18,11 @@ interface CustomColors {
   themePrimary: string;
 }
 
+interface SidebarColors {
+  themeSidebarBg:   string;
+  themeSidebarText: string;
+}
+
 interface ContentTypeColors {
   themeKernel:   string;
   themeModule:   string;
@@ -27,6 +32,7 @@ interface ContentTypeColors {
 interface Props {
   initialMode:          Mode;
   initialColors:        CustomColors;
+  initialSidebarColors: SidebarColors;
   initialContentColors: ContentTypeColors;
 }
 
@@ -35,7 +41,12 @@ const COLOR_FIELDS: { key: keyof CustomColors; label: string; desc: string }[] =
   { key: "themeSurface", label: "Cards y paneles",  desc: "Fondo de tarjetas, menús y formularios" },
   { key: "themeBorder",  label: "Bordes",           desc: "Líneas divisorias y contornos" },
   { key: "themeText",    label: "Texto",            desc: "Color de todo el texto de la interfaz" },
-  { key: "themePrimary", label: "Color primario",   desc: "Barra lateral, botones y acentos" },
+  { key: "themePrimary", label: "Color primario",   desc: "Botones, tabs activos y acentos" },
+];
+
+const SIDEBAR_FIELDS: { key: keyof SidebarColors; label: string; desc: string }[] = [
+  { key: "themeSidebarBg",   label: "Fondo de la barra", desc: "Color de fondo de la barra lateral" },
+  { key: "themeSidebarText", label: "Texto de la barra", desc: "Color de íconos y letras en la barra" },
 ];
 
 const CONTENT_TYPE_FIELDS: { key: keyof ContentTypeColors; label: string; desc: string; default: string }[] = [
@@ -44,7 +55,16 @@ const CONTENT_TYPE_FIELDS: { key: keyof ContentTypeColors; label: string; desc: 
   { key: "themeResource", label: "Recurso", desc: "Materiales y herramientas de apoyo",   default: "#b45309" },
 ];
 
-export function ConfigApariencia({ initialMode, initialColors, initialContentColors }: Props) {
+// Default sidebar bg = primary color (resolves at runtime via CSS var)
+const DEFAULT_SIDEBAR_BG   = "#15803d"; // same as PRESET_LIGHT primary
+const DEFAULT_SIDEBAR_TEXT = "#ffffff";
+
+export function ConfigApariencia({
+  initialMode,
+  initialColors,
+  initialSidebarColors,
+  initialContentColors,
+}: Props) {
   const { setTheme } = useTheme();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -54,6 +74,10 @@ export function ConfigApariencia({ initialMode, initialColors, initialContentCol
   const [colors, setColors] = useState<CustomColors>(
     initialColors.themeBg ? initialColors : { ...PRESET_LIGHT }
   );
+  const [sidebarColors, setSidebarColors] = useState<SidebarColors>({
+    themeSidebarBg:   initialSidebarColors.themeSidebarBg   || DEFAULT_SIDEBAR_BG,
+    themeSidebarText: initialSidebarColors.themeSidebarText || DEFAULT_SIDEBAR_TEXT,
+  });
   const [ctColors, setCtColors] = useState<ContentTypeColors>(initialContentColors);
 
   const [pending, startTransition] = useTransition();
@@ -65,6 +89,7 @@ export function ConfigApariencia({ initialMode, initialColors, initialContentCol
     startTransition(async () => {
       const body: Record<string, unknown> = {
         themeMode: mode,
+        ...sidebarColors,
         ...ctColors,
       };
       if (mode === "custom") Object.assign(body, colors);
@@ -159,13 +184,49 @@ export function ConfigApariencia({ initialMode, initialColors, initialContentCol
         </div>
       )}
 
+      {/* ── Barra lateral ───────────────────────────────────────── */}
+      <div className="space-y-3 pt-2 border-t border-border">
+        <div>
+          <p className="text-sm font-medium text-text">Barra lateral</p>
+          <p className="text-xs text-text-subtle mt-0.5">
+            Personalizá el color de la barra izquierda independientemente del tema.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {SIDEBAR_FIELDS.map(({ key, label, desc }) => (
+            <div key={key} className="flex items-center gap-3 p-3 bg-bg rounded-xl border border-border">
+              <label className="relative shrink-0 cursor-pointer">
+                <div className="w-10 h-10 rounded-lg border border-border shadow-sm"
+                  style={{ backgroundColor: sidebarColors[key] }} />
+                <input type="color" value={sidebarColors[key]}
+                  onChange={e => setSidebarColors(c => ({ ...c, [key]: e.target.value }))}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+              </label>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-text leading-none">{label}</p>
+                <p className="text-xs text-text-subtle mt-0.5">{desc}</p>
+                <p className="text-xs font-mono text-text-subtle mt-0.5">{sidebarColors[key]}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setSidebarColors({ themeSidebarBg: DEFAULT_SIDEBAR_BG, themeSidebarText: DEFAULT_SIDEBAR_TEXT })}
+          className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Restaurar barra por defecto
+        </button>
+      </div>
+
       {/* ── Tipos de contenido ────────────────────────────────────────── */}
       <div className="space-y-3 pt-2 border-t border-border">
         <div>
           <p className="text-sm font-medium text-text">Colores por tipo de contenido</p>
           <p className="text-xs text-text-subtle mt-0.5">
             Diferenciá visualmente kernels, módulos y recursos en toda la plataforma.
-            Se aplican en cualquier modo de tema.
           </p>
         </div>
 
@@ -189,11 +250,7 @@ export function ConfigApariencia({ initialMode, initialColors, initialContentCol
         </div>
 
         <button
-          onClick={() => setCtColors({
-            themeKernel:   "#15803d",
-            themeModule:   "#1d4ed8",
-            themeResource: "#b45309",
-          })}
+          onClick={() => setCtColors({ themeKernel: "#15803d", themeModule: "#1d4ed8", themeResource: "#b45309" })}
           className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />

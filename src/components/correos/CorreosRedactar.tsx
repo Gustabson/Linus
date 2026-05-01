@@ -183,7 +183,7 @@ export function CorreosRedactar({
       title={title}
       className={`p-2 rounded-lg transition-colors ${
         active
-          ? "bg-green-100 text-green-700"
+          ? "bg-primary/10 text-primary"
           : "text-text-muted hover:bg-border-subtle hover:text-text"
       }`}
     >
@@ -222,7 +222,7 @@ export function CorreosRedactar({
           <button
             onClick={handleSend}
             disabled={sending || saving}
-            className="flex items-center gap-1.5 text-sm font-semibold bg-green-700 text-white px-5 py-2 rounded-xl hover:bg-green-800 disabled:opacity-50 transition-colors shadow-sm"
+            className="flex items-center gap-1.5 text-sm font-semibold bg-primary text-white px-5 py-2 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors shadow-sm"
           >
             {sending
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>
@@ -321,7 +321,7 @@ export function CorreosRedactar({
       {/* ── Feedback ──────────────────────────────────────────────── */}
       {(error || sent) && (
         <div className={`px-6 py-3 border-t text-sm font-medium ${
-          sent ? "bg-green-50 border-green-100 text-green-700"
+          sent ? "bg-primary/5 border-primary/10 text-primary"
                : "bg-red-50 border-red-100 text-red-600"
         }`}>
           {sent ? "✓ Correo enviado. Redirigiendo..." : error}

@@ -81,7 +81,7 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
     user.image ? (
       <Image src={user.image} alt="" width={40} height={40} className="rounded-full shrink-0" />
     ) : (
-      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm shrink-0">
+      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
         {(user.name ?? "?")[0].toUpperCase()}
       </div>
     );
@@ -91,7 +91,7 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
       {/* Back */}
       <Link
         href={backHref}
-        className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-green-700 transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-primary transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
         {backLabel}
@@ -177,7 +177,7 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
           {!showReply ? (
             <button
               onClick={() => setShowReply(true)}
-              className="flex items-center gap-2 text-sm font-medium text-green-700 border border-green-200 px-4 py-2.5 rounded-xl hover:bg-green-50 transition-colors"
+              className="flex items-center gap-2 text-sm font-medium text-primary border border-primary/20 px-4 py-2.5 rounded-xl hover:bg-primary/5 transition-colors"
             >
               <Reply className="w-4 h-4" />
               Responder
@@ -190,7 +190,7 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="Escribí tu respuesta..."
                 rows={4}
-                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 resize-none"
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/40 resize-none"
               />
               {error && <p className="text-sm text-red-500">{error}</p>}
               <div className="flex justify-end gap-2">
@@ -203,7 +203,7 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
                 <button
                   onClick={handleReply}
                   disabled={sending || !replyText.trim()}
-                  className="flex items-center gap-2 text-sm font-semibold bg-green-700 text-white px-4 py-2 rounded-xl hover:bg-green-800 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-2 text-sm font-semibold bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors"
                 >
                   {sending
                     ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando...</>

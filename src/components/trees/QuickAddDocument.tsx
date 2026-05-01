@@ -134,7 +134,7 @@ export function QuickAddDocument({ treeSlug, ownerUsername, isOwner, style, init
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-text-subtle">
                         {done === total
-                          ? <span className="text-green-600 font-medium">✓ Todo completo</span>
+                          ? <span className="text-primary font-medium">✓ Todo completo</span>
                           : <>{done} de {total} sección{total !== 1 ? "es" : ""} completa{done !== 1 ? "s" : ""}</>
                         }
                       </span>

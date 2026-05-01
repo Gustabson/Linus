@@ -77,7 +77,7 @@ export default async function UserProfilePage({
             {user.image ? (
               <Image src={user.image} alt={user.name ?? ""} width={96} height={96} className="rounded-full" />
             ) : (
-              <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-3xl font-bold">
+              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold">
                 {(user.name ?? "?")[0].toUpperCase()}
               </div>
             )}
@@ -127,7 +127,7 @@ export default async function UserProfilePage({
               )}
               {user.website && (
                 <a href={user.website} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-green-700 hover:underline">
+                  className="flex items-center gap-1 text-primary hover:underline">
                   <Globe className="w-4 h-4" />
                   {user.website.replace(/^https?:\/\//, "")}
                 </a>

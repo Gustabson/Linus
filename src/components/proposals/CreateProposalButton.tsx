@@ -40,7 +40,7 @@ export function CreateProposalButton({ sourceTreeId, parentTreeTitle }: Props) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 bg-green-700 text-white text-sm px-4 py-2 rounded-xl hover:bg-green-800 transition-colors"
+        className="flex items-center gap-2 bg-primary text-white text-sm px-4 py-2 rounded-xl hover:bg-primary-h transition-colors"
       >
         <GitPullRequest className="w-4 h-4" />
         Proponer cambios
@@ -73,7 +73,7 @@ export function CreateProposalButton({ sourceTreeId, parentTreeTitle }: Props) {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Ej: Actualización de objetivos de aprendizaje"
-                  className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-400"
+                  className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/40"
                 />
               </div>
               <div>
@@ -85,7 +85,7 @@ export function CreateProposalButton({ sourceTreeId, parentTreeTitle }: Props) {
                   onChange={(e) => setDesc(e.target.value)}
                   placeholder="Explicá brevemente qué cambiaste y por qué..."
                   rows={3}
-                  className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-400 resize-none"
+                  className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/40 resize-none"
                 />
               </div>
 
@@ -99,7 +99,7 @@ export function CreateProposalButton({ sourceTreeId, parentTreeTitle }: Props) {
                 <button
                   type="submit"
                   disabled={loading || !title.trim()}
-                  className="flex items-center gap-2 bg-green-700 text-white text-sm px-4 py-2 rounded-xl hover:bg-green-800 disabled:opacity-50 transition-colors"
+                  className="flex items-center gap-2 bg-primary text-white text-sm px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <GitPullRequest className="w-4 h-4" />}
                   {loading ? "Enviando..." : "Enviar propuesta"}

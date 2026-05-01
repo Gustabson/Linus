@@ -65,8 +65,8 @@ export default function BienvenidaPage() {
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mx-auto">
-            <BookOpen className="w-7 h-7 text-green-700" />
+          <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
+            <BookOpen className="w-7 h-7 text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-text">¡Bienvenido a EduHub!</h1>
           <p className="text-text-muted text-sm">
@@ -89,11 +89,11 @@ export default function BienvenidaPage() {
                 onChange={handleChange}
                 placeholder="tu_nombre"
                 maxLength={32}
-                className="w-full border border-border rounded-xl pl-8 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full border border-border rounded-xl pl-8 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 {checking && <Loader2 className="w-4 h-4 text-text-subtle animate-spin" />}
-                {!checking && available === true && <CheckCircle className="w-4 h-4 text-green-600" />}
+                {!checking && available === true && <CheckCircle className="w-4 h-4 text-primary" />}
                 {!checking && available === false && <span className="text-red-500 text-xs">✗</span>}
               </div>
             </div>
@@ -104,7 +104,7 @@ export default function BienvenidaPage() {
               <p className="text-xs text-red-600 mt-1">Ese username ya está en uso, probá otro.</p>
             )}
             {available === true && (
-              <p className="text-xs text-green-600 mt-1">¡Disponible!</p>
+              <p className="text-xs text-primary mt-1">¡Disponible!</p>
             )}
           </div>
 
@@ -115,7 +115,7 @@ export default function BienvenidaPage() {
           <button
             type="submit"
             disabled={saving || !isValid || available === false || available === null}
-            className="w-full bg-green-700 text-white py-3 rounded-xl font-medium hover:bg-green-800 disabled:opacity-50 transition-colors"
+            className="w-full bg-primary text-white py-3 rounded-xl font-medium hover:bg-primary-h disabled:opacity-50 transition-colors"
           >
             {saving ? "Guardando..." : "Continuar"}
           </button>

@@ -56,7 +56,7 @@ export default async function HistorialPage({
 
       <div>
         <h1 className="text-xl font-bold text-text flex items-center gap-2">
-          <GitBranch className="w-5 h-5 text-green-600" />
+          <GitBranch className="w-5 h-5 text-primary" />
           Historial de publicaciones
         </h1>
         <p className="text-sm text-text-muted mt-1">
@@ -81,20 +81,20 @@ export default async function HistorialPage({
               return (
                 <div key={v.id} className="relative flex gap-4">
                   <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center z-10 ${
-                    isCurrent ? "bg-green-100 ring-2 ring-green-400" : "bg-surface ring-1 ring-gray-200"
+                    isCurrent ? "bg-primary/10 ring-2 ring-primary/40" : "bg-surface ring-1 ring-gray-200"
                   }`}>
-                    <GitCommit className={`w-4 h-4 ${isCurrent ? "text-green-600" : "text-text-subtle"}`} />
+                    <GitCommit className={`w-4 h-4 ${isCurrent ? "text-primary" : "text-text-subtle"}`} />
                   </div>
 
                   <div className={`flex-1 bg-surface rounded-2xl border p-4 mb-1 ${
-                    isCurrent ? "border-green-200" : "border-border"
+                    isCurrent ? "border-primary/20" : "border-border"
                   }`}>
                     <div className="flex items-start justify-between gap-2 flex-wrap">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-medium text-text text-sm">{v.commitMessage || "Publicación"}</p>
                           {isCurrent && (
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
                               Actual
                             </span>
                           )}
@@ -109,7 +109,7 @@ export default async function HistorialPage({
                               por{" "}
                               <Link
                                 href={v.author.username ? `/${v.author.username}` : "#"}
-                                className="text-green-700 hover:underline"
+                                className="text-primary hover:underline"
                               >
                                 {v.author.name}
                               </Link>
@@ -121,7 +121,7 @@ export default async function HistorialPage({
                       {matchingPub && (
                         <Link
                           href={`/v/${matchingPub.publicId}`}
-                          className="font-mono text-xs bg-border-subtle text-text-muted px-2.5 py-1 rounded-lg hover:bg-green-50 hover:text-green-700 transition-colors flex items-center gap-1"
+                          className="font-mono text-xs bg-border-subtle text-text-muted px-2.5 py-1 rounded-lg hover:bg-primary/5 hover:text-primary transition-colors flex items-center gap-1"
                         >
                           {matchingPub.publicId}
                           <ExternalLink className="w-3 h-3" />

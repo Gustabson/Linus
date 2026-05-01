@@ -105,8 +105,8 @@ export default async function ExplorarPage({
           <Link key={opt.key} href={sortHref(opt.key)}
             className={`flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl border font-medium transition-colors ${
               sort === opt.key
-                ? "bg-green-700 text-white border-green-700"
-                : "bg-surface text-text-muted border-border hover:border-green-300"
+                ? "bg-primary text-white border-primary"
+                : "bg-surface text-text-muted border-border hover:border-primary/30"
             }`}>
             {opt.icon}
             {opt.label}
@@ -162,7 +162,7 @@ export default async function ExplorarPage({
                       {tree.owner.image ? (
                         <Image src={tree.owner.image} alt="" width={18} height={18} className="rounded-full" />
                       ) : (
-                        <div className="w-[18px] h-[18px] rounded-full bg-green-100 flex items-center justify-center text-green-700 text-[9px] font-bold">
+                        <div className="w-[18px] h-[18px] rounded-full bg-primary/10 flex items-center justify-center text-primary text-[9px] font-bold">
                           {(tree.owner.name ?? "?")[0]}
                         </div>
                       )}
@@ -196,11 +196,11 @@ export default async function ExplorarPage({
                   {tree.owner.image ? (
                     <Image src={tree.owner.image} alt="" width={28} height={28} className="rounded-full" />
                   ) : (
-                    <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xs font-bold">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
                       {(tree.owner.name ?? "?")[0]}
                     </div>
                   )}
-                  <span className="text-sm text-text-muted hover:text-green-700 transition-colors">{tree.owner.name}</span>
+                  <span className="text-sm text-text-muted hover:text-primary transition-colors">{tree.owner.name}</span>
                 </Link>
 
                 <h3 className={`text-base font-bold text-text ${ts.groupHoverTextCls} transition-colors line-clamp-2 mb-1 flex-1`}>

@@ -55,9 +55,9 @@ export default async function DashboardPage({
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           {user?.image ? (
-            <Image src={user.image} alt="" width={56} height={56} className="rounded-2xl ring-2 ring-green-100" />
+            <Image src={user.image} alt="" width={56} height={56} className="rounded-2xl ring-2 ring-primary/20" />
           ) : (
-            <div className="w-14 h-14 rounded-2xl bg-green-100 flex items-center justify-center text-green-700 text-2xl font-bold">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold">
               {(user?.name ?? "?")[0]}
             </div>
           )}
@@ -73,7 +73,7 @@ export default async function DashboardPage({
         </div>
         <Link
           href="/nuevo"
-          className="flex items-center gap-2 bg-green-700 text-white px-6 py-3 rounded-xl text-base font-semibold hover:bg-green-800 transition-colors shadow-sm"
+          className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl text-base font-semibold hover:bg-primary-h transition-colors shadow-sm"
         >
           <Plus className="w-5 h-5" />
           Crear nuevo
@@ -140,10 +140,10 @@ export default async function DashboardPage({
               : "Creá materiales de apoyo que podés adjuntar a cualquier kernel."}
           </p>
           <div className="flex items-center justify-center gap-3">
-            <Link href="/buscar" className="text-sm text-green-700 hover:underline">
+            <Link href="/buscar" className="text-sm text-primary hover:underline">
               Explorar {CONTENT_TYPE_BADGE[activeTab].label.toLowerCase()}s de otros
             </Link>
-            <Link href="/nuevo" className="bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 transition-colors">
+            <Link href="/nuevo" className="bg-primary text-white text-sm px-4 py-2 rounded-lg hover:bg-primary-h transition-colors">
               Crear {CONTENT_TYPE_BADGE[activeTab].label.toLowerCase()}
             </Link>
           </div>
@@ -170,7 +170,7 @@ export default async function DashboardPage({
                       </span>
                     )}
                     <span className={`ml-auto text-xs px-2.5 py-1 rounded-full font-medium ${
-                      tree.visibility === "PUBLIC"   ? "bg-green-50 text-green-600" :
+                      tree.visibility === "PUBLIC"   ? "bg-primary/5 text-primary" :
                       tree.visibility === "UNLISTED" ? "bg-border-subtle text-text-muted"  :
                                                        "bg-red-50 text-red-500"
                     }`}>
@@ -196,16 +196,16 @@ export default async function DashboardPage({
 
                 <div className="border-t border-border-subtle px-6 py-3 flex items-center gap-3 flex-wrap">
                   <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}`}
-                    className="relative z-10 flex items-center gap-1.5 text-sm text-text-muted hover:text-green-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50">
+                    className="relative z-10 flex items-center gap-1.5 text-sm text-text-muted hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-primary/5">
                     <Eye className="w-4 h-4" /> Ver
                   </Link>
                   <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}/configuracion`}
-                    className="relative z-10 flex items-center gap-1.5 text-sm text-text-muted hover:text-green-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50">
+                    className="relative z-10 flex items-center gap-1.5 text-sm text-text-muted hover:text-primary transition-colors px-3 py-1.5 rounded-lg hover:bg-primary/5">
                     <Settings className="w-4 h-4" /> Configurar
                   </Link>
                   <DeleteTreeButton slug={tree.slug} title={tree.title} hasForks={tree._count.forks > 0} />
                   {tree._count.forks > 0 && (
-                    <span className="ml-auto relative z-10 flex items-center gap-1.5 text-sm text-green-600 font-medium">
+                    <span className="ml-auto relative z-10 flex items-center gap-1.5 text-sm text-primary font-medium">
                       <TrendingUp className="w-4 h-4" />
                       {tree._count.forks} fork{tree._count.forks !== 1 ? "s" : ""}
                     </span>

@@ -175,7 +175,7 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
 
       {/* ── Import feedback ── */}
       {importState.step === "done" && (
-        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 flex items-center gap-2">
+        <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-sm text-primary flex items-center gap-2">
           <FileText className="w-4 h-4 shrink-0" />
           Se crearon <strong>{importState.count}</strong> sección{importState.count !== 1 ? "es" : ""} a partir del archivo. Podés editarlas abajo.
         </div>

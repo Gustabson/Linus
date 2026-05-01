@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 type Variant = "green" | "gray" | "amber" | "red" | "blue";
 
 const VARIANTS: Record<Variant, string> = {
-  green: "bg-green-50  text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  green: "bg-primary/10 text-primary",
   gray:  "bg-border-subtle text-text-muted",
   amber: "bg-amber-50  text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   red:   "bg-red-50    text-red-600   dark:bg-red-900/30   dark:text-red-400",

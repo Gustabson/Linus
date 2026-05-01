@@ -49,7 +49,7 @@ export function FollowButton({
         className={`relative z-10 flex items-center justify-center w-7 h-7 rounded-full transition-all disabled:opacity-60 shrink-0 ${
           following
             ? "bg-border-subtle text-text-muted hover:bg-red-50 hover:text-red-500"
-            : "bg-green-100 text-green-700 hover:bg-green-200"
+            : "bg-primary/10 text-primary hover:bg-primary/20"
         }`}
       >
         {following ? <UserCheck className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
@@ -64,13 +64,13 @@ export function FollowButton({
       className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all disabled:opacity-60 ${
         following
           ? "bg-border-subtle text-text hover:bg-red-50 hover:text-red-600 border border-border hover:border-red-200"
-          : "bg-green-700 text-white hover:bg-green-800"
+          : "bg-primary text-white hover:bg-primary-h"
       }`}
     >
       {following ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
       {following ? "Siguiendo" : "Seguir"}
       <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-        following ? "bg-border text-text-muted" : "bg-green-600 text-green-100"
+        following ? "bg-border text-text-muted" : "bg-primary text-primary-fg"
       }`}>
         {count}
       </span>

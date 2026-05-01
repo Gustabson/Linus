@@ -107,7 +107,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
           <div className="lg:sticky lg:top-20 space-y-4">
             <div className="bg-surface rounded-2xl border border-border p-4">
               <h3 className="font-semibold text-text text-sm mb-4 flex items-center gap-2">
-                <Users className="w-4 h-4 text-green-600" />
+                <Users className="w-4 h-4 text-primary" />
                 Personas para seguir
               </h3>
               <div className="space-y-3">
@@ -117,7 +117,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
                       {user.image ? (
                         <Image src={user.image} alt="" width={36} height={36} className="rounded-xl" />
                       ) : (
-                        <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center text-green-700 text-sm font-bold">
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
                           {(user.name ?? "?")[0]}
                         </div>
                       )}
@@ -125,7 +125,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/${user.username ?? user.id}`}
-                        className="text-sm font-semibold text-text hover:text-green-700 truncate block transition-colors"
+                        className="text-sm font-semibold text-text hover:text-primary truncate block transition-colors"
                       >
                         {user.name}
                       </Link>
@@ -145,7 +145,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
               </div>
               <Link
                 href="/buscar"
-                className="mt-4 flex items-center gap-1.5 text-sm text-green-700 hover:underline font-medium"
+                className="mt-4 flex items-center gap-1.5 text-sm text-primary hover:underline font-medium"
               >
                 <Compass className="w-4 h-4" />
                 Ver más personas
@@ -168,7 +168,7 @@ function TabLink({ href, active, icon, label }: {
       href={href}
       className={`flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${
         active
-          ? "border-green-700 text-green-700"
+          ? "border-primary text-primary"
           : "border-transparent text-text-muted hover:text-text hover:border-gray-300"
       }`}
     >

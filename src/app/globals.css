@@ -23,6 +23,9 @@
   /* Peligro */
   --danger:       #ef4444;
   --danger-h:     #dc2626;
+  /* Barra lateral */
+  --sidebar-bg:   var(--primary);
+  --sidebar-text: #ffffff;
   /* Tipos de contenido */
   --kernel:       #15803d;
   --kernel-h:     #166534;
@@ -45,6 +48,9 @@
   --primary-fg:   #ffffff;
   --danger:       #f87171;
   --danger-h:     #ef4444;
+  /* Barra lateral en oscuro — defaults, se pueden sobrescribir por usuario */
+  --sidebar-bg:   var(--primary);
+  --sidebar-text: #ffffff;
   /* Tipos de contenido — versiones más brillantes para fondo oscuro */
   --kernel:       #22c55e;
   --kernel-h:     #16a34a;
@@ -68,6 +74,9 @@
   --color-primary-fg:   var(--primary-fg);
   --color-danger:       var(--danger);
   --color-danger-h:     var(--danger-h);
+  /* Barra lateral */
+  --color-sidebar-bg:   var(--sidebar-bg);
+  --color-sidebar-text: var(--sidebar-text);
   /* Tipos de contenido */
   --color-kernel:       var(--kernel);
   --color-kernel-h:     var(--kernel-h);
@@ -105,7 +114,7 @@
 .tiptap p  { margin-bottom: 0.75rem; line-height: 1.625; }
 .tiptap ul { list-style-type: disc;    padding-left: 1.5rem; margin-bottom: 0.75rem; }
 .tiptap ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 0.75rem; }
-.tiptap blockquote { border-left: 4px solid #86efac; padding-left: 1rem; font-style: italic; color: var(--text-muted); margin: 1rem 0; }
+.tiptap blockquote { border-left: 4px solid var(--primary); padding-left: 1rem; font-style: italic; color: var(--text-muted); margin: 1rem 0; }
 .tiptap strong { font-weight: 600; }
 .tiptap em     { font-style: italic; }
 .tiptap a      { color: var(--primary); text-decoration: underline; }

@@ -54,7 +54,7 @@ export function SectionEditor({
         onClick={onClick}
         className={cn(
           "p-1.5 rounded-md transition-colors",
-          active ? "bg-green-100 text-green-800" : "text-text-muted hover:bg-border-subtle hover:text-text"
+          active ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-border-subtle hover:text-text"
         )}
       >
         {icon}

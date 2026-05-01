@@ -30,8 +30,8 @@ export default async function PublicVersionPage({
     <div className="max-w-xl mx-auto py-12 space-y-8">
       {/* Header */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-green-100 mx-auto">
-          <GitCommit className="w-7 h-7 text-green-700" />
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mx-auto">
+          <GitCommit className="w-7 h-7 text-primary" />
         </div>
         <div>
           <p className="text-xs font-mono text-text-subtle mb-1">Versión publicada</p>
@@ -59,7 +59,7 @@ export default async function PublicVersionPage({
             </p>
             <Link
               href={`/${publication.author.username}`}
-              className="text-green-700 hover:underline"
+              className="text-primary hover:underline"
             >
               {publication.author.name}
             </Link>
@@ -70,15 +70,15 @@ export default async function PublicVersionPage({
           <p className="text-xs text-text-subtle uppercase tracking-wide font-medium mb-2">Contenido</p>
           <Link
             href={`/${publication.tree.owner.username}/${publication.tree.slug}`}
-            className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-green-300 hover:bg-green-50 transition-colors group"
+            className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-colors group"
           >
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
               {badge.label}
             </span>
-            <span className="font-semibold text-text group-hover:text-green-700 transition-colors flex-1">
+            <span className="font-semibold text-text group-hover:text-primary transition-colors flex-1">
               {publication.tree.title}
             </span>
-            <ArrowRight className="w-4 h-4 text-text-subtle group-hover:text-green-600 transition-colors" />
+            <ArrowRight className="w-4 h-4 text-text-subtle group-hover:text-primary transition-colors" />
           </Link>
         </div>
       </div>

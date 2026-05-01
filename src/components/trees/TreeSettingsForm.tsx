@@ -63,7 +63,7 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
           <input
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
@@ -74,7 +74,7 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={3}
             placeholder="¿De qué trata este currículo?"
-            className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+            className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
           />
         </div>
       </div>
@@ -90,11 +90,11 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
               onClick={() => setForm({ ...form, visibility: opt.value })}
               className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
                 form.visibility === opt.value
-                  ? "border-green-500 bg-green-50"
+                  ? "border-primary bg-primary/5"
                   : "border-border hover:border-gray-300"
               }`}
             >
-              <div className={`p-1.5 rounded-lg ${form.visibility === opt.value ? "bg-green-100 text-green-700" : "bg-border-subtle text-text-muted"}`}>
+              <div className={`p-1.5 rounded-lg ${form.visibility === opt.value ? "bg-primary/10 text-primary" : "bg-border-subtle text-text-muted"}`}>
                 {opt.icon}
               </div>
               <div>
@@ -102,7 +102,7 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
                 <p className="text-xs text-text-muted">{opt.desc}</p>
               </div>
               <div className={`ml-auto w-4 h-4 rounded-full border-2 ${
-                form.visibility === opt.value ? "border-green-500 bg-green-500" : "border-gray-300"
+                form.visibility === opt.value ? "border-primary bg-primary" : "border-gray-300"
               }`} />
             </button>
           ))}
@@ -116,7 +116,7 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
       <button
         onClick={save}
         disabled={saving}
-        className="w-full flex items-center justify-center gap-2 bg-green-700 text-white py-3 rounded-xl font-medium hover:bg-green-800 disabled:opacity-50 transition-colors"
+        className="w-full flex items-center justify-center gap-2 bg-primary text-white py-3 rounded-xl font-medium hover:bg-primary-h disabled:opacity-50 transition-colors"
       >
         <Save className="w-4 h-4" />
         {saving ? "Guardando..." : saved ? "¡Guardado!" : "Guardar cambios"}

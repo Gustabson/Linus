@@ -51,6 +51,7 @@ export async function PATCH(req: NextRequest) {
   const {
     name, username, bio, website, location,
     themeMode, themeBg, themeSurface, themeBorder, themeText, themePrimary,
+    themeSidebarBg, themeSidebarText,
     themeKernel, themeModule, themeResource,
     notifCorreos, notifComentarios, notifLikes, notifSeguidores, notifPropuestas,
   } = body;
@@ -69,8 +70,8 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Ese nombre de usuario ya está en uso" }, { status: 409 });
   }
 
-  // Validate content type hex colors (always, not just in custom mode)
-  const ctHexFields = { themeKernel, themeModule, themeResource };
+  // Validate sidebar + content type hex colors (always, not just in custom mode)
+  const ctHexFields = { themeSidebarBg, themeSidebarText, themeKernel, themeModule, themeResource };
   for (const [key, val] of Object.entries(ctHexFields)) {
     if (val !== undefined && val !== null && !isValidHex(String(val)))
       return NextResponse.json({ error: `Color inválido en ${key}` }, { status: 400 });
@@ -108,7 +109,9 @@ export async function PATCH(req: NextRequest) {
   if (themeSurface !== undefined) data.themeSurface = themeSurface ? String(themeSurface) : null;
   if (themeBorder  !== undefined) data.themeBorder  = themeBorder  ? String(themeBorder)  : null;
   if (themeText    !== undefined) data.themeText    = themeText    ? String(themeText)    : null;
-  if (themePrimary  !== undefined) data.themePrimary  = themePrimary  ? String(themePrimary)  : null;
+  if (themePrimary    !== undefined) data.themePrimary    = themePrimary    ? String(themePrimary)    : null;
+  if (themeSidebarBg  !== undefined) data.themeSidebarBg  = themeSidebarBg  ? String(themeSidebarBg)  : null;
+  if (themeSidebarText!== undefined) data.themeSidebarText= themeSidebarText? String(themeSidebarText): null;
   if (themeKernel   !== undefined) data.themeKernel   = themeKernel   ? String(themeKernel)   : null;
   if (themeModule   !== undefined) data.themeModule   = themeModule   ? String(themeModule)   : null;
   if (themeResource !== undefined) data.themeResource = themeResource ? String(themeResource) : null;

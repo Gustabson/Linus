@@ -56,8 +56,8 @@ function TreeNode({
           href={`/${node.owner.username ?? node.owner.name ?? node.id}/${node.slug}`}
           className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left mb-1 ${
             isCurrent
-              ? "border-green-400 bg-green-50 shadow-sm"
-              : "border-border bg-surface hover:border-green-300 hover:shadow-sm"
+              ? "border-primary/40 bg-primary/5 shadow-sm"
+              : "border-border bg-surface hover:border-primary/30 hover:shadow-sm"
           }`}
         >
           {/* Avatar */}
@@ -72,13 +72,13 @@ function TreeNode({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               {node.contentType === "KERNEL" && (
-                <Cpu className="w-3 h-3 text-green-600 shrink-0" />
+                <Cpu className="w-3 h-3 text-primary shrink-0" />
               )}
-              <span className={`text-sm font-medium truncate ${isCurrent ? "text-green-800" : "text-text"}`}>
+              <span className={`text-sm font-medium truncate ${isCurrent ? "text-primary" : "text-text"}`}>
                 {node.title}
               </span>
               {isCurrent && (
-                <span className="text-xs bg-green-200 text-green-800 px-1.5 py-0.5 rounded-full shrink-0">
+                <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded-full shrink-0">
                   acá estás
                 </span>
               )}
@@ -155,9 +155,9 @@ export function ForkTree({
                   {i > 0 && <GitFork className="w-3 h-3 text-gray-300 shrink-0" />}
                   <Link
                     href={`/${a.owner.username ?? a.owner.name ?? a.id}/${a.slug}`}
-                    className="text-xs text-text-muted hover:text-green-700 flex items-center gap-1"
+                    className="text-xs text-text-muted hover:text-primary flex items-center gap-1"
                   >
-                    {a.contentType === "KERNEL" && <Cpu className="w-3 h-3 text-green-600" />}
+                    {a.contentType === "KERNEL" && <Cpu className="w-3 h-3 text-primary" />}
                     {a.title}
                   </Link>
                 </div>

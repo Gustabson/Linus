@@ -73,6 +73,10 @@ model User {
   themeText     String?  // --text
   themePrimary  String?  // --primary
 
+  // Sidebar colors
+  themeSidebarBg   String?  // --sidebar-bg
+  themeSidebarText String?  // --sidebar-text
+
   // Content type accent colors
   themeKernel   String?  // --kernel
   themeModule   String?  // --module

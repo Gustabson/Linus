@@ -74,7 +74,7 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
             <button
               onClick={loadMore}
               disabled={loading}
-              className="w-full py-3 text-sm text-text-muted hover:text-green-700 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 text-sm text-text-muted hover:text-primary transition-colors flex items-center justify-center gap-2"
             >
               {loading
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Cargando...</>

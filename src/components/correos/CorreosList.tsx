@@ -78,13 +78,13 @@ export function CorreosList({ messages, folder }: Props) {
               <Link
                 href={folder === "borradores" ? `/correos/redactar?id=${msg.id}` : `/correos/${msg.id}`}
                 className={`flex items-start gap-4 px-6 py-4 hover:bg-bg transition-colors group ${
-                  isUnread ? "bg-green-50/40" : ""
+                  isUnread ? "bg-primary/5/40" : ""
                 }`}
               >
                 {/* Unread dot */}
                 <div className="shrink-0 mt-2">
                   {isUnread
-                    ? <div className="w-2.5 h-2.5 rounded-full bg-green-600" />
+                    ? <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                     : <div className="w-2.5 h-2.5" />
                   }
                 </div>
@@ -100,7 +100,7 @@ export function CorreosList({ messages, folder }: Props) {
                       className="rounded-full"
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-sm font-bold">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
                       {avatarLetter}
                     </div>
                   )}

@@ -114,7 +114,7 @@ export function ExtensionsPanel({
         {isOwner && (
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-1 text-sm text-green-700 hover:text-green-900 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
+            className="flex items-center gap-1 text-sm text-primary hover:text-primary border border-primary/20 px-3 py-1.5 rounded-lg hover:bg-primary/5 transition-colors"
           >
             <Plus className="w-4 h-4" />
             Agregar
@@ -124,24 +124,24 @@ export function ExtensionsPanel({
 
       {/* Add form */}
       {showForm && (
-        <div className="bg-surface rounded-2xl border border-green-200 p-5 space-y-3">
+        <div className="bg-surface rounded-2xl border border-primary/20 p-5 space-y-3">
           {/* File upload area */}
           <div
             onClick={() => fileRef.current?.click()}
-            className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:border-green-300 hover:bg-green-50 transition-colors"
+            className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-colors"
           >
             {uploading ? (
-              <div className="flex items-center justify-center gap-2 text-green-700">
+              <div className="flex items-center justify-center gap-2 text-primary">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span className="text-sm">Subiendo archivo...</span>
               </div>
             ) : form.url ? (
-              <p className="text-sm text-green-700 font-medium">✓ Archivo subido</p>
+              <p className="text-sm text-primary font-medium">✓ Archivo subido</p>
             ) : (
               <>
                 <Upload className="w-6 h-6 mx-auto text-text-subtle mb-1" />
                 <p className="text-sm text-text-muted">
-                  Subir archivo <span className="text-green-700">(imágenes, PDFs, videos, docs)</span>
+                  Subir archivo <span className="text-primary">(imágenes, PDFs, videos, docs)</span>
                 </p>
                 <p className="text-xs text-text-subtle mt-0.5">Máximo 10MB</p>
               </>
@@ -193,7 +193,7 @@ export function ExtensionsPanel({
               Cancelar
             </button>
             <button onClick={addExtension} disabled={saving || !form.title.trim()}
-              className="text-sm bg-green-700 text-white px-4 py-1.5 rounded-lg hover:bg-green-800 disabled:opacity-50">
+              className="text-sm bg-primary text-white px-4 py-1.5 rounded-lg hover:bg-primary-h disabled:opacity-50">
               {saving ? "Guardando..." : "Agregar"}
             </button>
           </div>
@@ -210,7 +210,7 @@ export function ExtensionsPanel({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {extensions.map((ext) => (
             <div key={ext.id} className="bg-surface rounded-xl border border-border p-4 flex items-start gap-3 group">
-              <div className="bg-green-50 p-2 rounded-lg text-green-700 shrink-0">
+              <div className="bg-primary/5 p-2 rounded-lg text-primary shrink-0">
                 {TYPE_ICONS[ext.type] ?? <Link className="w-4 h-4" />}
               </div>
               <div className="flex-1 min-w-0">
@@ -223,7 +223,7 @@ export function ExtensionsPanel({
                   <div className="flex items-center gap-1 shrink-0">
                     {ext.url && (
                       <a href={ext.url} target="_blank" rel="noopener noreferrer"
-                        className="p-1 text-text-subtle hover:text-green-700">
+                        className="p-1 text-text-subtle hover:text-primary">
                         <ExternalLink className="w-4 h-4" />
                       </a>
                     )}

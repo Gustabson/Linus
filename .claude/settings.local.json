@@ -50,7 +50,10 @@
       "Bash(sed -i 's/El currículo base de tu escuela o institución\\\\. Otros maestros lo pueden forkear y adaptar\\\\./El currículo base de tu escuela o institución. Cualquiera puede forkearlo y adaptarlo./g' src/components/trees/NewTreeForm.tsx)",
       "Bash(npm uninstall *)",
       "Bash(grep -v \"^$\\\\|Retrieving\\\\|Fetching\\\\|Age\\\\|Project\")",
-      "WebFetch(domain:play.tailwindcss.com)"
+      "WebFetch(domain:play.tailwindcss.com)",
+      "Bash(grep -v -E \"/\\(Sidebar|Navbar|BottomNav\\)\\\\.tsx$|/constants\\\\.tsx$|/theme\\\\.ts$\")",
+      "Bash(xargs perl -i -pe ' *)",
+      "Bash(perl -i -pe 's/text-green-400/text-primary/g; s/hover:bg-green-200/hover:bg-primary\\\\/20/g; s/text-green-100/text-primary-fg/g; s/bg-green-200/bg-primary\\\\/20/g; s/ring-green-400/ring-primary\\\\/40/g;' src/components/documents/DocumentComments.tsx src/components/profile/FollowButton.tsx src/components/trees/ForkTree.tsx 'src/app/[username]/[slug]/[docSlug]/historial/page.tsx')"
     ]
   }
 }

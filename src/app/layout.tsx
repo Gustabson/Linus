@@ -42,6 +42,7 @@ export default async function RootLayout({
       select: {
         themeMode: true, themeBg: true, themeSurface: true,
         themeBorder: true, themeText: true, themePrimary: true,
+        themeSidebarBg: true, themeSidebarText: true,
         themeKernel: true, themeModule: true, themeResource: true,
       },
     });
@@ -63,7 +64,10 @@ export default async function RootLayout({
       };
     }
 
-    // Content type colors apply in ALL modes (light, dark, custom)
+    // Sidebar colors apply in ALL modes
+    if (prefs?.themeSidebarBg)   ctVars["--sidebar-bg"]   = prefs.themeSidebarBg;
+    if (prefs?.themeSidebarText) ctVars["--sidebar-text"] = prefs.themeSidebarText;
+    // Content type colors apply in ALL modes
     if (prefs?.themeKernel)   { ctVars["--kernel"]   = prefs.themeKernel;   ctVars["--kernel-h"]   = prefs.themeKernel; }
     if (prefs?.themeModule)   { ctVars["--module"]   = prefs.themeModule;   ctVars["--module-h"]   = prefs.themeModule; }
     if (prefs?.themeResource) { ctVars["--resource"] = prefs.themeResource; ctVars["--resource-h"] = prefs.themeResource; }

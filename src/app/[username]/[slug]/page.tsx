@@ -205,14 +205,14 @@ export default async function TreePage({
         <Link href={`/${authorSlug}`} className="flex items-center gap-3 group w-fit">
           {tree.owner.image ? (
             <Image src={tree.owner.image} alt={tree.owner.name ?? ""} width={40} height={40}
-              className="rounded-full ring-2 ring-transparent group-hover:ring-green-300 transition-all" />
+              className="rounded-full ring-2 ring-transparent group-hover:ring-primary/30 transition-all" />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold ring-2 ring-transparent group-hover:ring-green-300 transition-all">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold ring-2 ring-transparent group-hover:ring-primary/30 transition-all">
               {(tree.owner.name ?? "?")[0].toUpperCase()}
             </div>
           )}
           <div>
-            <p className="font-medium text-text group-hover:text-green-700 transition-colors text-sm">
+            <p className="font-medium text-text group-hover:text-primary transition-colors text-sm">
               {tree.owner.name}
             </p>
             {tree.owner.username && (

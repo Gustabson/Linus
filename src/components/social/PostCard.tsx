@@ -79,13 +79,13 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
               className="rounded-full"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
               {(post.author.name ?? "?")[0]}
             </div>
           )}
         </Link>
         <div className="min-w-0">
-          <Link href={authorHref} className="text-sm font-semibold text-text hover:text-green-700 transition-colors">
+          <Link href={authorHref} className="text-sm font-semibold text-text hover:text-primary transition-colors">
             {post.author.name ?? "Usuario"}
           </Link>
           <p className="text-xs text-text-subtle">
@@ -116,11 +116,11 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
       {post.tree && (
         <Link
           href={`/${post.tree.owner.username ?? ""}/${post.tree.slug}`}
-          className="block border border-border rounded-xl p-4 hover:border-green-200 hover:bg-green-50/40 transition-colors group"
+          className="block border border-border rounded-xl p-4 hover:border-primary/20 hover:bg-primary/5/40 transition-colors group"
         >
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
-              <BookOpen className="w-4 h-4 text-green-700" />
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <BookOpen className="w-4 h-4 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-0.5 flex-wrap">
@@ -136,7 +136,7 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
                   </span>
                 )}
               </div>
-              <p className="text-sm font-semibold text-text group-hover:text-green-700 transition-colors leading-snug line-clamp-1">
+              <p className="text-sm font-semibold text-text group-hover:text-primary transition-colors leading-snug line-clamp-1">
                 {post.tree.title}
               </p>
               {post.tree.description && (

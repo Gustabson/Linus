@@ -90,12 +90,12 @@ export function UserSearchInput({ value, onChange }: Props) {
                 setOpen(false);
                 setQuery("");
               }}
-              className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-green-50 transition-colors text-left"
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-primary/5 transition-colors text-left"
             >
               {user.image ? (
                 <Image src={user.image} alt="" width={28} height={28} className="rounded-full shrink-0" />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xs font-bold shrink-0">
+                <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold shrink-0">
                   {(user.name ?? user.username)[0].toUpperCase()}
                 </div>
               )}

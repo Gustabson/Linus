@@ -102,7 +102,7 @@ export function DocumentComments({
         {isAuthenticated && (
           <button
             onClick={() => { setShowForm(!showForm); onQuoteUsed?.(); }}
-            className="text-sm text-green-700 hover:text-green-900 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors"
+            className="text-sm text-primary hover:text-primary border border-primary/20 px-3 py-1.5 rounded-lg hover:bg-primary/5 transition-colors"
           >
             + Comentar
           </button>
@@ -111,20 +111,20 @@ export function DocumentComments({
 
       {/* Add comment form */}
       {showForm && isAuthenticated && (
-        <form onSubmit={submit} className="bg-surface rounded-2xl border border-green-200 p-4 space-y-3">
+        <form onSubmit={submit} className="bg-surface rounded-2xl border border-primary/20 p-4 space-y-3">
           {/* Quote preview */}
           {activeQuote && (
-            <div className="bg-green-50 border-l-4 border-green-400 pl-3 pr-2 py-2 rounded-r-lg flex items-start gap-2">
-              <Quote className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+            <div className="bg-primary/5 border-l-4 border-primary/40 pl-3 pr-2 py-2 rounded-r-lg flex items-start gap-2">
+              <Quote className="w-4 h-4 text-primary shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 {activeQuote.sectionType && (
-                  <p className="text-xs text-green-700 font-medium mb-0.5">
+                  <p className="text-xs text-primary font-medium mb-0.5">
                     {activeQuote.sectionType}
                   </p>
                 )}
-                <p className="text-xs text-green-800 line-clamp-2">{activeQuote.text}</p>
+                <p className="text-xs text-primary line-clamp-2">{activeQuote.text}</p>
               </div>
-              <button type="button" onClick={onQuoteUsed} className="text-green-400 hover:text-green-600 shrink-0">
+              <button type="button" onClick={onQuoteUsed} className="text-primary hover:text-primary shrink-0">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -135,7 +135,7 @@ export function DocumentComments({
             onChange={(e) => setContent(e.target.value)}
             placeholder="Dejá tu corrección o comentario..."
             rows={3}
-            className="w-full border border-border rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full border border-border rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
           />
 
           <div className="flex items-center justify-between gap-3">
@@ -163,7 +163,7 @@ export function DocumentComments({
               <button
                 type="submit"
                 disabled={saving || !content.trim()}
-                className="flex items-center gap-1.5 text-sm bg-green-700 text-white px-4 py-1.5 rounded-lg hover:bg-green-800 disabled:opacity-50"
+                className="flex items-center gap-1.5 text-sm bg-primary text-white px-4 py-1.5 rounded-lg hover:bg-primary-h disabled:opacity-50"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 Enviar

@@ -39,7 +39,7 @@ export function ProposalActions({ proposalId, isAuthor, isTargetOwner }: Props) 
           <button
             onClick={() => act("accept")}
             disabled={!!loading}
-            className="flex items-center gap-2 bg-green-700 text-white text-sm px-4 py-2 rounded-xl hover:bg-green-800 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-2 bg-primary text-white text-sm px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors"
           >
             {loading === "accept" ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
             Aceptar y fusionar

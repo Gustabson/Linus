@@ -68,7 +68,7 @@ export default async function DocumentPreviewPage({
       {/* Title card */}
       <div className="bg-surface rounded-2xl border border-border p-8 space-y-3 text-center">
         {tree.contentType === "KERNEL" && (
-          <span className="inline-block bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium mb-2">
+          <span className="inline-block bg-primary/10 text-primary text-xs px-3 py-1 rounded-full font-medium mb-2">
             Kernel oficial
           </span>
         )}
@@ -83,7 +83,7 @@ export default async function DocumentPreviewPage({
         <div className="flex items-center justify-center gap-3 pt-2">
           <Link
             href={`/${username}/${slug}`}
-            className="flex items-center gap-1.5 text-sm text-green-700 hover:underline"
+            className="flex items-center gap-1.5 text-sm text-primary hover:underline"
           >
             <ExternalLink className="w-4 h-4" />
             Ver currículo completo
@@ -95,7 +95,7 @@ export default async function DocumentPreviewPage({
       {sections.length > 0 && (
         <div className="bg-surface rounded-2xl border border-border p-6">
           <h2 className="font-semibold text-text mb-3 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-green-600" />
+            <BookOpen className="w-4 h-4 text-primary" />
             Contenido
           </h2>
           <div className="grid grid-cols-2 gap-2">
@@ -105,7 +105,7 @@ export default async function DocumentPreviewPage({
                 href={`#section-${section.id}`}
                 className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg transition-colors ${
                   section.isComplete
-                    ? "text-text hover:bg-green-50 hover:text-green-700"
+                    ? "text-text hover:bg-primary/5 hover:text-primary"
                     : "text-text-subtle cursor-default"
                 }`}
               >
@@ -125,7 +125,7 @@ export default async function DocumentPreviewPage({
           <div key={section.id} id={`section-${section.id}`} className="bg-surface rounded-2xl border border-border overflow-hidden">
             {/* Section header */}
             <div className="px-6 py-4 border-b border-border-subtle bg-bg flex items-center gap-3">
-              <span className="w-7 h-7 rounded-full bg-green-100 text-green-700 text-sm font-medium flex items-center justify-center shrink-0">
+              <span className="w-7 h-7 rounded-full bg-primary/10 text-primary text-sm font-medium flex items-center justify-center shrink-0">
                 {i + 1}
               </span>
               <h2 className="font-semibold text-text">{section.sectionType}</h2>
@@ -168,7 +168,7 @@ export default async function DocumentPreviewPage({
       {/* Footer */}
       <div className="text-center text-xs text-text-subtle pb-8 space-y-1">
         <p>Generado por EduHub · Conocimiento Educativo Abierto</p>
-        <Link href={`/${username}/${slug}/${docSlug}`} className="text-green-700 hover:underline">
+        <Link href={`/${username}/${slug}/${docSlug}`} className="text-primary hover:underline">
           Ver versión completa con historial y comentarios
         </Link>
       </div>

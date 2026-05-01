@@ -16,12 +16,12 @@ interface Notification {
 }
 
 const TYPE_META: Record<NotificationType, { label: string; icon: React.ReactNode }> = {
-  NEW_FOLLOWER:      { label: "te empezó a seguir",        icon: <UserPlus      className="w-3.5 h-3.5 text-green-600" /> },
+  NEW_FOLLOWER:      { label: "te empezó a seguir",        icon: <UserPlus      className="w-3.5 h-3.5 text-primary" /> },
   NEW_FORK:          { label: "forkeó tu contenido",       icon: <GitFork       className="w-3.5 h-3.5 text-blue-600"  /> },
   NEW_LIKE:          { label: "le gustó tu contenido",     icon: <Heart         className="w-3.5 h-3.5 text-red-500"   /> },
   NEW_COMMENT:       { label: "comentó en tu documento",   icon: <MessageSquare className="w-3.5 h-3.5 text-amber-600" /> },
   NEW_PROPOSAL:      { label: "te envió una propuesta",    icon: <GitFork       className="w-3.5 h-3.5 text-blue-600"  /> },
-  PROPOSAL_REVIEWED: { label: "revisó tu propuesta",       icon: <MessageSquare className="w-3.5 h-3.5 text-green-600" /> },
+  PROPOSAL_REVIEWED: { label: "revisó tu propuesta",       icon: <MessageSquare className="w-3.5 h-3.5 text-primary" /> },
 };
 
 function formatRelative(dateStr: string) {
@@ -129,13 +129,13 @@ export function NotificationBell({
                     key={n.id}
                     href={n.link}
                     onClick={() => setOpen(false)}
-                    className={`flex items-start gap-3 px-4 py-3 hover:bg-bg transition-colors ${!n.read ? "bg-green-50/50" : ""}`}
+                    className={`flex items-start gap-3 px-4 py-3 hover:bg-bg transition-colors ${!n.read ? "bg-primary/5/50" : ""}`}
                   >
                     <div className="shrink-0 relative">
                       {n.actor.image ? (
                         <Image src={n.actor.image} alt="" width={32} height={32} className="rounded-full" />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-xs font-bold">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
                           {(n.actor.name ?? "?")[0]}
                         </div>
                       )}
@@ -151,7 +151,7 @@ export function NotificationBell({
                       <p className="text-xs text-text-subtle mt-0.5">{formatRelative(n.createdAt)}</p>
                     </div>
 
-                    {!n.read && <span className="shrink-0 mt-1.5 w-2 h-2 rounded-full bg-green-500" />}
+                    {!n.read && <span className="shrink-0 mt-1.5 w-2 h-2 rounded-full bg-primary" />}
                   </Link>
                 );
               })

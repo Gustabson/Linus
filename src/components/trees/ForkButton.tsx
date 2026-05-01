@@ -83,15 +83,15 @@ export function ForkButton({
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {kernels.length === 0 ? (
                   <p className="text-sm text-text-subtle text-center py-4">
-                    No tenés kernels. <a href="/nuevo" className="text-green-700 hover:underline">Crear uno</a>
+                    No tenés kernels. <a href="/nuevo" className="text-primary hover:underline">Crear uno</a>
                   </p>
                 ) : kernels.map((k) => (
                   <button key={k.id} type="button"
                     onClick={() => setSelectedKernelId(selectedKernelId === k.id ? null : k.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${selectedKernelId === k.id ? "border-green-500 bg-green-50" : "border-border hover:border-gray-300"}`}>
-                    <Cpu className={`w-4 h-4 shrink-0 ${selectedKernelId === k.id ? "text-green-600" : "text-text-subtle"}`} />
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${selectedKernelId === k.id ? "border-primary bg-primary/5" : "border-border hover:border-gray-300"}`}>
+                    <Cpu className={`w-4 h-4 shrink-0 ${selectedKernelId === k.id ? "text-primary" : "text-text-subtle"}`} />
                     <span className="text-sm text-text truncate">{k.title}</span>
-                    <div className={`ml-auto w-4 h-4 rounded-full border-2 shrink-0 ${selectedKernelId === k.id ? "border-green-500 bg-green-500" : "border-gray-300"}`} />
+                    <div className={`ml-auto w-4 h-4 rounded-full border-2 shrink-0 ${selectedKernelId === k.id ? "border-primary bg-primary" : "border-gray-300"}`} />
                   </button>
                 ))}
               </div>
@@ -104,7 +104,7 @@ export function ForkButton({
               </button>
               {selectedKernelId && (
                 <button onClick={() => handleFork(selectedKernelId)} disabled={loading}
-                  className="flex-1 text-sm bg-green-700 text-white py-2.5 rounded-xl hover:bg-green-800 disabled:opacity-50 transition-colors">
+                  className="flex-1 text-sm bg-primary text-white py-2.5 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors">
                   {loading ? "Forkeando..." : "Agregar al kernel"}
                 </button>
               )}

@@ -32,7 +32,9 @@ export default async function ConfiguracionPage() {
       themeSurface:  true,
       themeBorder:   true,
       themeText:     true,
-      themePrimary:  true,
+      themePrimary:    true,
+      themeSidebarBg:  true,
+      themeSidebarText:true,
       themeKernel:   true,
       themeModule:   true,
       themeResource: true,
@@ -86,6 +88,10 @@ export default async function ConfiguracionPage() {
       <ConfigApariencia
         initialMode={themeMode}
         initialColors={themeColors}
+        initialSidebarColors={{
+          themeSidebarBg:   user.themeSidebarBg   ?? "",
+          themeSidebarText: user.themeSidebarText ?? "#ffffff",
+        }}
         initialContentColors={{
           themeKernel:   user.themeKernel   ?? "#15803d",
           themeModule:   user.themeModule   ?? "#1d4ed8",

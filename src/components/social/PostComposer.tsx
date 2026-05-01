@@ -109,7 +109,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
               className="rounded-full"
             />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
               {(currentUser.name ?? "?")[0]}
             </div>
           )}
@@ -132,7 +132,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
           {/* Attached tree preview */}
           {attachedTree && (
             <div className="mt-2 border border-border rounded-xl p-3 flex items-start gap-2.5 bg-bg">
-              <BookOpen className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
+              <BookOpen className="w-4 h-4 text-primary shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   {(() => {
@@ -166,7 +166,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
         <button
           type="button"
           onClick={() => setShowTreeSearch(!showTreeSearch)}
-          className="flex items-center gap-1.5 text-sm text-text-muted hover:text-green-700 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-text-muted hover:text-primary transition-colors"
         >
           <BookOpen className="w-4 h-4" />
           {attachedTree ? "Cambiar contenido adjunto" : "Adjuntar kernel / módulo / recurso"}
@@ -180,7 +180,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
               value={treeQuery}
               onChange={(e) => searchTrees(e.target.value)}
               placeholder="Buscar por título..."
-              className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+              className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary/40"
             />
             {searching && (
               <p className="text-xs text-text-subtle flex items-center gap-1.5 px-1">
@@ -201,7 +201,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
                         setTreeQuery("");
                         setTreeResults([]);
                       }}
-                      className="w-full text-left px-3 py-2.5 hover:bg-green-50 transition-colors"
+                      className="w-full text-left px-3 py-2.5 hover:bg-primary/5 transition-colors"
                     >
                       <div className="flex items-center gap-2">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${badge.cls}`}>
@@ -232,7 +232,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex items-center gap-1.5 bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-green-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 bg-primary text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {submitting
               ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Publicando...</>

@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 const STATUS_META: Record<ProposalStatus, { label: string; cls: string; icon: React.ReactNode }> = {
   OPEN:      { label: "Abierta",  cls: "bg-blue-50 text-blue-700",   icon: <Clock       className="w-3.5 h-3.5" /> },
-  ACCEPTED:  { label: "Aceptada", cls: "bg-green-50 text-green-700", icon: <CheckCircle className="w-3.5 h-3.5" /> },
+  ACCEPTED:  { label: "Aceptada", cls: "bg-primary/5 text-primary", icon: <CheckCircle className="w-3.5 h-3.5" /> },
   REJECTED:  { label: "Rechazada",cls: "bg-red-50 text-red-600",     icon: <XCircle     className="w-3.5 h-3.5" /> },
   WITHDRAWN: { label: "Retirada", cls: "bg-border-subtle text-text-muted",  icon: <MinusCircle className="w-3.5 h-3.5" /> },
 };
@@ -55,7 +55,7 @@ export default async function PropuestasPage({
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-text flex items-center gap-2">
-          <GitPullRequest className="w-6 h-6 text-green-600" />
+          <GitPullRequest className="w-6 h-6 text-primary" />
           Propuestas
         </h1>
       </div>
@@ -69,12 +69,12 @@ export default async function PropuestasPage({
           <Link key={t.key} href={`/propuestas?tab=${t.key}`}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
               tab === t.key
-                ? "border-green-600 text-green-700"
+                ? "border-primary text-primary"
                 : "border-transparent text-text-muted hover:text-text"
             }`}>
             {t.key === "recibidas" ? <GitPullRequest className="w-4 h-4" /> : <Send className="w-4 h-4" />}
             {t.label}
-            <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === t.key ? "bg-green-100 text-green-700" : "bg-border-subtle text-text-muted"}`}>
+            <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === t.key ? "bg-primary/10 text-primary" : "bg-border-subtle text-text-muted"}`}>
               {t.count}
             </span>
             {t.badge > 0 && (
@@ -101,13 +101,13 @@ export default async function PropuestasPage({
             const person = isReceived ? p.author : p.reviewer;
             return (
               <Link key={p.id} href={`/propuestas/${p.id}`}
-                className="block bg-surface rounded-2xl border border-border hover:border-green-300 hover:shadow-sm transition-all p-4">
+                className="block bg-surface rounded-2xl border border-border hover:border-primary/30 hover:shadow-sm transition-all p-4">
                 <div className="flex items-start gap-3">
                   {/* Avatar */}
                   {isReceived && person?.image ? (
                     <Image src={person.image} alt="" width={36} height={36} className="rounded-full shrink-0 mt-0.5" />
                   ) : (
-                    <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm shrink-0 mt-0.5">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0 mt-0.5">
                       {(person?.name ?? "?")[0]}
                     </div>
                   )}
@@ -122,7 +122,7 @@ export default async function PropuestasPage({
 
                     <p className="text-xs text-text-subtle mt-1">
                       {isReceived
-                        ? <><span className="text-green-700">@{person?.username ?? person?.name}</span> quiere fusionar cambios en <span className="font-medium text-text">{p.targetTree?.title}</span></>
+                        ? <><span className="text-primary">@{person?.username ?? person?.name}</span> quiere fusionar cambios en <span className="font-medium text-text">{p.targetTree?.title}</span></>
                         : <>Hacia <span className="font-medium text-text">{p.targetTree?.title}</span></>
                       }
                     </p>

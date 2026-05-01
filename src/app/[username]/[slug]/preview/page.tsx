@@ -100,7 +100,7 @@ export default async function KernelPreviewPage({
       {tree.documents.length > 0 && (
         <div className="bg-surface rounded-2xl border border-border p-6">
           <h2 className="font-semibold text-text mb-3 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-green-600" />
+            <BookOpen className="w-4 h-4 text-primary" />
             Documentos
           </h2>
           <div className="space-y-1">
@@ -108,14 +108,14 @@ export default async function KernelPreviewPage({
               const sections = doc.versions[0]?.sections ?? [];
               return (
                 <div key={doc.id}>
-                  <a href={`#doc-${doc.id}`} className="text-sm font-medium text-text hover:text-green-700 transition-colors">
+                  <a href={`#doc-${doc.id}`} className="text-sm font-medium text-text hover:text-primary transition-colors">
                     {di + 1}. {doc.title}
                   </a>
                   {sections.length > 0 && (
                     <div className="ml-4 mt-0.5 space-y-0.5">
                       {sections.filter(s => s.isComplete).map((s, si) => (
                         <a key={s.id} href={`#section-${s.id}`}
-                          className="block text-xs text-text-subtle hover:text-green-600 transition-colors">
+                          className="block text-xs text-text-subtle hover:text-primary transition-colors">
                           {di + 1}.{si + 1} {s.sectionType}
                         </a>
                       ))}
@@ -228,7 +228,7 @@ export default async function KernelPreviewPage({
                 </div>
                 {docSlug && contentOwnerUsername && (
                   <Link href={`/${contentOwnerUsername}/${a.content.slug}/${docSlug}/preview`}
-                    className="text-xs text-text-muted hover:text-green-700 transition-colors whitespace-nowrap">
+                    className="text-xs text-text-muted hover:text-primary transition-colors whitespace-nowrap">
                     Ver preview →
                   </Link>
                 )}
@@ -240,7 +240,7 @@ export default async function KernelPreviewPage({
 
       {/* Footer */}
       <div className="text-center text-xs text-text-subtle pb-8">
-        <Link href={`/${username}/${slug}`} className="text-green-700 hover:underline">
+        <Link href={`/${username}/${slug}`} className="text-primary hover:underline">
           Ver versión completa con edición, comentarios e historial
         </Link>
       </div>

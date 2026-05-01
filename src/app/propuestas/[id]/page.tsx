@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 const STATUS_META: Record<ProposalStatus, { label: string; cls: string; icon: React.ReactNode }> = {
   OPEN:      { label: "Abierta",   cls: "bg-blue-50 text-blue-700",   icon: <Clock       className="w-4 h-4" /> },
-  ACCEPTED:  { label: "Aceptada",  cls: "bg-green-50 text-green-700", icon: <CheckCircle className="w-4 h-4" /> },
+  ACCEPTED:  { label: "Aceptada",  cls: "bg-primary/5 text-primary", icon: <CheckCircle className="w-4 h-4" /> },
   REJECTED:  { label: "Rechazada", cls: "bg-red-50 text-red-600",     icon: <XCircle     className="w-4 h-4" /> },
   WITHDRAWN: { label: "Retirada",  cls: "bg-border-subtle text-text-muted",  icon: <MinusCircle className="w-4 h-4" /> },
 };
@@ -92,14 +92,14 @@ export default async function ProposalDetailPage({
         {/* Flow: source → target */}
         <div className="flex items-center gap-3 text-sm flex-wrap">
           <Link href={`/${proposal.sourceTree.owner.username ?? proposal.sourceTree.ownerId}/${proposal.sourceTree.slug}`}
-            className="flex items-center gap-1.5 bg-bg border border-border px-3 py-1.5 rounded-lg hover:border-green-300 transition-colors">
+            className="flex items-center gap-1.5 bg-bg border border-border px-3 py-1.5 rounded-lg hover:border-primary/30 transition-colors">
             <GitPullRequest className="w-3.5 h-3.5 text-text-subtle" />
             <span className="font-medium">{proposal.sourceTree.title}</span>
           </Link>
           <ArrowRight className="w-4 h-4 text-text-subtle shrink-0" />
           <Link href={`/${proposal.targetTree.owner.username ?? proposal.targetTree.ownerId}/${proposal.targetTree.slug}`}
-            className="flex items-center gap-1.5 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:border-green-400 transition-colors">
-            <GitMerge className="w-3.5 h-3.5 text-green-600" />
+            className="flex items-center gap-1.5 bg-primary/5 border border-primary/20 px-3 py-1.5 rounded-lg hover:border-primary/40 transition-colors">
+            <GitMerge className="w-3.5 h-3.5 text-primary" />
             <span className="font-medium">{proposal.targetTree.title}</span>
           </Link>
         </div>
@@ -109,13 +109,13 @@ export default async function ProposalDetailPage({
           {proposal.author.image ? (
             <Image src={proposal.author.image} alt="" width={18} height={18} className="rounded-full" />
           ) : (
-            <div className="w-4.5 h-4.5 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold">
+            <div className="w-4.5 h-4.5 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
               {(proposal.author.name ?? "?")[0]}
             </div>
           )}
           <span>
             Por{" "}
-            <Link href={`/${proposal.author.username ?? ""}`} className="text-green-700 hover:underline">
+            <Link href={`/${proposal.author.username ?? ""}`} className="text-primary hover:underline">
               {proposal.author.name}
             </Link>
             {" · "}{formatDate(proposal.createdAt)}
@@ -187,11 +187,11 @@ export default async function ProposalDetailPage({
                           </div>
 
                           {/* Source (proposed) */}
-                          <div className={`p-4 ${hasChanges ? "bg-green-50/30" : ""}`}>
-                            <p className="text-xs font-medium mb-2 flex items-center gap-1.5 ${hasChanges ? 'text-green-700' : 'text-text-subtle'}">
-                              <span className={`w-2 h-2 rounded-full inline-block ${hasChanges ? "bg-green-500" : "bg-gray-300"}`} />
+                          <div className={`p-4 ${hasChanges ? "bg-primary/5/30" : ""}`}>
+                            <p className="text-xs font-medium mb-2 flex items-center gap-1.5 ${hasChanges ? 'text-primary' : 'text-text-subtle'}">
+                              <span className={`w-2 h-2 rounded-full inline-block ${hasChanges ? "bg-primary" : "bg-gray-300"}`} />
                               Propuesto · {sourceSection.sectionType}
-                              {hasChanges && <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">modificado</span>}
+                              {hasChanges && <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">modificado</span>}
                             </p>
                             <RichTextPreview content={sourceSection.richTextContent} />
                           </div>

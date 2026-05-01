@@ -88,7 +88,7 @@ export function TreePublishButton({
           <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-text flex items-center gap-2">
-                <Upload className="w-4 h-4 text-green-700" />
+                <Upload className="w-4 h-4 text-primary" />
                 Publicar {style.label?.toLowerCase() ?? "contenido"}
               </h2>
               <button onClick={() => { setShowModal(false); setError(""); }} className="text-text-subtle hover:text-text-muted">
@@ -111,7 +111,7 @@ export function TreePublishButton({
                   onChange={(e) => setCommitMsg(e.target.value)}
                   placeholder="Ej: Actualicé los objetivos de la unidad 2"
                   rows={2}
-                  className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-400 resize-none"
+                  className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary/40 resize-none"
                 />
               </div>
 

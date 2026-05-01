@@ -48,7 +48,7 @@ export default async function BuscarPage({
           defaultValue={q}
           placeholder="Buscá por nombre o @usuario..."
           autoFocus
-          className="w-full pl-12 pr-4 py-3 border border-border rounded-2xl text-sm focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 bg-surface"
+          className="w-full pl-12 pr-4 py-3 border border-border rounded-2xl text-sm focus:outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/20 bg-surface"
         />
       </form>
 
@@ -65,12 +65,12 @@ export default async function BuscarPage({
             const isFollowing = Array.isArray(user.followers) && user.followers.length > 0;
             const isMe = session?.user?.id === user.id;
             return (
-              <div key={user.id} className="relative bg-surface rounded-2xl border border-border hover:border-green-300 hover:shadow-sm transition-all p-4 flex items-center gap-3">
+              <div key={user.id} className="relative bg-surface rounded-2xl border border-border hover:border-primary/30 hover:shadow-sm transition-all p-4 flex items-center gap-3">
                 <Link href={`/${user.username}`} className="absolute inset-0 rounded-2xl" aria-label={user.name ?? ""} />
                 {user.image ? (
                   <Image src={user.image} alt="" width={44} height={44} className="rounded-full shrink-0" />
                 ) : (
-                  <div className="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg shrink-0">
+                  <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg shrink-0">
                     {(user.name ?? "?")[0]}
                   </div>
                 )}

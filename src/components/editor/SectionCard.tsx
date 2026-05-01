@@ -141,7 +141,7 @@ export function SectionCard({
           {/* Completion icon + chevron */}
           <div className="flex items-center gap-2 shrink-0">
             {section.isComplete
-              ? <CheckCircle2 className="w-5 h-5 text-green-500" />
+              ? <CheckCircle2 className="w-5 h-5 text-primary" />
               : <Circle       className="w-5 h-5 text-gray-200"  />
             }
             {isOpen
@@ -250,7 +250,7 @@ export function SectionCard({
                     .trim().slice(0, 300);
                   if (text) onQuote(text, titleValue);
                 }}
-                className="flex items-center gap-1.5 text-xs text-text-muted hover:text-green-700 border border-border hover:border-green-300 px-3 py-2 rounded-xl transition-colors"
+                className="flex items-center gap-1.5 text-xs text-text-muted hover:text-primary border border-border hover:border-primary/30 px-3 py-2 rounded-xl transition-colors"
               >
                 <Quote className="w-3.5 h-3.5" />
                 Citar y comentar
@@ -259,7 +259,7 @@ export function SectionCard({
 
             {!isOwner && !isAuthenticated && (
               <p className="text-sm text-text-subtle">
-                <a href="/login" className="text-green-700 hover:underline font-medium">Iniciá sesión</a>{" "}
+                <a href="/login" className="text-primary hover:underline font-medium">Iniciá sesión</a>{" "}
                 para forkear y editar este currículo.
               </p>
             )}
@@ -273,7 +273,7 @@ export function SectionCard({
                 className={cn(
                   "ml-auto flex items-center gap-2 text-sm px-5 py-2.5 rounded-xl font-medium transition-colors",
                   saved
-                    ? "bg-green-100 text-green-700 cursor-default"
+                    ? "bg-primary/10 text-primary cursor-default"
                     : saving
                     ? "bg-border-subtle text-text-muted cursor-wait"
                     : "bg-gray-900 text-white hover:bg-gray-800"

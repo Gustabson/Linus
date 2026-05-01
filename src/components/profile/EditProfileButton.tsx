@@ -73,7 +73,7 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
                     value={form[key as keyof typeof form]}
                     onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                     placeholder={placeholder}
-                    className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               ))}
@@ -86,7 +86,7 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
                   onChange={(e) => setForm({ ...form, bio: e.target.value })}
                   placeholder="Contá algo sobre vos..."
                   rows={3}
-                  className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 />
               </div>
             </div>
@@ -100,7 +100,7 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
               <button
                 onClick={save}
                 disabled={saving}
-                className="flex items-center gap-2 bg-green-700 text-white text-sm px-4 py-2 rounded-lg hover:bg-green-800 disabled:opacity-50"
+                className="flex items-center gap-2 bg-primary text-white text-sm px-4 py-2 rounded-lg hover:bg-primary-h disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 {saving ? "Guardando..." : "Guardar"}

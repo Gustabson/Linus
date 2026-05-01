@@ -30,8 +30,8 @@ export function CorreosSidebar({ unreadCount }: Props) {
           href="/correos/redactar"
           className={`w-full flex items-center justify-center gap-2 font-semibold text-sm px-4 py-2.5 rounded-2xl shadow-sm transition-colors ${
             pathname === "/correos/redactar"
-              ? "bg-green-800 text-white"
-              : "bg-green-700 hover:bg-green-800 text-white"
+              ? "bg-primary-h text-white"
+              : "bg-primary hover:bg-primary-h text-white"
           }`}
         >
           <Pencil className="w-4 h-4" />
@@ -47,14 +47,14 @@ export function CorreosSidebar({ unreadCount }: Props) {
             href={href}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
               isActive(href)
-                ? "bg-green-50 text-green-800"
+                ? "bg-primary/5 text-primary"
                 : "text-text-muted hover:bg-border-subtle hover:text-text"
             }`}
           >
             <Icon className="w-4 h-4 shrink-0" />
             <span className="flex-1 truncate">{label}</span>
             {href === "/correos" && unreadCount > 0 && (
-              <span className="bg-green-700 text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+              <span className="bg-primary text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}

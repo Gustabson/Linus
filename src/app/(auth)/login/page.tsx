@@ -8,8 +8,8 @@ export default function LoginPage() {
       <div className="bg-surface rounded-2xl shadow-sm border border-border p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-3">
-            <div className="bg-green-100 p-3 rounded-full">
-              <BookOpen className="w-8 h-8 text-green-700" />
+            <div className="bg-primary/10 p-3 rounded-full">
+              <BookOpen className="w-8 h-8 text-primary" />
             </div>
           </div>
           <h1 className="text-2xl font-bold text-text">Bienvenido a EduHub</h1>
@@ -55,7 +55,7 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-4 text-center">
-          <Link href="/" className="text-sm text-green-700 hover:underline">
+          <Link href="/" className="text-sm text-primary hover:underline">
             ← Volver al inicio
           </Link>
         </div>
