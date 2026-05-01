@@ -96,18 +96,6 @@ export const CONTENT_TYPE_STYLE: Record<ContentType, ContentTypeStyle> = {
   },
 };
 
-// ─── Legacy aliases (backwards-compat for existing imports) ──────────────────
-
-/** @deprecated Use CONTENT_TYPE_STYLE[type].badgeCls + label + icon */
-export const CONTENT_TYPE_BADGE: Record<
-  ContentType,
-  { label: string; cls: string; icon: React.ReactNode }
-> = {
-  KERNEL:   { label: "Kernel",  cls: CONTENT_TYPE_STYLE.KERNEL.badgeCls,   icon: <Cpu     className="w-3 h-3" /> },
-  MODULE:   { label: "Módulo",  cls: CONTENT_TYPE_STYLE.MODULE.badgeCls,   icon: <Puzzle  className="w-3 h-3" /> },
-  RESOURCE: { label: "Recurso", cls: CONTENT_TYPE_STYLE.RESOURCE.badgeCls, icon: <Package className="w-3 h-3" /> },
-};
-
 export const CONTENT_TABS: {
   key: ContentType;
   label: string;

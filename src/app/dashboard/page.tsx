@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { DeleteTreeButton } from "@/components/trees/DeleteTreeButton";
 import { formatDate } from "@/lib/utils";
-import { CONTENT_TYPE_BADGE, CONTENT_TYPE_STYLE, CONTENT_TABS } from "@/lib/constants";
+import { CONTENT_TYPE_STYLE, CONTENT_TABS } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -130,7 +130,7 @@ export default async function DashboardPage({
             {CONTENT_TABS.find(t => t.key === activeTab)?.icon}
           </div>
           <h3 className="font-medium text-text mb-1">
-            Todavía no tenés {CONTENT_TYPE_BADGE[activeTab].label.toLowerCase()}s
+            Todavía no tenés {CONTENT_TYPE_STYLE[activeTab].label.toLowerCase()}s
           </h3>
           <p className="text-text-muted text-sm mb-4">
             {activeTab === "KERNEL"
@@ -141,18 +141,17 @@ export default async function DashboardPage({
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link href="/buscar" className="text-sm text-primary hover:underline">
-              Explorar {CONTENT_TYPE_BADGE[activeTab].label.toLowerCase()}s de otros
+              Explorar {CONTENT_TYPE_STYLE[activeTab].label.toLowerCase()}s de otros
             </Link>
             <Link href="/nuevo" className="bg-primary text-white text-sm px-4 py-2 rounded-lg hover:bg-primary-h transition-colors">
-              Crear {CONTENT_TYPE_BADGE[activeTab].label.toLowerCase()}
+              Crear {CONTENT_TYPE_STYLE[activeTab].label.toLowerCase()}
             </Link>
           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {activeTrees.map((tree) => {
-            const badge = CONTENT_TYPE_BADGE[tree.contentType];
-            const ts    = CONTENT_TYPE_STYLE[tree.contentType];
+            const ts = CONTENT_TYPE_STYLE[tree.contentType];
             return (
               <div key={tree.id} className={`relative bg-surface rounded-2xl border border-border ${ts.hoverBorderCls} hover:shadow-md transition-all group flex flex-col`}>
                 <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
@@ -160,8 +159,8 @@ export default async function DashboardPage({
                 <div className="p-6 flex flex-col gap-4 flex-1">
                   {/* Top row: badge + visibility */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${badge.cls}`}>
-                      {badge.label}
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${ts.badgeCls}`}>
+                      {ts.label}
                     </span>
                     {tree.parentTree && (
                       <span className="text-xs text-text-subtle flex items-center gap-1">

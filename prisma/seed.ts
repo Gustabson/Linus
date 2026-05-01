@@ -87,4 +87,8 @@ async function main() {
 
 main()
   .catch(console.error)
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    // B4: close both the Prisma client AND the underlying pg Pool
+    await prisma.$disconnect();
+    await pool.end();
+  });

@@ -3,7 +3,7 @@ import { GitFork, BookOpen, Search, Heart, TrendingUp, Clock } from "lucide-reac
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import Image from "next/image";
-import { CONTENT_TYPE_BADGE, CONTENT_TYPE_STYLE, CONTENT_TABS } from "@/lib/constants";
+import { CONTENT_TYPE_STYLE, CONTENT_TYPE_STYLE, CONTENT_TABS } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +49,7 @@ export default async function ExplorarPage({
     return (b._count.likes * 2 + b._count.forks * 3) - (a._count.likes * 2 + a._count.forks * 3);
   });
 
-  const badge = CONTENT_TYPE_BADGE[contentType];
+  const badge = CONTENT_TYPE_STYLE[contentType];
   const style = CONTENT_TYPE_STYLE[contentType];
 
   const tabHref  = (t: string) => `/explorar?tipo=${t}${sort !== "trending" ? `&sort=${sort}` : ""}${q ? `&q=${q}` : ""}`;
@@ -130,7 +130,7 @@ export default async function ExplorarPage({
         /* ── List layout when searching — easier to compare results ── */
         <div className="space-y-2">
           {sorted.map((tree) => {
-            const tb = CONTENT_TYPE_BADGE[tree.contentType];
+            const tb = CONTENT_TYPE_STYLE[tree.contentType];
             const ts = CONTENT_TYPE_STYLE[tree.contentType];
             return (
               <div key={tree.id} className={`relative bg-surface rounded-2xl border border-border ${ts.hoverBorderCls} hover:shadow-sm transition-all group flex items-start gap-4 p-5`}>
@@ -184,7 +184,7 @@ export default async function ExplorarPage({
         /* ── Grid layout for browsing ── */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {sorted.map((tree) => {
-            const tb = CONTENT_TYPE_BADGE[tree.contentType];
+            const tb = CONTENT_TYPE_STYLE[tree.contentType];
             const ts = CONTENT_TYPE_STYLE[tree.contentType];
             return (
               <div key={tree.id} className={`relative bg-surface rounded-2xl border border-border p-6 ${ts.hoverBorderCls} hover:shadow-md transition-all group flex flex-col`}>

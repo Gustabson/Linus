@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Heart, MessageCircle, GitFork, BookOpen } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { CONTENT_TYPE_BADGE } from "@/lib/constants";
+import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
 
 export interface PostData {
@@ -63,7 +63,7 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
   }
 
   const authorHref = post.author.username ? `/${post.author.username}` : "#";
-  const badge      = post.tree ? CONTENT_TYPE_BADGE[post.tree.contentType] : null;
+  const badge      = post.tree ? CONTENT_TYPE_STYLE[post.tree.contentType] : null;
 
   return (
     <article className="bg-surface rounded-2xl border border-border hover:border-gray-300 transition-colors p-5 space-y-4">

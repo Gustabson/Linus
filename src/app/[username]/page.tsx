@@ -7,7 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { EditProfileButton } from "@/components/profile/EditProfileButton";
 import { FollowButton } from "@/components/profile/FollowButton";
-import { CONTENT_TYPE_BADGE, CONTENT_TYPE_STYLE } from "@/lib/constants";
+import { CONTENT_TYPE_STYLE, CONTENT_TYPE_STYLE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -166,7 +166,7 @@ export default async function UserProfilePage({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {user.ownedTrees.map((tree) => {
-              const badge = CONTENT_TYPE_BADGE[tree.contentType] ?? CONTENT_TYPE_BADGE.KERNEL;
+              const badge = CONTENT_TYPE_STYLE[tree.contentType] ?? CONTENT_TYPE_STYLE.KERNEL;
               const ts    = CONTENT_TYPE_STYLE[tree.contentType];
               return (
                 <Link key={tree.id} href={`/${user.username}/${tree.slug}`}

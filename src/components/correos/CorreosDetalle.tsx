@@ -143,7 +143,10 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
         {/* Divider */}
         <hr className="border-border-subtle" />
 
-        {/* Body — sanitized HTML from server */}
+        {/* S8 ⚠ SECURITY: dangerouslySetInnerHTML is safe ONLY because
+            message.body is sanitized server-side via sanitize-html before storage.
+            See src/lib/sanitize.ts + src/app/api/correos/route.ts.
+            DO NOT remove or weaken that sanitization — stored XSS risk. */}
         <div
           className="prose prose-sm max-w-none text-text"
           dangerouslySetInnerHTML={{ __html: message.body }}
@@ -162,6 +165,7 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
                   <p className="text-xs text-text-subtle">{formatDate(new Date(reply.createdAt))}</p>
                 </div>
               </div>
+              {/* S8 ⚠ SECURITY: see comment above — sanitized server-side */}
               <div
                 className="prose prose-sm max-w-none text-text"
                 dangerouslySetInnerHTML={{ __html: reply.body }}

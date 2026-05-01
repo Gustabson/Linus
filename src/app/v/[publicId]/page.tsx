@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { GitCommit, ArrowRight, Calendar, User } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { CONTENT_TYPE_BADGE } from "@/lib/constants";
+import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export default async function PublicVersionPage({
 
   if (!publication || publication.tree.visibility === "PRIVATE") notFound();
 
-  const badge = CONTENT_TYPE_BADGE[publication.tree.contentType];
+  const badge = CONTENT_TYPE_STYLE[publication.tree.contentType];
 
   return (
     <div className="max-w-xl mx-auto py-12 space-y-8">

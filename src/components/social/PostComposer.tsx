@@ -4,7 +4,7 @@ import { useState, useRef, useTransition } from "react";
 import Image from "next/image";
 import { Send, X, BookOpen, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import type { ContentType } from "@prisma/client";
-import { CONTENT_TYPE_BADGE } from "@/lib/constants";
+import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import type { PostData } from "./PostCard";
 
 interface Props {
@@ -136,7 +136,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   {(() => {
-                    const badge = CONTENT_TYPE_BADGE[attachedTree.contentType];
+                    const badge = CONTENT_TYPE_STYLE[attachedTree.contentType];
                     return (
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
                         {badge.label}
@@ -190,7 +190,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
             {treeResults.length > 0 && (
               <div className="border border-border rounded-xl overflow-hidden divide-y divide-border-subtle">
                 {treeResults.map((tree) => {
-                  const badge = CONTENT_TYPE_BADGE[tree.contentType];
+                  const badge = CONTENT_TYPE_STYLE[tree.contentType];
                   return (
                     <button
                       key={tree.id}
