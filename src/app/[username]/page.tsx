@@ -33,10 +33,8 @@ export default async function UserProfilePage({
   const { username } = await params;
   const session = await auth();
 
-  const user = await prisma.user.findFirst({
-    where: {
-      OR: [{ username }, { name: { equals: username, mode: "insensitive" } }],
-    },
+  const user = await prisma.user.findUnique({
+    where: { username },
     include: {
       ownedTrees: {
         where: { visibility: "PUBLIC" },
