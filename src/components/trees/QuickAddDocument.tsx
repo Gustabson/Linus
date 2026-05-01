@@ -73,13 +73,13 @@ export function QuickAddDocument({ treeSlug, ownerUsername, isOwner, style, init
 
       {/* ── Empty state ── */}
       {docs.length === 0 && !showForm && (
-        <div className="rounded-2xl border-2 border-dashed border-gray-200 p-10 text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto">
-            <BookOpen className="w-6 h-6 text-gray-400" />
+        <div className="rounded-2xl border-2 border-dashed border-border p-10 text-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-border-subtle flex items-center justify-center mx-auto">
+            <BookOpen className="w-6 h-6 text-text-subtle" />
           </div>
           <div>
-            <p className="font-medium text-gray-700">Todavía no hay documentos</p>
-            <p className="text-sm text-gray-400 mt-0.5">
+            <p className="font-medium text-text">Todavía no hay documentos</p>
+            <p className="text-sm text-text-subtle mt-0.5">
               Agregá el primer documento para empezar a organizar el contenido.
             </p>
           </div>
@@ -104,7 +104,7 @@ export function QuickAddDocument({ treeSlug, ownerUsername, isOwner, style, init
           <Link
             key={doc.id}
             href={`/${ownerUsername}/${treeSlug}/${doc.slug}`}
-            className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-gray-300 hover:shadow-sm transition-all block group"
+            className="bg-surface rounded-2xl border border-border p-5 hover:border-gray-300 hover:shadow-sm transition-all block group"
           >
             <div className="flex items-start gap-4">
               {/* Number circle */}
@@ -115,7 +115,7 @@ export function QuickAddDocument({ treeSlug, ownerUsername, isOwner, style, init
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 justify-between">
-                  <h3 className={`font-semibold text-gray-900 text-base leading-snug ${style.groupHoverTextCls} transition-colors`}>
+                  <h3 className={`font-semibold text-text text-base leading-snug ${style.groupHoverTextCls} transition-colors`}>
                     {doc.title}
                   </h3>
                   <div className="flex items-center gap-2 shrink-0">
@@ -132,15 +132,15 @@ export function QuickAddDocument({ treeSlug, ownerUsername, isOwner, style, init
                 {total > 0 ? (
                   <div className="mt-2.5 space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-text-subtle">
                         {done === total
                           ? <span className="text-green-600 font-medium">✓ Todo completo</span>
                           : <>{done} de {total} sección{total !== 1 ? "es" : ""} completa{done !== 1 ? "s" : ""}</>
                         }
                       </span>
-                      <span className="text-xs text-gray-400">{doc.progress}%</span>
+                      <span className="text-xs text-text-subtle">{doc.progress}%</span>
                     </div>
-                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-border-subtle rounded-full overflow-hidden">
                       <div
                         className={`${style.progressCls} h-full rounded-full transition-all`}
                         style={{ width: `${doc.progress}%` }}
@@ -148,7 +148,7 @@ export function QuickAddDocument({ treeSlug, ownerUsername, isOwner, style, init
                     </div>
                   </div>
                 ) : (
-                  <p className="text-xs text-gray-400 mt-1.5">Sin secciones todavía</p>
+                  <p className="text-xs text-text-subtle mt-1.5">Sin secciones todavía</p>
                 )}
               </div>
             </div>
@@ -161,9 +161,9 @@ export function QuickAddDocument({ treeSlug, ownerUsername, isOwner, style, init
         showForm ? (
           <form
             onSubmit={handleSubmit}
-            className={`rounded-2xl border-2 border-dashed ${style.accentBorderCls} bg-white p-5 space-y-3`}
+            className={`rounded-2xl border-2 border-dashed ${style.accentBorderCls} bg-surface p-5 space-y-3`}
           >
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-text">
               Nombre del documento
             </label>
             <input
@@ -172,7 +172,7 @@ export function QuickAddDocument({ treeSlug, ownerUsername, isOwner, style, init
               onChange={(e) => setTitle(e.target.value)}
               onKeyDown={(e) => e.key === "Escape" && (setShowForm(false), setTitle(""), setError(""))}
               placeholder="Ej: Introducción, Unidad 1, Clase 3…"
-              className={`w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-current ${style.textCls} placeholder-gray-300 text-gray-800`}
+              className={`w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-current ${style.textCls} placeholder-gray-300 text-text`}
             />
             {error && (
               <p className="text-xs text-red-500">{error}</p>
@@ -181,7 +181,7 @@ export function QuickAddDocument({ treeSlug, ownerUsername, isOwner, style, init
               <button
                 type="button"
                 onClick={() => { setShowForm(false); setTitle(""); setError(""); }}
-                className="text-sm text-gray-500 px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors"
+                className="text-sm text-text-muted px-4 py-2 rounded-xl hover:bg-bg transition-colors"
               >
                 Cancelar
               </button>
@@ -199,7 +199,7 @@ export function QuickAddDocument({ treeSlug, ownerUsername, isOwner, style, init
           /* Add button — card style */
           <button
             onClick={() => setShowForm(true)}
-            className={`w-full flex items-center justify-center gap-2.5 text-sm border-2 border-dashed border-gray-200 rounded-2xl py-4 transition-all ${style.hoverTextCls} ${style.hoverBorderCls} text-gray-400 hover:bg-gray-50`}
+            className={`w-full flex items-center justify-center gap-2.5 text-sm border-2 border-dashed border-border rounded-2xl py-4 transition-all ${style.hoverTextCls} ${style.hoverBorderCls} text-text-subtle hover:bg-bg`}
           >
             <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${style.lightBgCls}`}>
               <Plus className={`w-3.5 h-3.5 ${style.textCls}`} />

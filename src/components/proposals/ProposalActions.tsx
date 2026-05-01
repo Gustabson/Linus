@@ -33,7 +33,7 @@ export function ProposalActions({ proposalId, isAuthor, isTargetOwner }: Props) 
   }
 
   return (
-    <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-gray-100">
+    <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-border-subtle">
       {isTargetOwner && (
         <>
           <button
@@ -58,7 +58,7 @@ export function ProposalActions({ proposalId, isAuthor, isTargetOwner }: Props) 
         <button
           onClick={() => act("withdraw")}
           disabled={!!loading}
-          className="flex items-center gap-2 text-gray-500 border border-gray-200 text-sm px-4 py-2 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-2 text-text-muted border border-border text-sm px-4 py-2 rounded-xl hover:bg-bg disabled:opacity-50 transition-colors"
         >
           {loading === "withdraw" ? <Loader2 className="w-4 h-4 animate-spin" /> : <MinusCircle className="w-4 h-4" />}
           Retirar propuesta

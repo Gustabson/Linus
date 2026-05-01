@@ -51,7 +51,7 @@ export function ForkButton({
   if (!needsKernelPicker) {
     return (
       <button onClick={() => handleFork()} disabled={loading}
-        className="flex items-center gap-2 border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
+        className="flex items-center gap-2 border border-border text-text text-sm px-4 py-2 rounded-lg hover:bg-bg transition-colors disabled:opacity-50">
         <GitFork className="w-4 h-4" />
         {loading ? "Forkeando..." : "Forkear"}
       </button>
@@ -61,36 +61,36 @@ export function ForkButton({
   return (
     <>
       <button onClick={() => { setShowModal(true); loadKernels(); }} disabled={loading}
-        className="flex items-center gap-2 border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
+        className="flex items-center gap-2 border border-border text-text text-sm px-4 py-2 rounded-lg hover:bg-bg transition-colors disabled:opacity-50">
         <GitFork className="w-4 h-4" />
         Forkear
       </button>
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="font-semibold text-gray-900">Forkear &ldquo;{treeTitle}&rdquo;</h2>
-                <p className="text-sm text-gray-500 mt-0.5">¿A qué kernel querés agregarlo?</p>
+                <h2 className="font-semibold text-text">Forkear &ldquo;{treeTitle}&rdquo;</h2>
+                <p className="text-sm text-text-muted mt-0.5">¿A qué kernel querés agregarlo?</p>
               </div>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <button onClick={() => setShowModal(false)} className="text-text-subtle hover:text-text-muted"><X className="w-5 h-5" /></button>
             </div>
 
             {loadingKernels ? (
-              <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-gray-400 animate-spin" /></div>
+              <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-text-subtle animate-spin" /></div>
             ) : (
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {kernels.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-4">
+                  <p className="text-sm text-text-subtle text-center py-4">
                     No tenés kernels. <a href="/nuevo" className="text-green-700 hover:underline">Crear uno</a>
                   </p>
                 ) : kernels.map((k) => (
                   <button key={k.id} type="button"
                     onClick={() => setSelectedKernelId(selectedKernelId === k.id ? null : k.id)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${selectedKernelId === k.id ? "border-green-500 bg-green-50" : "border-gray-200 hover:border-gray-300"}`}>
-                    <Cpu className={`w-4 h-4 shrink-0 ${selectedKernelId === k.id ? "text-green-600" : "text-gray-400"}`} />
-                    <span className="text-sm text-gray-900 truncate">{k.title}</span>
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${selectedKernelId === k.id ? "border-green-500 bg-green-50" : "border-border hover:border-gray-300"}`}>
+                    <Cpu className={`w-4 h-4 shrink-0 ${selectedKernelId === k.id ? "text-green-600" : "text-text-subtle"}`} />
+                    <span className="text-sm text-text truncate">{k.title}</span>
                     <div className={`ml-auto w-4 h-4 rounded-full border-2 shrink-0 ${selectedKernelId === k.id ? "border-green-500 bg-green-500" : "border-gray-300"}`} />
                   </button>
                 ))}
@@ -99,7 +99,7 @@ export function ForkButton({
 
             <div className="flex gap-2 pt-1">
               <button onClick={() => handleFork(null)} disabled={loading}
-                className="flex-1 text-sm border border-gray-200 text-gray-600 py-2.5 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors">
+                className="flex-1 text-sm border border-border text-text-muted py-2.5 rounded-xl hover:bg-bg disabled:opacity-50 transition-colors">
                 Sin agregar a ningún kernel
               </button>
               {selectedKernelId && (

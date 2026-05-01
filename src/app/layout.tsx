@@ -36,7 +36,7 @@ export default async function RootLayout({
 
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <body className="min-h-screen bg-bg">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <SessionProvider session={session}>
             <LayoutShell isLoggedIn={isLoggedIn}>

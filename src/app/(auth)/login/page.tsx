@@ -5,15 +5,15 @@ import Link from "next/link";
 export default function LoginPage() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 w-full max-w-md">
+      <div className="bg-surface rounded-2xl shadow-sm border border-border p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-3">
             <div className="bg-green-100 p-3 rounded-full">
               <BookOpen className="w-8 h-8 text-green-700" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Bienvenido a EduHub</h1>
-          <p className="text-gray-500 mt-1 text-sm">
+          <h1 className="text-2xl font-bold text-text">Bienvenido a EduHub</h1>
+          <p className="text-text-muted mt-1 text-sm">
             La plataforma educativa colaborativa y abierta
           </p>
         </div>
@@ -27,7 +27,7 @@ export default function LoginPage() {
           >
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-center gap-3 border border-border rounded-lg px-4 py-3 text-sm font-medium text-text hover:bg-bg transition-colors"
             >
               <Globe className="w-5 h-5 text-red-500" />
               Continuar con Google
@@ -42,7 +42,7 @@ export default function LoginPage() {
           >
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-center gap-3 border border-border rounded-lg px-4 py-3 text-sm font-medium text-text hover:bg-bg transition-colors"
             >
               <GitBranch className="w-5 h-5" />
               Continuar con GitHub
@@ -50,7 +50,7 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <div className="mt-6 text-center text-xs text-gray-400">
+        <div className="mt-6 text-center text-xs text-text-subtle">
           Al ingresar aceptas compartir tu conocimiento educativo con la comunidad.
         </div>
 

@@ -53,7 +53,7 @@ export function CorreosRedactar({
     ],
     editorProps: {
       attributes: {
-        class: "prose prose-base max-w-none focus:outline-none min-h-[320px] px-1 py-2 text-gray-800",
+        class: "prose prose-base max-w-none focus:outline-none min-h-[320px] px-1 py-2 text-text",
       },
     },
     // Pre-fill body when editing a draft
@@ -184,7 +184,7 @@ export function CorreosRedactar({
       className={`p-2 rounded-lg transition-colors ${
         active
           ? "bg-green-100 text-green-700"
-          : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+          : "text-text-muted hover:bg-border-subtle hover:text-text"
       }`}
     >
       {children}
@@ -195,8 +195,8 @@ export function CorreosRedactar({
     <div className="flex flex-col h-full">
 
       {/* ── Header ────────────────────────────────────────────────── */}
-      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h2 className="font-semibold text-gray-900 text-base">
+      <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between">
+        <h2 className="font-semibold text-text text-base">
           {isEditingDraft ? "Editar borrador" : "Nuevo correo"}
         </h2>
 
@@ -204,7 +204,7 @@ export function CorreosRedactar({
           <button
             onClick={handleDiscard}
             disabled={sending || saving}
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-text-muted hover:text-red-500 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
             {isEditingDraft ? "Cancelar" : "Descartar"}
@@ -212,7 +212,7 @@ export function CorreosRedactar({
           <button
             onClick={handleSaveDraft}
             disabled={saving || sending}
-            className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-4 py-2 rounded-xl hover:bg-bg disabled:opacity-50 transition-colors"
           >
             {saving
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
@@ -233,27 +233,27 @@ export function CorreosRedactar({
       </div>
 
       {/* ── Fields ────────────────────────────────────────────────── */}
-      <div className="border-b border-gray-100 divide-y divide-gray-100">
+      <div className="border-b border-border-subtle divide-y divide-border-subtle">
         <div className="flex items-center gap-3 px-6 py-3">
-          <span className="text-sm text-gray-400 w-16 shrink-0">Para</span>
+          <span className="text-sm text-text-subtle w-16 shrink-0">Para</span>
           <UserSearchInput value={recipient} onChange={setRecipient} />
         </div>
         <div className="flex items-center gap-3 px-6 py-3">
-          <span className="text-sm text-gray-400 w-16 shrink-0">Asunto</span>
+          <span className="text-sm text-text-subtle w-16 shrink-0">Asunto</span>
           <input
             type="text"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="Asunto del correo"
             maxLength={200}
-            className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none"
+            className="flex-1 text-sm text-text placeholder:text-text-subtle focus:outline-none"
           />
         </div>
       </div>
 
       {/* ── Toolbar ───────────────────────────────────────────────── */}
       {editor && (
-        <div className="flex items-center gap-0.5 px-4 py-2 border-b border-gray-100 flex-wrap bg-gray-50/60">
+        <div className="flex items-center gap-0.5 px-4 py-2 border-b border-border-subtle flex-wrap bg-bg">
           <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()}
             active={editor.isActive("bold")} title="Negrita">
             <Bold className="w-4 h-4" />
@@ -267,7 +267,7 @@ export function CorreosRedactar({
             <UnderlineIcon className="w-4 h-4" />
           </ToolBtn>
 
-          <div className="w-px h-5 bg-gray-200 mx-1" />
+          <div className="w-px h-5 bg-border mx-1" />
 
           <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
             active={editor.isActive("heading", { level: 2 })} title="Título H2">
@@ -278,7 +278,7 @@ export function CorreosRedactar({
             <Heading3 className="w-4 h-4" />
           </ToolBtn>
 
-          <div className="w-px h-5 bg-gray-200 mx-1" />
+          <div className="w-px h-5 bg-border mx-1" />
 
           <ToolBtn onClick={() => editor.chain().focus().toggleBulletList().run()}
             active={editor.isActive("bulletList")} title="Lista con viñetas">
@@ -289,7 +289,7 @@ export function CorreosRedactar({
             <ListOrdered className="w-4 h-4" />
           </ToolBtn>
 
-          <div className="w-px h-5 bg-gray-200 mx-1" />
+          <div className="w-px h-5 bg-border mx-1" />
 
           <ToolBtn onClick={() => editor.chain().focus().setTextAlign("left").run()}
             active={editor.isActive({ textAlign: "left" })} title="Izquierda">
@@ -304,7 +304,7 @@ export function CorreosRedactar({
             <AlignRight className="w-4 h-4" />
           </ToolBtn>
 
-          <div className="w-px h-5 bg-gray-200 mx-1" />
+          <div className="w-px h-5 bg-border mx-1" />
 
           <ToolBtn onClick={setLink}
             active={editor.isActive("link")} title="Enlace">

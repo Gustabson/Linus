@@ -64,7 +64,7 @@ export function TreePublishButton({
             <ExternalLink className="w-3 h-3" />
           </Link>
         ) : (
-          <span className="text-xs text-gray-400">Sin publicar</span>
+          <span className="text-xs text-text-subtle">Sin publicar</span>
         )}
 
         {/* Publish button */}
@@ -85,33 +85,33 @@ export function TreePublishButton({
       {/* Publish modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+          <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="font-bold text-text flex items-center gap-2">
                 <Upload className="w-4 h-4 text-green-700" />
                 Publicar {style.label?.toLowerCase() ?? "contenido"}
               </h2>
-              <button onClick={() => { setShowModal(false); setError(""); }} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => { setShowModal(false); setError(""); }} className="text-text-subtle hover:text-text-muted">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-text-muted">
               Se genera un ID único para esta versión. Cualquiera puede usarlo para
               verificar exactamente qué contenido estaba publicado en este momento.
             </p>
 
             <form onSubmit={handlePublish} className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descripción del cambio <span className="font-normal text-gray-400">(opcional)</span>
+                <label className="block text-sm font-medium text-text mb-1">
+                  Descripción del cambio <span className="font-normal text-text-subtle">(opcional)</span>
                 </label>
                 <textarea
                   value={commitMsg}
                   onChange={(e) => setCommitMsg(e.target.value)}
                   placeholder="Ej: Actualicé los objetivos de la unidad 2"
                   rows={2}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-400 resize-none"
+                  className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-400 resize-none"
                 />
               </div>
 
@@ -121,7 +121,7 @@ export function TreePublishButton({
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setError(""); }}
-                  className="text-sm text-gray-500 px-4 py-2 rounded-xl hover:bg-gray-50"
+                  className="text-sm text-text-muted px-4 py-2 rounded-xl hover:bg-bg"
                 >
                   Cancelar
                 </button>

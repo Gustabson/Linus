@@ -22,8 +22,8 @@ export default async function NuevoPage({
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">{LABELS[defaultType] ?? "Crear nuevo"}</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-3xl font-bold text-text">{LABELS[defaultType] ?? "Crear nuevo"}</h1>
+        <p className="text-text-muted mt-1">
           {defaultType === "MODULE"
             ? "Un módulo es una unidad didáctica completa con secciones, igual que un kernel."
             : defaultType === "RESOURCE"

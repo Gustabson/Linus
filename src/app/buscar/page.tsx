@@ -38,23 +38,23 @@ export default async function BuscarPage({
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Buscar personas</h1>
+      <h1 className="text-2xl font-bold text-text">Buscar personas</h1>
 
       {/* Search form */}
       <form method="GET" action="/buscar" className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-subtle" />
         <input
           name="q"
           defaultValue={q}
           placeholder="Buscá por nombre o @usuario..."
           autoFocus
-          className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 bg-white"
+          className="w-full pl-12 pr-4 py-3 border border-border rounded-2xl text-sm focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-100 bg-surface"
         />
       </form>
 
       {/* Results */}
       {q && users.length === 0 && (
-        <p className="text-center text-gray-400 py-12">
+        <p className="text-center text-text-subtle py-12">
           No encontramos personas con &ldquo;{q}&rdquo;
         </p>
       )}
@@ -65,7 +65,7 @@ export default async function BuscarPage({
             const isFollowing = Array.isArray(user.followers) && user.followers.length > 0;
             const isMe = session?.user?.id === user.id;
             return (
-              <div key={user.id} className="relative bg-white rounded-2xl border border-gray-200 hover:border-green-300 hover:shadow-sm transition-all p-4 flex items-center gap-3">
+              <div key={user.id} className="relative bg-surface rounded-2xl border border-border hover:border-green-300 hover:shadow-sm transition-all p-4 flex items-center gap-3">
                 <Link href={`/${user.username}`} className="absolute inset-0 rounded-2xl" aria-label={user.name ?? ""} />
                 {user.image ? (
                   <Image src={user.image} alt="" width={44} height={44} className="rounded-full shrink-0" />
@@ -75,12 +75,12 @@ export default async function BuscarPage({
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{user.name}</p>
-                  <p className="text-xs text-gray-400">@{user.username}</p>
+                  <p className="font-medium text-text truncate">{user.name}</p>
+                  <p className="text-xs text-text-subtle">@{user.username}</p>
                   {user.bio && (
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{user.bio}</p>
+                    <p className="text-xs text-text-muted mt-0.5 line-clamp-1">{user.bio}</p>
                   )}
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-text-subtle mt-0.5">
                     {user._count.followers} seguidores · {user._count.ownedTrees} contenidos
                   </p>
                 </div>
@@ -100,7 +100,7 @@ export default async function BuscarPage({
       )}
 
       {!q && (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-text-subtle">
           <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">Escribí un nombre para buscar</p>
         </div>

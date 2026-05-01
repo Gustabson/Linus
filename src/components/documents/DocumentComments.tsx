@@ -90,11 +90,11 @@ export function DocumentComments({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-gray-400" />
+        <h3 className="font-semibold text-text flex items-center gap-2">
+          <MessageSquare className="w-5 h-5 text-text-subtle" />
           Comentarios
           {publicComments.length > 0 && (
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-border-subtle text-text-muted px-2 py-0.5 rounded-full">
               {publicComments.length}
             </span>
           )}
@@ -111,7 +111,7 @@ export function DocumentComments({
 
       {/* Add comment form */}
       {showForm && isAuthenticated && (
-        <form onSubmit={submit} className="bg-white rounded-2xl border border-green-200 p-4 space-y-3">
+        <form onSubmit={submit} className="bg-surface rounded-2xl border border-green-200 p-4 space-y-3">
           {/* Quote preview */}
           {activeQuote && (
             <div className="bg-green-50 border-l-4 border-green-400 pl-3 pr-2 py-2 rounded-r-lg flex items-start gap-2">
@@ -135,7 +135,7 @@ export function DocumentComments({
             onChange={(e) => setContent(e.target.value)}
             placeholder="Dejá tu corrección o comentario..."
             rows={3}
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full border border-border rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
           />
 
           <div className="flex items-center justify-between gap-3">
@@ -145,7 +145,7 @@ export function DocumentComments({
               className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all ${
                 isPrivate
                   ? "bg-gray-800 text-white border-gray-800"
-                  : "border-gray-200 text-gray-500 hover:border-gray-300"
+                  : "border-border text-text-muted hover:border-gray-300"
               }`}
             >
               <Lock className="w-3 h-3" />
@@ -156,7 +156,7 @@ export function DocumentComments({
               <button
                 type="button"
                 onClick={() => { setShowForm(false); onQuoteUsed?.(); }}
-                className="text-sm text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-50"
+                className="text-sm text-text-muted px-3 py-1.5 rounded-lg hover:bg-bg"
               >
                 Cancelar
               </button>
@@ -176,7 +176,7 @@ export function DocumentComments({
       {/* Private notes section */}
       {privateComments.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs text-gray-400 flex items-center gap-1">
+          <p className="text-xs text-text-subtle flex items-center gap-1">
             <Lock className="w-3 h-3" /> Tus notas privadas
           </p>
           {privateComments.map((c) => (
@@ -188,10 +188,10 @@ export function DocumentComments({
       {/* Public comments */}
       {loading ? (
         <div className="flex justify-center py-6">
-          <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+          <Loader2 className="w-5 h-5 text-text-subtle animate-spin" />
         </div>
       ) : publicComments.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-6 text-center text-gray-400 text-sm">
+        <div className="bg-surface rounded-2xl border border-dashed border-border p-6 text-center text-text-subtle text-sm">
           Todavía no hay comentarios.
           {isAuthenticated && " Sé el primero en dejar una corrección."}
         </div>

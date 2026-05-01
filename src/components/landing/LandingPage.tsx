@@ -10,11 +10,11 @@ export function LandingPage() {
           <Globe className="w-4 h-4" />
           Conocimiento educativo abierto para todos
         </div>
-        <h1 className="text-5xl font-bold text-gray-900 leading-tight max-w-3xl mx-auto">
+        <h1 className="text-5xl font-bold text-text leading-tight max-w-3xl mx-auto">
           El currículo educativo<br />
           <span className="text-green-700">que crece con la comunidad</span>
         </h1>
-        <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-xl text-text-muted max-w-2xl mx-auto leading-relaxed">
           Como Linux para la educación. Un kernel creado por educadores expertos,
           que cualquiera puede tomar, adaptar a su contexto y compartir de vuelta.
         </p>
@@ -28,7 +28,7 @@ export function LandingPage() {
           </Link>
           <Link
             href="/kernel"
-            className="border border-gray-200 text-gray-700 px-6 py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+            className="border border-border text-text px-6 py-3 rounded-xl font-medium hover:bg-bg transition-colors"
           >
             Ver el Kernel
           </Link>
@@ -38,8 +38,8 @@ export function LandingPage() {
       {/* How it works */}
       <section className="space-y-8">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">¿Cómo funciona?</h2>
-          <p className="text-gray-500 mt-2">Simple para todos, poderoso para la educación</p>
+          <h2 className="text-3xl font-bold text-text">¿Cómo funciona?</h2>
+          <p className="text-text-muted mt-2">Simple para todos, poderoso para la educación</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
@@ -59,28 +59,28 @@ export function LandingPage() {
               desc: "¿Encontraste algo mejor? Proponé el cambio al kernel o compartí tu fork para que otros lo usen como base.",
             },
           ].map((item) => (
-            <div key={item.title} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
+            <div key={item.title} className="bg-surface rounded-2xl border border-border p-6 space-y-3">
               <div className="bg-green-50 w-12 h-12 rounded-xl flex items-center justify-center">
                 {item.icon}
               </div>
-              <h3 className="font-semibold text-gray-900">{item.title}</h3>
-              <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+              <h3 className="font-semibold text-text">{item.title}</h3>
+              <p className="text-text-muted text-sm leading-relaxed">{item.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Trust / Publications */}
-      <section className="bg-white rounded-2xl border border-gray-200 p-8 md:p-12">
+      <section className="bg-surface rounded-2xl border border-border p-8 md:p-12">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
           <div className="bg-green-50 p-4 rounded-2xl shrink-0">
             <GitCommit className="w-10 h-10 text-green-700" />
           </div>
           <div className="space-y-3">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-text">
               Publicaciones verificables. Historial claro.
             </h2>
-            <p className="text-gray-500 leading-relaxed">
+            <p className="text-text-muted leading-relaxed">
               Cada publicación genera un ID único que cualquier persona puede usar para
               verificar exactamente qué contenido fue publicado y cuándo. Tu contribución
               queda registrada de forma permanente.
@@ -91,8 +91,8 @@ export function LandingPage() {
 
       {/* CTA */}
       <section className="text-center py-12">
-        <h2 className="text-3xl font-bold text-gray-900 mb-4">Empezá hoy, gratis</h2>
-        <p className="text-gray-500 mb-8">
+        <h2 className="text-3xl font-bold text-text mb-4">Empezá hoy, gratis</h2>
+        <p className="text-text-muted mb-8">
           Solo necesitás una cuenta de Google o GitHub. Sin costos, sin barreras.
         </p>
         <Link

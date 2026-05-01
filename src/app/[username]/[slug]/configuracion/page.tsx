@@ -29,8 +29,8 @@ export default async function TreeSettingsPage({
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Configuración</h1>
-        <p className="text-gray-500 mt-1">{tree.title}</p>
+        <h1 className="text-3xl font-bold text-text">Configuración</h1>
+        <p className="text-text-muted mt-1">{tree.title}</p>
       </div>
       <TreeSettingsForm tree={tree} ownerUsername={username} />
     </div>

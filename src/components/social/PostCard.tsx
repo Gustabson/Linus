@@ -66,7 +66,7 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
   const badge      = post.tree ? CONTENT_TYPE_BADGE[post.tree.contentType] : null;
 
   return (
-    <article className="bg-white rounded-2xl border border-gray-200 hover:border-gray-300 transition-colors p-5 space-y-4">
+    <article className="bg-surface rounded-2xl border border-border hover:border-gray-300 transition-colors p-5 space-y-4">
       {/* Header — author */}
       <div className="flex items-center gap-3">
         <Link href={authorHref} className="shrink-0">
@@ -85,23 +85,23 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
           )}
         </Link>
         <div className="min-w-0">
-          <Link href={authorHref} className="text-sm font-semibold text-gray-900 hover:text-green-700 transition-colors">
+          <Link href={authorHref} className="text-sm font-semibold text-text hover:text-green-700 transition-colors">
             {post.author.name ?? "Usuario"}
           </Link>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-text-subtle">
             {post.author.username ? `@${post.author.username} · ` : ""}{formatDate(new Date(post.createdAt))}
           </p>
         </div>
       </div>
 
       {/* Content */}
-      <p className="text-gray-800 text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+      <p className="text-text text-[15px] leading-relaxed whitespace-pre-wrap break-words">
         {post.content}
       </p>
 
       {/* Optional image */}
       {post.imageUrl && (
-        <div className="rounded-xl overflow-hidden border border-gray-100">
+        <div className="rounded-xl overflow-hidden border border-border-subtle">
           <Image
             src={post.imageUrl}
             alt="Imagen del post"
@@ -116,7 +116,7 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
       {post.tree && (
         <Link
           href={`/${post.tree.owner.username ?? ""}/${post.tree.slug}`}
-          className="block border border-gray-200 rounded-xl p-4 hover:border-green-200 hover:bg-green-50/40 transition-colors group"
+          className="block border border-border rounded-xl p-4 hover:border-green-200 hover:bg-green-50/40 transition-colors group"
         >
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
@@ -131,18 +131,18 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
                   </span>
                 )}
                 {post.tree.forkDepth > 0 && (
-                  <span className="text-xs text-gray-400 flex items-center gap-1">
+                  <span className="text-xs text-text-subtle flex items-center gap-1">
                     <GitFork className="w-3 h-3" /> Fork
                   </span>
                 )}
               </div>
-              <p className="text-sm font-semibold text-gray-900 group-hover:text-green-700 transition-colors leading-snug line-clamp-1">
+              <p className="text-sm font-semibold text-text group-hover:text-green-700 transition-colors leading-snug line-clamp-1">
                 {post.tree.title}
               </p>
               {post.tree.description && (
-                <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{post.tree.description}</p>
+                <p className="text-xs text-text-muted mt-0.5 line-clamp-1">{post.tree.description}</p>
               )}
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-text-subtle mt-1">
                 por {post.tree.owner.name} · {post.tree._count.likes} me gusta · {post.tree._count.forks} forks
               </p>
             </div>
@@ -151,21 +151,21 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-5 pt-1 border-t border-gray-100">
+      <div className="flex items-center gap-5 pt-1 border-t border-border-subtle">
         <button
           onClick={toggleLike}
           disabled={!isAuthenticated}
           className={`flex items-center gap-1.5 text-sm transition-colors ${
             liked
               ? "text-red-500 hover:text-red-600"
-              : "text-gray-400 hover:text-red-400"
+              : "text-text-subtle hover:text-red-400"
           } disabled:cursor-default`}
         >
           <Heart className={`w-4 h-4 ${liked ? "fill-current" : ""}`} />
           <span>{likeCount}</span>
         </button>
 
-        <span className="flex items-center gap-1.5 text-sm text-gray-400">
+        <span className="flex items-center gap-1.5 text-sm text-text-subtle">
           <MessageCircle className="w-4 h-4" />
           <span>{post._count.comments}</span>
         </span>

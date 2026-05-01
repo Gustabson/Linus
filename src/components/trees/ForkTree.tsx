@@ -33,7 +33,7 @@ function TreeNode({
     <div className="relative">
       {/* Connector line from parent */}
       {depth > 0 && (
-        <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-200" style={{ left: -17 }} />
+        <div className="absolute left-0 top-0 bottom-0 w-px bg-border" style={{ left: -17 }} />
       )}
 
       <div className={`flex items-start gap-2 group ${depth > 0 ? "ml-6" : ""}`}>
@@ -41,7 +41,7 @@ function TreeNode({
         {hasChildren ? (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="shrink-0 mt-2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="shrink-0 mt-2 text-text-subtle hover:text-text-muted transition-colors"
           >
             {expanded
               ? <ChevronDown className="w-4 h-4" />
@@ -57,14 +57,14 @@ function TreeNode({
           className={`flex-1 flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all text-left mb-1 ${
             isCurrent
               ? "border-green-400 bg-green-50 shadow-sm"
-              : "border-gray-200 bg-white hover:border-green-300 hover:shadow-sm"
+              : "border-border bg-surface hover:border-green-300 hover:shadow-sm"
           }`}
         >
           {/* Avatar */}
           {node.owner.image ? (
             <Image src={node.owner.image} alt="" width={24} height={24} className="rounded-full shrink-0" />
           ) : (
-            <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs text-gray-500 shrink-0">
+            <div className="w-6 h-6 rounded-full bg-border-subtle flex items-center justify-center text-xs text-text-muted shrink-0">
               {(node.owner.name ?? "?")[0]}
             </div>
           )}
@@ -74,7 +74,7 @@ function TreeNode({
               {node.contentType === "KERNEL" && (
                 <Cpu className="w-3 h-3 text-green-600 shrink-0" />
               )}
-              <span className={`text-sm font-medium truncate ${isCurrent ? "text-green-800" : "text-gray-900"}`}>
+              <span className={`text-sm font-medium truncate ${isCurrent ? "text-green-800" : "text-text"}`}>
                 {node.title}
               </span>
               {isCurrent && (
@@ -83,12 +83,12 @@ function TreeNode({
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-400 truncate">
+            <p className="text-xs text-text-subtle truncate">
               {node.owner.username ? `@${node.owner.username}` : node.owner.name}
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 text-xs text-gray-400">
+          <div className="flex items-center gap-3 shrink-0 text-xs text-text-subtle">
             <span className="flex items-center gap-0.5">
               <Heart className="w-3 h-3" /> {node._count.likes}
             </span>
@@ -102,7 +102,7 @@ function TreeNode({
       {/* Children */}
       {hasChildren && expanded && (
         <div className="ml-6 relative">
-          <div className="absolute left-0 top-0 bottom-4 w-px bg-gray-200" style={{ left: -11 }} />
+          <div className="absolute left-0 top-0 bottom-4 w-px bg-border" style={{ left: -11 }} />
           {node.forks.map((fork) => (
             <TreeNode key={fork.id} node={fork} currentSlug={currentSlug} depth={depth + 1} />
           ))}
@@ -130,19 +130,19 @@ export function ForkTree({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+    <div className="bg-surface rounded-2xl border border-border overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-bg transition-colors"
       >
         <div className="flex items-center gap-2">
-          <GitFork className="w-5 h-5 text-gray-400" />
-          <span className="font-semibold text-gray-900">Árbol de forks</span>
-          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+          <GitFork className="w-5 h-5 text-text-subtle" />
+          <span className="font-semibold text-text">Árbol de forks</span>
+          <span className="text-xs bg-border-subtle text-text-muted px-2 py-0.5 rounded-full">
             {totalForks} fork{totalForks !== 1 ? "s" : ""}
           </span>
         </div>
-        {open ? <ChevronDown className="w-5 h-5 text-gray-400" /> : <ChevronRight className="w-5 h-5 text-gray-400" />}
+        {open ? <ChevronDown className="w-5 h-5 text-text-subtle" /> : <ChevronRight className="w-5 h-5 text-text-subtle" />}
       </button>
 
       {open && (
@@ -155,14 +155,14 @@ export function ForkTree({
                   {i > 0 && <GitFork className="w-3 h-3 text-gray-300 shrink-0" />}
                   <Link
                     href={`/${a.owner.username ?? a.owner.name ?? a.id}/${a.slug}`}
-                    className="text-xs text-gray-500 hover:text-green-700 flex items-center gap-1"
+                    className="text-xs text-text-muted hover:text-green-700 flex items-center gap-1"
                   >
                     {a.contentType === "KERNEL" && <Cpu className="w-3 h-3 text-green-600" />}
                     {a.title}
                   </Link>
                 </div>
               ))}
-              <div className="border-l-2 border-dashed border-gray-200 ml-3 h-4" />
+              <div className="border-l-2 border-dashed border-border ml-3 h-4" />
             </div>
           )}
 

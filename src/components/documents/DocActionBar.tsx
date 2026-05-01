@@ -125,17 +125,17 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
       {/* ── Row 1: breadcrumb ── */}
       <button
         onClick={handleBack}
-        className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition-colors group"
+        className="inline-flex items-center gap-1.5 text-sm text-text-subtle hover:text-text transition-colors group"
       >
         <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
         <span>{treeTitle}</span>
         <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
-        <span className="text-gray-500">{docTitle}</span>
+        <span className="text-text-muted">{docTitle}</span>
       </button>
 
       {/* ── Row 2: title + actions ── */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold text-gray-900 leading-tight">{docTitle}</h1>
+        <h1 className="text-2xl font-bold text-text leading-tight">{docTitle}</h1>
 
         <div className="flex items-center gap-2">
           {/* Upload Word/PDF */}
@@ -150,7 +150,7 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={importState.step === "uploading"}
-              className="flex items-center gap-2 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-xl hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 text-sm text-text-muted border border-border px-3 py-2 rounded-xl hover:bg-bg hover:border-gray-300 disabled:opacity-50 transition-colors"
             >
               {importState.step === "uploading"
                 ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -205,7 +205,7 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
               value={embedTitle}
               onChange={(e) => setEmbedTitle(e.target.value)}
               placeholder="Ej: Material de lectura"
-              className="flex-1 border border-amber-200 bg-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400"
+              className="flex-1 border border-amber-200 bg-surface rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400"
             />
             <button
               type="submit"
@@ -217,7 +217,7 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
             <button
               type="button"
               onClick={() => setImportState({ step: "idle" })}
-              className="text-gray-500 px-3 py-2 rounded-xl hover:bg-amber-100 transition-colors"
+              className="text-text-muted px-3 py-2 rounded-xl hover:bg-amber-100 transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -228,16 +228,16 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
       {/* ── Delete confirmation modal ── */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
+          <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
             <div className="flex items-start gap-4">
               <div className="bg-red-100 p-3 rounded-2xl shrink-0">
                 <Trash2 className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <h2 className="font-bold text-gray-900 text-lg">Eliminar documento</h2>
-                <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                <h2 className="font-bold text-text text-lg">Eliminar documento</h2>
+                <p className="text-sm text-text-muted mt-1 leading-relaxed">
                   ¿Eliminar{" "}
-                  <span className="font-semibold text-gray-800">"{docTitle}"</span>?{" "}
+                  <span className="font-semibold text-text">"{docTitle}"</span>?{" "}
                   Se perderán todas las secciones y el historial. Esta acción no se puede deshacer.
                 </p>
               </div>
@@ -246,7 +246,7 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="text-sm text-gray-500 px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+                className="text-sm text-text-muted px-4 py-2.5 rounded-xl hover:bg-bg transition-colors"
               >
                 Cancelar
               </button>

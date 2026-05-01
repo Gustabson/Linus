@@ -92,7 +92,7 @@ export default async function DocumentPage({
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+      <div className="bg-surface rounded-2xl border border-border p-6 space-y-4">
         {isKernel && isOwner ? (
           /* Kernel doc: DocActionBar handles breadcrumb + title + actions */
           <DocActionBar
@@ -110,9 +110,9 @@ export default async function DocumentPage({
                 {style.icon}
                 {style.label}
               </span>
-              <h1 className="text-2xl font-bold text-gray-900">{tree.title}</h1>
+              <h1 className="text-2xl font-bold text-text">{tree.title}</h1>
               {latestVersion && (
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 flex-wrap">
+                <div className="flex items-center gap-4 mt-2 text-sm text-text-muted flex-wrap">
                   <span className="flex items-center gap-1">
                     <Users className="w-4 h-4" />
                     {latestVersion.author.name}
@@ -136,7 +136,7 @@ export default async function DocumentPage({
               )}
               <Link
                 href={`/${username}/${slug}/${docSlug}/historial`}
-                className={`flex items-center gap-1.5 text-sm text-gray-500 ${style.hoverTextCls} transition-colors`}
+                className={`flex items-center gap-1.5 text-sm text-text-muted ${style.hoverTextCls} transition-colors`}
                 title="Ver historial de publicaciones"
               >
                 <GitBranch className="w-4 h-4" />
@@ -144,7 +144,7 @@ export default async function DocumentPage({
               </Link>
               <Link
                 href={`/${username}/${slug}/${docSlug}/preview`}
-                className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-lg hover:bg-bg transition-colors"
               >
                 <Eye className="w-4 h-4" />
                 Preview

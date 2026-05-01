@@ -74,22 +74,22 @@ export default async function KernelPreviewPage({
       <div className="flex items-center justify-between">
         <Link
           href={`/${username}/${slug}`}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver al kernel
         </Link>
-        <span className="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">Vista previa</span>
+        <span className="text-xs bg-border-subtle text-text-muted px-3 py-1 rounded-full">Vista previa</span>
       </div>
 
       {/* Title card */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-8 space-y-3 text-center">
+      <div className="bg-surface rounded-2xl border border-border p-8 space-y-3 text-center">
         <span className={`inline-block text-xs px-3 py-1 rounded-full font-medium ${style.badgeCls}`}>
           {style.label}
         </span>
-        <h1 className="text-3xl font-bold text-gray-900">{tree.title}</h1>
-        {tree.description && <p className="text-gray-500">{tree.description}</p>}
-        <p className="text-xs text-gray-400">
+        <h1 className="text-3xl font-bold text-text">{tree.title}</h1>
+        {tree.description && <p className="text-text-muted">{tree.description}</p>}
+        <p className="text-xs text-text-subtle">
           por {tree.owner.name}
           {tree.documents.length > 0 && ` · ${tree.documents.length} documento${tree.documents.length !== 1 ? "s" : ""}`}
           {tree.attachments.length > 0 && ` · ${tree.attachments.length} adjunto${tree.attachments.length !== 1 ? "s" : ""}`}
@@ -98,8 +98,8 @@ export default async function KernelPreviewPage({
 
       {/* Table of contents */}
       {tree.documents.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <div className="bg-surface rounded-2xl border border-border p-6">
+          <h2 className="font-semibold text-text mb-3 flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-green-600" />
             Documentos
           </h2>
@@ -108,14 +108,14 @@ export default async function KernelPreviewPage({
               const sections = doc.versions[0]?.sections ?? [];
               return (
                 <div key={doc.id}>
-                  <a href={`#doc-${doc.id}`} className="text-sm font-medium text-gray-700 hover:text-green-700 transition-colors">
+                  <a href={`#doc-${doc.id}`} className="text-sm font-medium text-text hover:text-green-700 transition-colors">
                     {di + 1}. {doc.title}
                   </a>
                   {sections.length > 0 && (
                     <div className="ml-4 mt-0.5 space-y-0.5">
                       {sections.filter(s => s.isComplete).map((s, si) => (
                         <a key={s.id} href={`#section-${s.id}`}
-                          className="block text-xs text-gray-400 hover:text-green-600 transition-colors">
+                          className="block text-xs text-text-subtle hover:text-green-600 transition-colors">
                           {di + 1}.{si + 1} {s.sectionType}
                         </a>
                       ))}
@@ -140,9 +140,9 @@ export default async function KernelPreviewPage({
                 {di + 1}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">{doc.title}</h2>
+                <h2 className="text-xl font-bold text-text">{doc.title}</h2>
                 {doc.versions[0] && (
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-text-subtle">
                     {formatDate(doc.versions[0].createdAt)}
                     {doc.versions[0].author.name && ` · ${doc.versions[0].author.name}`}
                   </p>
@@ -151,7 +151,7 @@ export default async function KernelPreviewPage({
             </div>
 
             {completeSections.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center text-gray-400 text-sm">
+              <div className="bg-surface rounded-2xl border border-dashed border-border p-8 text-center text-text-subtle text-sm">
                 Este documento todavía no tiene secciones completadas.
               </div>
             ) : (
@@ -160,13 +160,13 @@ export default async function KernelPreviewPage({
                 const isPdfEmbed = content?.__type === "pdf_embed";
                 return (
                   <div key={section.id} id={`section-${section.id}`}
-                    className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                    className="bg-surface rounded-2xl border border-border overflow-hidden">
                     {/* Section header */}
-                    <div className={`px-6 py-4 border-b border-gray-100 ${style.lightBgCls} flex items-center gap-3`}>
+                    <div className={`px-6 py-4 border-b border-border-subtle ${style.lightBgCls} flex items-center gap-3`}>
                       <span className={`w-7 h-7 rounded-full ${style.iconBgCls} text-sm font-medium flex items-center justify-center shrink-0`}>
                         {di + 1}.{si + 1}
                       </span>
-                      <h3 className="font-semibold text-gray-900">{section.sectionType}</h3>
+                      <h3 className="font-semibold text-text">{section.sectionType}</h3>
                       <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
                         {section.difficultyLevel && (
                           <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
@@ -181,7 +181,7 @@ export default async function KernelPreviewPage({
                           </span>
                         )}
                         {section.durationMinutes && (
-                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                          <span className="text-xs bg-border-subtle text-text-muted px-2 py-0.5 rounded-full">
                             {section.durationMinutes} min
                           </span>
                         )}
@@ -193,7 +193,7 @@ export default async function KernelPreviewPage({
                       {isPdfEmbed ? (
                         <iframe
                           src={content.url as string}
-                          className="w-full rounded-lg border border-gray-200"
+                          className="w-full rounded-lg border border-border"
                           style={{ height: "600px" }}
                           title={section.sectionType}
                         />
@@ -212,23 +212,23 @@ export default async function KernelPreviewPage({
       {/* Attached modules / resources */}
       {tree.attachments.length > 0 && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-gray-900">Módulos y recursos adjuntos</h2>
+          <h2 className="text-lg font-semibold text-text">Módulos y recursos adjuntos</h2>
           {tree.attachments.map((a) => {
             const ct     = CONTENT_TYPE_STYLE[a.content.contentType as keyof typeof CONTENT_TYPE_STYLE];
             const docSlug = a.content.documents[0]?.slug;
             const contentOwnerUsername = a.content.owner.username;
             return (
-              <div key={a.id} className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center justify-between gap-4">
+              <div key={a.id} className="bg-surface rounded-2xl border border-border p-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ct.badgeCls}`}>
                     {ct.label}
                   </span>
-                  <span className="font-medium text-gray-900">{a.content.title}</span>
-                  <span className="text-xs text-gray-400">por {a.content.owner.name}</span>
+                  <span className="font-medium text-text">{a.content.title}</span>
+                  <span className="text-xs text-text-subtle">por {a.content.owner.name}</span>
                 </div>
                 {docSlug && contentOwnerUsername && (
                   <Link href={`/${contentOwnerUsername}/${a.content.slug}/${docSlug}/preview`}
-                    className="text-xs text-gray-500 hover:text-green-700 transition-colors whitespace-nowrap">
+                    className="text-xs text-text-muted hover:text-green-700 transition-colors whitespace-nowrap">
                     Ver preview →
                   </Link>
                 )}
@@ -239,7 +239,7 @@ export default async function KernelPreviewPage({
       )}
 
       {/* Footer */}
-      <div className="text-center text-xs text-gray-400 pb-8">
+      <div className="text-center text-xs text-text-subtle pb-8">
         <Link href={`/${username}/${slug}`} className="text-green-700 hover:underline">
           Ver versión completa con edición, comentarios e historial
         </Link>

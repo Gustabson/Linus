@@ -22,7 +22,7 @@ export function LayoutShell({ children, isLoggedIn }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-bg">
       {/* Fixed left sidebar — desktop only */}
       <Sidebar />
 

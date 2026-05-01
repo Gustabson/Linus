@@ -54,7 +54,7 @@ export function SectionEditor({
         onClick={onClick}
         className={cn(
           "p-1.5 rounded-md transition-colors",
-          active ? "bg-green-100 text-green-800" : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+          active ? "bg-green-100 text-green-800" : "text-text-muted hover:bg-border-subtle hover:text-text"
         )}
       >
         {icon}
@@ -62,12 +62,12 @@ export function SectionEditor({
     );
   }
 
-  const sep = <div className="w-px h-5 bg-gray-200 mx-0.5" />;
+  const sep = <div className="w-px h-5 bg-border mx-0.5" />;
 
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+    <div className="border border-border rounded-xl overflow-hidden bg-surface">
       {editable && (
-        <div className="flex flex-wrap items-center gap-0.5 p-2 border-b border-gray-100 bg-gray-50">
+        <div className="flex flex-wrap items-center gap-0.5 p-2 border-b border-border-subtle bg-bg">
           {btn(editor.isActive("bold"),      () => editor.chain().focus().toggleBold().run(),      "Negrita",        <Bold           className="w-4 h-4" />)}
           {btn(editor.isActive("italic"),    () => editor.chain().focus().toggleItalic().run(),    "Cursiva",        <Italic         className="w-4 h-4" />)}
           {btn(editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), "Subrayado",      <UnderlineIcon  className="w-4 h-4" />)}
@@ -95,7 +95,7 @@ export function SectionEditor({
           {btn(false, () => editor.chain().focus().undo().run(), "Deshacer", <Undo className="w-4 h-4" />)}
           {btn(false, () => editor.chain().focus().redo().run(), "Rehacer",  <Redo className="w-4 h-4" />)}
 
-          <div className="ml-auto text-xs text-gray-400">
+          <div className="ml-auto text-xs text-text-subtle">
             {editor.storage.characterCount?.characters() ?? 0} caracteres
           </div>
         </div>

@@ -52,9 +52,9 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
 
       {/* Feed */}
       {posts.length === 0 ? (
-        <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center space-y-3">
+        <div className="bg-surface rounded-2xl border-2 border-dashed border-border p-12 text-center space-y-3">
           <RefreshCw className="w-8 h-8 mx-auto text-gray-200" />
-          <p className="text-gray-500 font-medium">
+          <p className="text-text-muted font-medium">
             {tab === "siguiendo"
               ? "Seguí a otras personas para ver sus publicaciones acá."
               : "Todavía no hay publicaciones. ¡Sé el primero!"}
@@ -74,7 +74,7 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
             <button
               onClick={loadMore}
               disabled={loading}
-              className="w-full py-3 text-sm text-gray-500 hover:text-green-700 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 text-sm text-text-muted hover:text-green-700 transition-colors flex items-center justify-center gap-2"
             >
               {loading
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Cargando...</>

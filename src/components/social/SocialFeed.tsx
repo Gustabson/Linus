@@ -77,8 +77,8 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
     <div className="max-w-4xl mx-auto">
 
       {/* ── Sticky tab bar ──────────────────────────────────────── */}
-      <div className="sticky top-0 z-20 bg-gray-50 -mx-4 sm:-mx-6 px-4 sm:px-6 mb-6">
-        <div className="flex border-b border-gray-200">
+      <div className="sticky top-0 z-20 bg-bg -mx-4 sm:-mx-6 px-4 sm:px-6 mb-6">
+        <div className="flex border-b border-border">
           <TabLink href="/?tab=tendencias" active={isTendencias}   icon={<Flame className="w-4 h-4" />} label="Tendencias" />
           <TabLink href="/?tab=siguiendo"  active={!isTendencias}  icon={<Rss   className="w-4 h-4" />} label="Siguiendo"  />
         </div>
@@ -105,8 +105,8 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
         {/* Right sidebar — suggested teachers */}
         {suggested.length > 0 && (
           <div className="lg:sticky lg:top-20 space-y-4">
-            <div className="bg-white rounded-2xl border border-gray-200 p-4">
-              <h3 className="font-semibold text-gray-900 text-sm mb-4 flex items-center gap-2">
+            <div className="bg-surface rounded-2xl border border-border p-4">
+              <h3 className="font-semibold text-text text-sm mb-4 flex items-center gap-2">
                 <Users className="w-4 h-4 text-green-600" />
                 Personas para seguir
               </h3>
@@ -125,11 +125,11 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
                     <div className="flex-1 min-w-0">
                       <Link
                         href={`/${user.username ?? user.id}`}
-                        className="text-sm font-semibold text-gray-900 hover:text-green-700 truncate block transition-colors"
+                        className="text-sm font-semibold text-text hover:text-green-700 truncate block transition-colors"
                       >
                         {user.name}
                       </Link>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-text-subtle">
                         {user._count.ownedTrees} contenido{user._count.ownedTrees !== 1 ? "s" : ""}
                       </p>
                     </div>
@@ -169,7 +169,7 @@ function TabLink({ href, active, icon, label }: {
       className={`flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${
         active
           ? "border-green-700 text-green-700"
-          : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
+          : "border-transparent text-text-muted hover:text-text hover:border-gray-300"
       }`}
     >
       {icon}

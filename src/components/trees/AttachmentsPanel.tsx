@@ -164,7 +164,7 @@ function AttachSection({
           <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${meta.cls}`}>
             {meta.icon} {meta.plural}
           </span>
-          <span className="text-sm text-gray-400">{items.length}</span>
+          <span className="text-sm text-text-subtle">{items.length}</span>
         </div>
 
         {canAdd && (
@@ -174,7 +174,7 @@ function AttachSection({
               className={`flex items-center gap-1 text-xs border px-2.5 py-1.5 rounded-lg transition-colors ${
                 showSearch
                   ? "border-green-400 bg-green-50 text-green-700"
-                  : "border-gray-200 text-gray-600 hover:border-green-200 hover:bg-green-50 hover:text-green-700"
+                  : "border-border text-text-muted hover:border-green-200 hover:bg-green-50 hover:text-green-700"
               }`}
             >
               <Search className="w-3.5 h-3.5" />
@@ -198,9 +198,9 @@ function AttachSection({
       {/* Inline create form */}
       {showCreate && canAdd && (
         <form onSubmit={handleCreate}
-          className="bg-white rounded-xl border border-green-200 p-4 space-y-3">
+          className="bg-surface rounded-xl border border-green-200 p-4 space-y-3">
           <div>
-            <label className="block text-xs text-gray-500 mb-1 font-medium">
+            <label className="block text-xs text-text-muted mb-1 font-medium">
               Título del {meta.label.toLowerCase()} *
             </label>
             <input
@@ -208,16 +208,16 @@ function AttachSection({
               value={createTitle}
               onChange={(e) => setCreateTitle(e.target.value)}
               placeholder={meta.placeholder}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-green-400"
+              className="w-full border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-green-400"
             />
           </div>
-          <p className="text-xs text-gray-400 flex items-center gap-1">
+          <p className="text-xs text-text-subtle flex items-center gap-1">
             <FileText className="w-3.5 h-3.5" />
             Se crearán las 10 secciones automáticamente. Vas a ir directo al editor.
           </p>
           <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setShowCreate(false)}
-              className="text-sm text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-50">
+              className="text-sm text-text-muted px-3 py-1.5 rounded-lg hover:bg-bg">
               Cancelar
             </button>
             <button type="submit" disabled={creating || !createTitle.trim()}
@@ -232,21 +232,21 @@ function AttachSection({
 
       {/* Search existing */}
       {showSearch && canAdd && (
-        <div className="bg-white rounded-xl border border-green-200 p-3 space-y-2">
+        <div className="bg-surface rounded-xl border border-green-200 p-3 space-y-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-subtle" />
             <input
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={`Buscar ${meta.label.toLowerCase()}s públicos...`}
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-400"
+              className="w-full pl-9 pr-4 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-green-400"
             />
-            {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />}
+            {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-subtle animate-spin" />}
           </div>
 
           {results.length === 0 && !searching && (
-            <p className="text-xs text-gray-400 text-center py-3">
+            <p className="text-xs text-text-subtle text-center py-3">
               {query ? "Sin resultados." : `Escribí para buscar ${meta.label.toLowerCase()}s.`}
             </p>
           )}
@@ -254,17 +254,17 @@ function AttachSection({
           <div className="space-y-1.5 max-h-56 overflow-y-auto">
             {results.map((tree) => (
               <div key={tree.id}
-                className="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 hover:border-green-200 hover:bg-green-50 transition-colors">
+                className="flex items-center gap-3 p-2.5 rounded-lg border border-border-subtle hover:border-green-200 hover:bg-green-50 transition-colors">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 text-sm truncate">{tree.title}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="font-medium text-text text-sm truncate">{tree.title}</p>
+                  <p className="text-xs text-text-subtle">
                     {tree.owner.username ? `@${tree.owner.username}` : tree.owner.name}
                     {" · "}❤ {tree._count.likes} · ⑂ {tree._count.forks}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <Link href={`/${tree.owner.username ?? tree.owner.name ?? tree.id}/${tree.slug}`} target="_blank"
-                    className="p-1 text-gray-400 hover:text-green-700" title="Ver">
+                    className="p-1 text-text-subtle hover:text-green-700" title="Ver">
                     <ExternalLink className="w-3.5 h-3.5" />
                   </Link>
                   <button
@@ -282,7 +282,7 @@ function AttachSection({
 
       {/* Items grid */}
       {items.length === 0 ? (
-        <div className="bg-white rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
+        <div className="bg-surface rounded-xl border border-dashed border-border p-6 text-center text-sm text-text-subtle">
           {meta.emptyText}
           {canAdd && <span className="block mt-0.5 text-xs">{meta.hint}</span>}
         </div>
@@ -290,27 +290,27 @@ function AttachSection({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {items.map((att) => (
             <div key={att.id}
-              className="relative bg-white rounded-xl border border-gray-200 p-4 hover:border-green-300 transition-colors group flex flex-col gap-2">
+              className="relative bg-surface rounded-xl border border-border p-4 hover:border-green-300 transition-colors group flex flex-col gap-2">
               <Link href={`/${att.content.owner.username ?? att.content.owner.name ?? att.content.id}/${att.content.slug}`} className="absolute inset-0 rounded-xl" aria-label={att.content.title} />
 
               {/* Title row with detach button always visible */}
               <div className="flex items-start justify-between gap-2">
-                <p className="font-medium text-gray-900 text-sm group-hover:text-green-700 transition-colors line-clamp-2 flex-1">
+                <p className="font-medium text-text text-sm group-hover:text-green-700 transition-colors line-clamp-2 flex-1">
                   {att.content.title}
                 </p>
                 <button
                   onClick={() => detach(att.id, att.content.id)}
-                  className="relative z-10 shrink-0 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                  className="relative z-10 shrink-0 p-1.5 text-text-subtle hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                   title="Desadjuntar"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-text-subtle">
                 {att.content.owner.username ? `@${att.content.owner.username}` : att.content.owner.name}
               </p>
-              <div className="flex items-center gap-3 text-xs text-gray-400">
+              <div className="flex items-center gap-3 text-xs text-text-subtle">
                 <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{att.content._count.likes}</span>
                 <span className="flex items-center gap-1"><GitFork className="w-3 h-3" />{att.content._count.forks}</span>
               </div>
@@ -343,7 +343,7 @@ export function AttachmentsPanel({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-900">Módulos</h2>
+      <h2 className="text-xl font-semibold text-text">Módulos</h2>
       <AttachSection
         kernelSlug={kernelSlug}
         kernelId={kernelId}

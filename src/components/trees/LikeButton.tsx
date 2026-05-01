@@ -41,7 +41,7 @@ export function LikeButton({
         "flex items-center gap-2 border text-sm px-4 py-2 rounded-lg transition-all disabled:opacity-50",
         liked
           ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
-          : "border-gray-200 text-gray-600 hover:bg-gray-50"
+          : "border-border text-text-muted hover:bg-bg"
       )}
     >
       <Heart className={cn("w-4 h-4", liked && "fill-red-500 text-red-500")} />

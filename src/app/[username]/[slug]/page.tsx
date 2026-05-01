@@ -185,22 +185,22 @@ export default async function TreePage({
     <div className="space-y-8 max-w-4xl mx-auto">
       {/* Breadcrumb */}
       {ancestors.length > 0 && (
-        <nav className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+        <nav className="flex items-center gap-2 text-sm text-text-muted flex-wrap">
           {ancestors.map((a, i) => (
             <span key={a.id} className="flex items-center gap-2">
               {i > 0 && <ChevronRight className="w-4 h-4" />}
-              <Link href={`/${a.ownerUsername ?? a.id}/${a.slug}`} className="hover:text-gray-900">
+              <Link href={`/${a.ownerUsername ?? a.id}/${a.slug}`} className="hover:text-text">
                 {a.title}
               </Link>
             </span>
           ))}
           <ChevronRight className="w-4 h-4" />
-          <span className="text-gray-900">{tree.title}</span>
+          <span className="text-text">{tree.title}</span>
         </nav>
       )}
 
       {/* Header */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
+      <div className="bg-surface rounded-2xl border border-border p-6 space-y-5">
         {/* Author row */}
         <Link href={`/${authorSlug}`} className="flex items-center gap-3 group w-fit">
           {tree.owner.image ? (
@@ -212,11 +212,11 @@ export default async function TreePage({
             </div>
           )}
           <div>
-            <p className="font-medium text-gray-900 group-hover:text-green-700 transition-colors text-sm">
+            <p className="font-medium text-text group-hover:text-green-700 transition-colors text-sm">
               {tree.owner.name}
             </p>
             {tree.owner.username && (
-              <p className="text-xs text-gray-400">@{tree.owner.username}</p>
+              <p className="text-xs text-text-subtle">@{tree.owner.username}</p>
             )}
           </div>
         </Link>
@@ -231,15 +231,15 @@ export default async function TreePage({
                 </span>
               )}
               {tree.forkDepth > 0 && (
-                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span className="bg-border-subtle text-text-muted text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
                   <GitFork className="w-3 h-3" />
                   Fork nivel {tree.forkDepth}
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">{tree.title}</h1>
+            <h1 className="text-2xl font-bold text-text">{tree.title}</h1>
             {tree.description && (
-              <p className="text-gray-500">{tree.description}</p>
+              <p className="text-text-muted">{tree.description}</p>
             )}
           </div>
 
@@ -271,14 +271,14 @@ export default async function TreePage({
             )}
             {/* Preview — always visible for kernels (shows full read-only view) */}
             <Link href={`/${username}/${slug}/preview`}
-              className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+              className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-lg hover:bg-bg transition-colors">
               <Eye className="w-4 h-4" />
               Preview
             </Link>
             {isOwner && (
               <>
                 <Link href={`/${username}/${slug}/configuracion`}
-                  className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                  className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-lg hover:bg-bg transition-colors">
                   <Settings className="w-4 h-4" />
                   Configurar
                 </Link>
@@ -288,7 +288,7 @@ export default async function TreePage({
         </div>
 
         {/* Stats row */}
-        <div className="flex items-center gap-5 text-sm text-gray-500 pt-2 border-t border-gray-100 flex-wrap">
+        <div className="flex items-center gap-5 text-sm text-text-muted pt-2 border-t border-border-subtle flex-wrap">
           <span className="flex items-center gap-1">
             <GitFork className="w-4 h-4" />
             {tree._count.forks} forks
@@ -314,9 +314,9 @@ export default async function TreePage({
         {/* ── Documents (inside the card — kernel + docs = one visual unit) ── */}
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Documentos</p>
+            <p className="text-xs font-semibold uppercase tracking-widest text-text-subtle">Documentos</p>
             {tree.documents.length > 0 && (
-              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-border-subtle text-text-muted px-2 py-0.5 rounded-full font-medium">
                 {tree.documents.length}
               </span>
             )}

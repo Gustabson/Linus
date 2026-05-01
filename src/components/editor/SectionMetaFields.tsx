@@ -23,13 +23,13 @@ export function SectionMetaFields({
   onChange,
 }: SectionMetaFieldsProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-gray-50 rounded-xl">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-bg rounded-xl">
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Nivel</label>
+        <label className="text-xs text-text-muted block mb-1">Nivel</label>
         <select
           defaultValue={difficultyLevel ?? "BEGINNER"}
           onChange={(e) => onChange("difficultyLevel", e.target.value)}
-          className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white"
+          className="w-full text-sm border border-border rounded-lg px-2 py-1.5 bg-surface"
         >
           {Object.entries(DIFFICULTY_LABELS).map(([k, v]) => (
             <option key={k} value={k}>{v}</option>
@@ -37,33 +37,33 @@ export function SectionMetaFields({
         </select>
       </div>
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Edad min.</label>
+        <label className="text-xs text-text-muted block mb-1">Edad min.</label>
         <input
           type="number"
           defaultValue={ageRangeMin ?? ""}
           placeholder="5"
           onChange={(e) => onChange("ageRangeMin", e.target.value ? Number(e.target.value) : null)}
-          className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5"
+          className="w-full text-sm border border-border rounded-lg px-2 py-1.5"
         />
       </div>
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Edad max.</label>
+        <label className="text-xs text-text-muted block mb-1">Edad max.</label>
         <input
           type="number"
           defaultValue={ageRangeMax ?? ""}
           placeholder="18"
           onChange={(e) => onChange("ageRangeMax", e.target.value ? Number(e.target.value) : null)}
-          className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5"
+          className="w-full text-sm border border-border rounded-lg px-2 py-1.5"
         />
       </div>
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Duración (min)</label>
+        <label className="text-xs text-text-muted block mb-1">Duración (min)</label>
         <input
           type="number"
           defaultValue={durationMinutes ?? ""}
           placeholder="45"
           onChange={(e) => onChange("durationMinutes", e.target.value ? Number(e.target.value) : null)}
-          className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5"
+          className="w-full text-sm border border-border rounded-lg px-2 py-1.5"
         />
       </div>
     </div>

@@ -44,8 +44,8 @@ interface BellProps {
 }
 
 export function NotificationBell({
-  triggerClass  = "relative flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors",
-  dropdownClass = "absolute right-0 top-11 w-80 bg-white rounded-2xl border border-gray-200 shadow-lg z-50 overflow-hidden",
+  triggerClass  = "relative flex items-center justify-center w-9 h-9 rounded-xl text-text-muted hover:text-text hover:bg-bg transition-colors",
+  dropdownClass = "absolute right-0 top-11 w-80 bg-surface rounded-2xl border border-border shadow-lg z-50 overflow-hidden",
   label,
 }: BellProps = {}) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -112,13 +112,13 @@ export function NotificationBell({
 
       {open && (
         <div className={dropdownClass}>
-          <div className="px-4 py-3 border-b border-gray-100">
-            <span className="text-sm font-semibold text-gray-900">Notificaciones</span>
+          <div className="px-4 py-3 border-b border-border-subtle">
+            <span className="text-sm font-semibold text-text">Notificaciones</span>
           </div>
 
           <div className="max-h-96 overflow-y-auto divide-y divide-gray-50">
             {notifications.length === 0 ? (
-              <div className="py-10 text-center text-sm text-gray-400">
+              <div className="py-10 text-center text-sm text-text-subtle">
                 No tenés notificaciones
               </div>
             ) : (
@@ -129,7 +129,7 @@ export function NotificationBell({
                     key={n.id}
                     href={n.link}
                     onClick={() => setOpen(false)}
-                    className={`flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors ${!n.read ? "bg-green-50/50" : ""}`}
+                    className={`flex items-start gap-3 px-4 py-3 hover:bg-bg transition-colors ${!n.read ? "bg-green-50/50" : ""}`}
                   >
                     <div className="shrink-0 relative">
                       {n.actor.image ? (
@@ -139,16 +139,16 @@ export function NotificationBell({
                           {(n.actor.name ?? "?")[0]}
                         </div>
                       )}
-                      <span className="absolute -bottom-0.5 -right-0.5 bg-white rounded-full p-0.5">
+                      <span className="absolute -bottom-0.5 -right-0.5 bg-surface rounded-full p-0.5">
                         {meta.icon}
                       </span>
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-900 leading-snug">
+                      <p className="text-sm text-text leading-snug">
                         <span className="font-medium">{n.actor.name}</span> {meta.label}
                       </p>
-                      <p className="text-xs text-gray-400 mt-0.5">{formatRelative(n.createdAt)}</p>
+                      <p className="text-xs text-text-subtle mt-0.5">{formatRelative(n.createdAt)}</p>
                     </div>
 
                     {!n.read && <span className="shrink-0 mt-1.5 w-2 h-2 rounded-full bg-green-500" />}

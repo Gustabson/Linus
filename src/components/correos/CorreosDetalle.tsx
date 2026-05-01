@@ -91,34 +91,34 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
       {/* Back */}
       <Link
         href={backHref}
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-700 transition-colors mb-6"
+        className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-green-700 transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
         {backLabel}
       </Link>
 
       {/* Subject */}
-      <h1 className="text-2xl font-bold text-gray-900 mb-6 leading-snug">
+      <h1 className="text-2xl font-bold text-text mb-6 leading-snug">
         {message.subject}
       </h1>
 
       {/* Main message card */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
+      <div className="bg-surface rounded-2xl border border-border p-6 space-y-5">
         {/* Sender row */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             {avatarFor(message.sender)}
             <div>
-              <p className="font-semibold text-gray-900 text-sm">
+              <p className="font-semibold text-text text-sm">
                 {message.sender.name ?? "Usuario"}
                 {message.sender.username && (
-                  <span className="font-normal text-gray-400 ml-1">
+                  <span className="font-normal text-text-subtle ml-1">
                     @{message.sender.username}
                   </span>
                 )}
               </p>
               {message.recipient && (
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-text-subtle">
                   Para: {message.recipient.name ?? "Usuario"}
                   {message.recipient.username && ` (@${message.recipient.username})`}
                 </p>
@@ -126,14 +126,14 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-text-subtle">
               {formatDate(new Date(message.createdAt))}
             </span>
             <button
               onClick={handleDelete}
               disabled={deleting}
               title="Eliminar"
-              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+              className="p-1.5 rounded-lg text-text-subtle hover:text-red-500 hover:bg-red-50 transition-colors"
             >
               {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
             </button>
@@ -141,29 +141,29 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
         </div>
 
         {/* Divider */}
-        <hr className="border-gray-100" />
+        <hr className="border-border-subtle" />
 
         {/* Body — sanitized HTML from server */}
         <div
-          className="prose prose-sm max-w-none text-gray-800"
+          className="prose prose-sm max-w-none text-text"
           dangerouslySetInnerHTML={{ __html: message.body }}
         />
       </div>
 
       {/* Thread replies */}
       {replies.length > 0 && (
-        <div className="mt-4 space-y-3 pl-6 border-l-2 border-gray-100">
+        <div className="mt-4 space-y-3 pl-6 border-l-2 border-border-subtle">
           {replies.map((reply) => (
-            <div key={reply.id} className="bg-white rounded-xl border border-gray-200 p-4">
+            <div key={reply.id} className="bg-surface rounded-xl border border-border p-4">
               <div className="flex items-center gap-2.5 mb-3">
                 {avatarFor(reply.sender)}
                 <div>
-                  <p className="font-semibold text-gray-900 text-sm">{reply.sender.name}</p>
-                  <p className="text-xs text-gray-400">{formatDate(new Date(reply.createdAt))}</p>
+                  <p className="font-semibold text-text text-sm">{reply.sender.name}</p>
+                  <p className="text-xs text-text-subtle">{formatDate(new Date(reply.createdAt))}</p>
                 </div>
               </div>
               <div
-                className="prose prose-sm max-w-none text-gray-800"
+                className="prose prose-sm max-w-none text-text"
                 dangerouslySetInnerHTML={{ __html: reply.body }}
               />
             </div>
@@ -183,20 +183,20 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
               Responder
             </button>
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
-              <p className="text-sm font-medium text-gray-700">Tu respuesta</p>
+            <div className="bg-surface rounded-2xl border border-border p-4 space-y-3">
+              <p className="text-sm font-medium text-text">Tu respuesta</p>
               <textarea
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="Escribí tu respuesta..."
                 rows={4}
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 resize-none"
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-green-400 resize-none"
               />
               {error && <p className="text-sm text-red-500">{error}</p>}
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => { setShowReply(false); setReplyText(""); setError(""); }}
-                  className="text-sm text-gray-500 px-4 py-2 rounded-xl hover:bg-gray-50"
+                  className="text-sm text-text-muted px-4 py-2 rounded-xl hover:bg-bg"
                 >
                   Cancelar
                 </button>

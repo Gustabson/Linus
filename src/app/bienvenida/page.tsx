@@ -68,20 +68,20 @@ export default function BienvenidaPage() {
           <div className="w-14 h-14 bg-green-100 rounded-2xl flex items-center justify-center mx-auto">
             <BookOpen className="w-7 h-7 text-green-700" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">¡Bienvenido a EduHub!</h1>
-          <p className="text-gray-500 text-sm">
+          <h1 className="text-2xl font-bold text-text">¡Bienvenido a EduHub!</h1>
+          <p className="text-text-muted text-sm">
             Elegí un nombre de usuario único. Las demás personas lo usarán para encontrarte.
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-surface rounded-2xl border border-border p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text mb-1">
               Nombre de usuario
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm select-none">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle text-sm select-none">
                 @
               </span>
               <input
@@ -89,15 +89,15 @@ export default function BienvenidaPage() {
                 onChange={handleChange}
                 placeholder="tu_nombre"
                 maxLength={32}
-                className="w-full border border-gray-200 rounded-xl pl-8 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full border border-border rounded-xl pl-8 pr-10 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                {checking && <Loader2 className="w-4 h-4 text-gray-400 animate-spin" />}
+                {checking && <Loader2 className="w-4 h-4 text-text-subtle animate-spin" />}
                 {!checking && available === true && <CheckCircle className="w-4 h-4 text-green-600" />}
                 {!checking && available === false && <span className="text-red-500 text-xs">✗</span>}
               </div>
             </div>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-text-subtle mt-1">
               Solo letras minúsculas, números, guiones y guiones bajos. 3–32 caracteres.
             </p>
             {available === false && (
@@ -121,7 +121,7 @@ export default function BienvenidaPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400">
+        <p className="text-center text-xs text-text-subtle">
           Podés cambiarlo después desde tu perfil.
         </p>
       </div>

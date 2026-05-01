@@ -55,27 +55,27 @@ export default async function DocumentPreviewPage({
       <div className="flex items-center justify-between">
         <Link
           href={`/${username}/${slug}/${docSlug}`}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver al documento
         </Link>
-        <span className="text-xs bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+        <span className="text-xs bg-border-subtle text-text-muted px-3 py-1 rounded-full">
           Vista previa
         </span>
       </div>
 
       {/* Title card */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-8 space-y-3 text-center">
+      <div className="bg-surface rounded-2xl border border-border p-8 space-y-3 text-center">
         {tree.contentType === "KERNEL" && (
           <span className="inline-block bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full font-medium mb-2">
             Kernel oficial
           </span>
         )}
-        <h1 className="text-3xl font-bold text-gray-900">{doc.title}</h1>
-        <p className="text-gray-500">{tree.title}</p>
+        <h1 className="text-3xl font-bold text-text">{doc.title}</h1>
+        <p className="text-text-muted">{tree.title}</p>
         {latestVersion && (
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-text-subtle">
             Última actualización: {formatDate(latestVersion.createdAt)}
             {latestVersion.author.name && ` · ${latestVersion.author.name}`}
           </p>
@@ -93,8 +93,8 @@ export default async function DocumentPreviewPage({
 
       {/* Table of contents */}
       {sections.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <div className="bg-surface rounded-2xl border border-border p-6">
+          <h2 className="font-semibold text-text mb-3 flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-green-600" />
             Contenido
           </h2>
@@ -105,11 +105,11 @@ export default async function DocumentPreviewPage({
                 href={`#section-${section.id}`}
                 className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg transition-colors ${
                   section.isComplete
-                    ? "text-gray-700 hover:bg-green-50 hover:text-green-700"
-                    : "text-gray-400 cursor-default"
+                    ? "text-text hover:bg-green-50 hover:text-green-700"
+                    : "text-text-subtle cursor-default"
                 }`}
               >
-                <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 text-xs flex items-center justify-center shrink-0">
+                <span className="w-5 h-5 rounded-full bg-border-subtle text-text-muted text-xs flex items-center justify-center shrink-0">
                   {i + 1}
                 </span>
                 {section.sectionType}
@@ -122,13 +122,13 @@ export default async function DocumentPreviewPage({
       {/* Sections */}
       <div className="space-y-6">
         {sections.filter((s) => s.isComplete).map((section, i) => (
-          <div key={section.id} id={`section-${section.id}`} className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div key={section.id} id={`section-${section.id}`} className="bg-surface rounded-2xl border border-border overflow-hidden">
             {/* Section header */}
-            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center gap-3">
+            <div className="px-6 py-4 border-b border-border-subtle bg-bg flex items-center gap-3">
               <span className="w-7 h-7 rounded-full bg-green-100 text-green-700 text-sm font-medium flex items-center justify-center shrink-0">
                 {i + 1}
               </span>
-              <h2 className="font-semibold text-gray-900">{section.sectionType}</h2>
+              <h2 className="font-semibold text-text">{section.sectionType}</h2>
               {/* Meta badges */}
               <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
                 {section.difficultyLevel && (
@@ -144,7 +144,7 @@ export default async function DocumentPreviewPage({
                   </span>
                 )}
                 {section.durationMinutes && (
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                  <span className="text-xs bg-border-subtle text-text-muted px-2 py-0.5 rounded-full">
                     {section.durationMinutes} min
                   </span>
                 )}
@@ -159,14 +159,14 @@ export default async function DocumentPreviewPage({
         ))}
 
         {sections.length === 0 && (
-          <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center">
-            <p className="text-gray-400">Este documento todavía no tiene secciones.</p>
+          <div className="bg-surface rounded-2xl border border-dashed border-border p-12 text-center">
+            <p className="text-text-subtle">Este documento todavía no tiene secciones.</p>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="text-center text-xs text-gray-400 pb-8 space-y-1">
+      <div className="text-center text-xs text-text-subtle pb-8 space-y-1">
         <p>Generado por EduHub · Conocimiento Educativo Abierto</p>
         <Link href={`/${username}/${slug}/${docSlug}`} className="text-green-700 hover:underline">
           Ver versión completa con historial y comentarios

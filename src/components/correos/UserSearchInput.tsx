@@ -57,9 +57,9 @@ export function UserSearchInput({ value, onChange }: Props) {
   if (value) {
     return (
       <div className="flex items-center gap-2 flex-1">
-        <span className="text-sm text-gray-800 font-medium">{value.name}</span>
-        <span className="text-xs text-gray-400">@{value.username}</span>
-        <button onClick={clear} className="text-gray-400 hover:text-gray-600 transition-colors">
+        <span className="text-sm text-text font-medium">{value.name}</span>
+        <span className="text-xs text-text-subtle">@{value.username}</span>
+        <button onClick={clear} className="text-text-subtle hover:text-text-muted transition-colors">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -73,13 +73,13 @@ export function UserSearchInput({ value, onChange }: Props) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Buscar por nombre de usuario..."
-        className="w-full text-sm text-gray-800 placeholder-gray-400 focus:outline-none"
+        className="w-full text-sm text-text placeholder:text-text-subtle focus:outline-none"
       />
       {loading && (
-        <span className="absolute right-0 top-0 text-xs text-gray-400">Buscando...</span>
+        <span className="absolute right-0 top-0 text-xs text-text-subtle">Buscando...</span>
       )}
       {open && results.length > 0 && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+        <div className="absolute left-0 right-0 top-full mt-1 bg-surface border border-border rounded-xl shadow-lg z-50 overflow-hidden">
           {results.map((user) => (
             <button
               key={user.id}
@@ -100,16 +100,16 @@ export function UserSearchInput({ value, onChange }: Props) {
                 </div>
               )}
               <div>
-                <p className="text-sm font-medium text-gray-800">{user.name}</p>
-                <p className="text-xs text-gray-400">@{user.username}</p>
+                <p className="text-sm font-medium text-text">{user.name}</p>
+                <p className="text-xs text-text-subtle">@{user.username}</p>
               </div>
             </button>
           ))}
         </div>
       )}
       {open && results.length === 0 && !loading && query.length >= 2 && (
-        <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 px-3 py-2.5">
-          <p className="text-sm text-gray-400">Sin resultados para &ldquo;{query}&rdquo;</p>
+        <div className="absolute left-0 right-0 top-full mt-1 bg-surface border border-border rounded-xl shadow-lg z-50 px-3 py-2.5">
+          <p className="text-sm text-text-subtle">Sin resultados para &ldquo;{query}&rdquo;</p>
         </div>
       )}
     </div>

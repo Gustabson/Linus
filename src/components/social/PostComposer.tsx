@@ -96,7 +96,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+    <div className="bg-surface rounded-2xl border border-border p-5 space-y-3">
       <div className="flex gap-3">
         {/* Avatar */}
         <div className="shrink-0">
@@ -126,12 +126,12 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
             }}
             placeholder="¿Qué querés compartir con la comunidad?"
             rows={2}
-            className="w-full resize-none text-[15px] leading-relaxed placeholder-gray-400 focus:outline-none text-gray-800"
+            className="w-full resize-none text-[15px] leading-relaxed placeholder:text-text-subtle focus:outline-none text-text"
           />
 
           {/* Attached tree preview */}
           {attachedTree && (
-            <div className="mt-2 border border-gray-200 rounded-xl p-3 flex items-start gap-2.5 bg-gray-50">
+            <div className="mt-2 border border-border rounded-xl p-3 flex items-start gap-2.5 bg-bg">
               <BookOpen className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
@@ -144,12 +144,12 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
                     );
                   })()}
                 </div>
-                <p className="text-sm font-semibold text-gray-800 line-clamp-1">{attachedTree.title}</p>
-                <p className="text-xs text-gray-400">por {attachedTree.owner.name}</p>
+                <p className="text-sm font-semibold text-text line-clamp-1">{attachedTree.title}</p>
+                <p className="text-xs text-text-subtle">por {attachedTree.owner.name}</p>
               </div>
               <button
                 onClick={() => setAttachedTree(null)}
-                className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                className="shrink-0 text-text-subtle hover:text-text-muted transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -159,14 +159,14 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
       </div>
 
       {/* Divider */}
-      <div className="border-t border-gray-100" />
+      <div className="border-t border-border-subtle" />
 
       {/* Tree search toggle */}
       <div className="space-y-2">
         <button
           type="button"
           onClick={() => setShowTreeSearch(!showTreeSearch)}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-700 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-text-muted hover:text-green-700 transition-colors"
         >
           <BookOpen className="w-4 h-4" />
           {attachedTree ? "Cambiar contenido adjunto" : "Adjuntar kernel / módulo / recurso"}
@@ -180,15 +180,15 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
               value={treeQuery}
               onChange={(e) => searchTrees(e.target.value)}
               placeholder="Buscar por título..."
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+              className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-400"
             />
             {searching && (
-              <p className="text-xs text-gray-400 flex items-center gap-1.5 px-1">
+              <p className="text-xs text-text-subtle flex items-center gap-1.5 px-1">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Buscando...
               </p>
             )}
             {treeResults.length > 0 && (
-              <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+              <div className="border border-border rounded-xl overflow-hidden divide-y divide-border-subtle">
                 {treeResults.map((tree) => {
                   const badge = CONTENT_TYPE_BADGE[tree.contentType];
                   return (
@@ -207,8 +207,8 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${badge.cls}`}>
                           {badge.label}
                         </span>
-                        <span className="text-sm font-medium text-gray-800 truncate">{tree.title}</span>
-                        <span className="text-xs text-gray-400 shrink-0">por {tree.owner.name}</span>
+                        <span className="text-sm font-medium text-text truncate">{tree.title}</span>
+                        <span className="text-xs text-text-subtle shrink-0">por {tree.owner.name}</span>
                       </div>
                     </button>
                   );
@@ -216,7 +216,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
               </div>
             )}
             {treeQuery.trim().length >= 2 && !searching && treeResults.length === 0 && (
-              <p className="text-xs text-gray-400 px-1">Sin resultados.</p>
+              <p className="text-xs text-text-subtle px-1">Sin resultados.</p>
             )}
           </div>
         )}
@@ -224,7 +224,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
 
       {/* Footer: char count + submit */}
       <div className="flex items-center justify-between">
-        <span className={`text-xs ${overLimit ? "text-red-500 font-medium" : "text-gray-400"}`}>
+        <span className={`text-xs ${overLimit ? "text-red-500 font-medium" : "text-text-subtle"}`}>
           {charCount}/{MAX_CHARS}
         </span>
         <div className="flex items-center gap-3">

@@ -70,7 +70,7 @@ export default async function UserProfilePage({
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Profile header */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
+      <div className="bg-surface rounded-2xl border border-border p-6 md:p-8">
         <div className="flex flex-col md:flex-row items-start gap-6">
           {/* Avatar */}
           <div className="shrink-0">
@@ -87,9 +87,9 @@ export default async function UserProfilePage({
           <div className="flex-1 space-y-3">
             <div className="flex items-start justify-between flex-wrap gap-3">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
+                <h1 className="text-2xl font-bold text-text">{user.name}</h1>
                 {user.username && (
-                  <p className="text-gray-400 text-sm">@{user.username}</p>
+                  <p className="text-text-subtle text-sm">@{user.username}</p>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -115,10 +115,10 @@ export default async function UserProfilePage({
             </div>
 
             {user.bio && (
-              <p className="text-gray-600 leading-relaxed text-base">{user.bio}</p>
+              <p className="text-text-muted leading-relaxed text-base">{user.bio}</p>
             )}
 
-            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+            <div className="flex flex-wrap gap-4 text-sm text-text-muted">
               {user.location && (
                 <span className="flex items-center gap-1">
                   <MapPin className="w-4 h-4" />
@@ -141,7 +141,7 @@ export default async function UserProfilePage({
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-100">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border-subtle">
           {[
             { label: "Seguidores", value: user._count.followers },
             { label: "Siguiendo",  value: user._count.following  },
@@ -149,8 +149,8 @@ export default async function UserProfilePage({
             { label: "Likes recibidos", value: totalLikes },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
-              <div className="text-xs text-gray-400 mb-1">{stat.label}</div>
-              <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+              <div className="text-xs text-text-subtle mb-1">{stat.label}</div>
+              <div className="text-2xl font-bold text-text">{stat.value}</div>
             </div>
           ))}
         </div>
@@ -158,9 +158,9 @@ export default async function UserProfilePage({
 
       {/* Content */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">Contenido público</h2>
+        <h2 className="text-xl font-semibold text-text">Contenido público</h2>
         {user.ownedTrees.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center text-gray-400">
+          <div className="bg-surface rounded-2xl border border-dashed border-border p-10 text-center text-text-subtle">
             <p>Este usuario todavía no tiene contenido público.</p>
           </div>
         ) : (
@@ -170,26 +170,26 @@ export default async function UserProfilePage({
               const ts    = CONTENT_TYPE_STYLE[tree.contentType];
               return (
                 <Link key={tree.id} href={`/${user.username}/${tree.slug}`}
-                  className={`bg-white rounded-2xl border border-gray-200 p-6 ${ts.hoverBorderCls} hover:shadow-md transition-all group block`}>
+                  className={`bg-surface rounded-2xl border border-border p-6 ${ts.hoverBorderCls} hover:shadow-md transition-all group block`}>
                   <div className="flex items-center gap-2 mb-3 flex-wrap">
                     <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${badge.cls}`}>
                       {badge.icon}
                       {badge.label}
                     </span>
                     {tree.forkDepth > 0 && (
-                      <span className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="bg-border-subtle text-text-muted text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
                         <GitFork className="w-3 h-3" />
                         Fork
                       </span>
                     )}
                   </div>
-                  <h3 className={`text-base font-bold text-gray-900 ${ts.groupHoverTextCls} transition-colors mb-2 line-clamp-2`}>
+                  <h3 className={`text-base font-bold text-text ${ts.groupHoverTextCls} transition-colors mb-2 line-clamp-2`}>
                     {tree.title}
                   </h3>
                   {tree.description && (
-                    <p className="text-gray-500 text-sm line-clamp-2 mb-4 leading-relaxed">{tree.description}</p>
+                    <p className="text-text-muted text-sm line-clamp-2 mb-4 leading-relaxed">{tree.description}</p>
                   )}
-                  <div className="flex items-center gap-4 text-sm text-gray-400 pt-3 border-t border-gray-100">
+                  <div className="flex items-center gap-4 text-sm text-text-subtle pt-3 border-t border-border-subtle">
                     <span className="flex items-center gap-1">
                       <Heart className="w-4 h-4" /> {tree._count.likes}
                     </span>

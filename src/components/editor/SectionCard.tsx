@@ -87,10 +87,10 @@ export function SectionCard({
 
   return (
     <div className={cn(
-      "bg-white rounded-2xl border transition-all duration-200",
+      "bg-surface rounded-2xl border transition-all duration-200",
       isOpen
         ? "border-gray-300 shadow-sm"
-        : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
+        : "border-border hover:border-gray-300 hover:shadow-sm"
     )}>
 
       {/* ── Header ── */}
@@ -107,7 +107,7 @@ export function SectionCard({
             "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold transition-colors",
             isOpen
               ? "bg-gray-900 text-white"
-              : "bg-gray-100 text-gray-500"
+              : "bg-border-subtle text-text-muted"
           )}>
             {index + 1}
           </div>
@@ -122,10 +122,10 @@ export function SectionCard({
                 onBlur={commitTitle}
                 onKeyDown={handleTitleKeyDown}
                 onClick={(e) => e.stopPropagation()}
-                className="font-semibold text-gray-900 text-base bg-transparent border-b-2 border-gray-900 focus:outline-none min-w-0 flex-1 pb-0.5"
+                className="font-semibold text-text text-base bg-transparent border-b-2 border-gray-900 focus:outline-none min-w-0 flex-1 pb-0.5"
               />
             ) : (
-              <span className="font-semibold text-gray-900 text-base truncate leading-snug">
+              <span className="font-semibold text-text text-base truncate leading-snug">
                 {titleValue}
               </span>
             )}
@@ -145,21 +145,21 @@ export function SectionCard({
               : <Circle       className="w-5 h-5 text-gray-200"  />
             }
             {isOpen
-              ? <ChevronUp   className="w-4 h-4 text-gray-400" />
-              : <ChevronDown className="w-4 h-4 text-gray-400" />
+              ? <ChevronUp   className="w-4 h-4 text-text-subtle" />
+              : <ChevronDown className="w-4 h-4 text-text-subtle" />
             }
           </div>
         </button>
 
         {/* Owner actions — only visible when open */}
         {isOwner && isOpen && (
-          <div className="flex items-center gap-1 pr-4 border-l border-gray-100 pl-3">
+          <div className="flex items-center gap-1 pr-4 border-l border-border-subtle pl-3">
             {!editingTitle && (
               <button
                 type="button"
                 title="Renombrar"
                 onClick={startEditTitle}
-                className="p-2 text-gray-300 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                className="p-2 text-gray-300 hover:text-text hover:bg-bg rounded-lg transition-colors"
               >
                 <Pencil className="w-4 h-4" />
               </button>
@@ -176,7 +176,7 @@ export function SectionCard({
                 </button>
                 <button
                   onClick={() => setConfirmDelete(false)}
-                  className="text-xs text-gray-500 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="text-xs text-text-muted px-2 py-1 rounded-lg hover:bg-border-subtle transition-colors"
                 >
                   No
                 </button>
@@ -196,7 +196,7 @@ export function SectionCard({
 
       {/* ── Body ── */}
       {isOpen && (
-        <div className="border-t border-gray-100 px-5 pb-6 pt-5 space-y-5">
+        <div className="border-t border-border-subtle px-5 pb-6 pt-5 space-y-5">
 
           {/* Metadata (owner only) */}
           {isOwner && (
@@ -214,12 +214,12 @@ export function SectionCard({
             <div className="space-y-2">
               <iframe
                 src={(section.richTextContent as Record<string, unknown>).url as string}
-                className="w-full rounded-xl border border-gray-200"
+                className="w-full rounded-xl border border-border"
                 style={{ height: "600px" }}
                 title={section.sectionType}
               />
               {isOwner && (
-                <p className="text-xs text-gray-400 text-center">
+                <p className="text-xs text-text-subtle text-center">
                   PDF incrustado — no se puede editar directamente
                 </p>
               )}
@@ -250,7 +250,7 @@ export function SectionCard({
                     .trim().slice(0, 300);
                   if (text) onQuote(text, titleValue);
                 }}
-                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-green-700 border border-gray-200 hover:border-green-300 px-3 py-2 rounded-xl transition-colors"
+                className="flex items-center gap-1.5 text-xs text-text-muted hover:text-green-700 border border-border hover:border-green-300 px-3 py-2 rounded-xl transition-colors"
               >
                 <Quote className="w-3.5 h-3.5" />
                 Citar y comentar
@@ -258,7 +258,7 @@ export function SectionCard({
             )}
 
             {!isOwner && !isAuthenticated && (
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-text-subtle">
                 <a href="/login" className="text-green-700 hover:underline font-medium">Iniciá sesión</a>{" "}
                 para forkear y editar este currículo.
               </p>
@@ -275,7 +275,7 @@ export function SectionCard({
                   saved
                     ? "bg-green-100 text-green-700 cursor-default"
                     : saving
-                    ? "bg-gray-100 text-gray-500 cursor-wait"
+                    ? "bg-border-subtle text-text-muted cursor-wait"
                     : "bg-gray-900 text-white hover:bg-gray-800"
                 )}
               >

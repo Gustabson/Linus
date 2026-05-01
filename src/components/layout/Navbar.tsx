@@ -45,7 +45,7 @@ export function Navbar() {
         </div>
       )}
 
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <nav className="bg-surface border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
 
@@ -70,7 +70,7 @@ export function Navbar() {
                 <>
                   <Link
                     href={profileHref}
-                    className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 px-2 py-1.5 rounded-xl hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-2 text-sm text-text hover:text-text px-2 py-1.5 rounded-xl hover:bg-bg transition-colors"
                   >
                     {session.user?.image ? (
                       <Image
@@ -91,7 +91,7 @@ export function Navbar() {
                   <button
                     onClick={() => signOut()}
                     title="Cerrar sesión"
-                    className="text-gray-400 hover:text-red-500 p-2 rounded-xl hover:bg-red-50 transition-colors"
+                    className="text-text-subtle hover:text-red-500 p-2 rounded-xl hover:bg-red-50 transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -106,14 +106,14 @@ export function Navbar() {
             </div>
 
             {/* Mobile toggle */}
-            <button className="md:hidden p-2 rounded-xl hover:bg-gray-50" onClick={() => setOpen(!open)}>
+            <button className="md:hidden p-2 rounded-xl hover:bg-bg" onClick={() => setOpen(!open)}>
               {open ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
 
           {/* Mobile menu */}
           {open && (
-            <div className="md:hidden py-3 border-t border-gray-100 space-y-1">
+            <div className="md:hidden py-3 border-t border-border-subtle space-y-1">
               {session ? (
                 <>
                   {needsUsername && (
@@ -124,7 +124,7 @@ export function Navbar() {
                   <MobileLink href="/"          icon={<Home            className="w-4 h-4" />} label="Inicio"     onClick={() => setOpen(false)} />
                   <MobileLink href="/buscar"  icon={<Search          className="w-4 h-4" />} label="Buscar"   onClick={() => setOpen(false)} />
                   <MobileLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Mi espacio" onClick={() => setOpen(false)} />
-                  <div className="border-t border-gray-100 pt-2 mt-2">
+                  <div className="border-t border-border-subtle pt-2 mt-2">
                     <MobileLink
                       href={profileHref}
                       icon={
@@ -161,7 +161,7 @@ function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; l
   return (
     <Link
       href={href}
-      className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 font-medium px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors"
+      className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text font-medium px-3 py-2 rounded-xl hover:bg-bg transition-colors"
     >
       {icon}
       {label}
@@ -181,7 +181,7 @@ function MobileLink({
     <Link
       href={href}
       onClick={onClick}
-      className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+      className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-text rounded-xl hover:bg-bg transition-colors"
     >
       {icon}
       {label}

@@ -44,8 +44,8 @@ export default async function ConfiguracionPage() {
 
       {/* Header */}
       <div className="pb-2">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configuración</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <h1 className="text-2xl font-bold text-text dark:text-white">Configuración</h1>
+        <p className="text-sm text-text-muted dark:text-text-subtle mt-1">
           Gestioná tu perfil, cuenta y preferencias.
         </p>
       </div>

@@ -110,7 +110,7 @@ export function ExtensionsPanel({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">Recursos</h2>
+        <h2 className="text-xl font-semibold text-text">Recursos</h2>
         {isOwner && (
           <button
             onClick={() => setShowForm(!showForm)}
@@ -124,11 +124,11 @@ export function ExtensionsPanel({
 
       {/* Add form */}
       {showForm && (
-        <div className="bg-white rounded-2xl border border-green-200 p-5 space-y-3">
+        <div className="bg-surface rounded-2xl border border-green-200 p-5 space-y-3">
           {/* File upload area */}
           <div
             onClick={() => fileRef.current?.click()}
-            className="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center cursor-pointer hover:border-green-300 hover:bg-green-50 transition-colors"
+            className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:border-green-300 hover:bg-green-50 transition-colors"
           >
             {uploading ? (
               <div className="flex items-center justify-center gap-2 text-green-700">
@@ -139,57 +139,57 @@ export function ExtensionsPanel({
               <p className="text-sm text-green-700 font-medium">✓ Archivo subido</p>
             ) : (
               <>
-                <Upload className="w-6 h-6 mx-auto text-gray-400 mb-1" />
-                <p className="text-sm text-gray-500">
+                <Upload className="w-6 h-6 mx-auto text-text-subtle mb-1" />
+                <p className="text-sm text-text-muted">
                   Subir archivo <span className="text-green-700">(imágenes, PDFs, videos, docs)</span>
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">Máximo 10MB</p>
+                <p className="text-xs text-text-subtle mt-0.5">Máximo 10MB</p>
               </>
             )}
           </div>
           <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange}
             accept="image/*,video/*,.pdf,.zip,.doc,.docx,.ppt,.pptx,.txt,.csv" />
 
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <div className="flex-1 h-px bg-gray-100" />
+          <div className="flex items-center gap-2 text-xs text-text-subtle">
+            <div className="flex-1 h-px bg-border-subtle" />
             o pegá una URL
-            <div className="flex-1 h-px bg-gray-100" />
+            <div className="flex-1 h-px bg-border-subtle" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Tipo</label>
+              <label className="text-xs text-text-muted block mb-1">Tipo</label>
               <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm">
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm">
                 {Object.entries(TYPE_LABELS).map(([k, v]) => (
                   <option key={k} value={k}>{v}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Título *</label>
+              <label className="text-xs text-text-muted block mb-1">Título *</label>
               <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
                 placeholder="Nombre del recurso"
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm" />
             </div>
           </div>
 
           <div>
-            <label className="text-xs text-gray-500 block mb-1">URL (si no subiste archivo)</label>
+            <label className="text-xs text-text-muted block mb-1">URL (si no subiste archivo)</label>
             <input value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })}
               placeholder="https://..."
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm" />
           </div>
 
           <div>
-            <label className="text-xs text-gray-500 block mb-1">Descripción</label>
+            <label className="text-xs text-text-muted block mb-1">Descripción</label>
             <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="¿Para qué sirve este recurso?"
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm" />
           </div>
 
           <div className="flex justify-end gap-2">
-            <button onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-3 py-1.5 rounded-lg hover:bg-gray-50">
+            <button onClick={() => setShowForm(false)} className="text-sm text-text-muted px-3 py-1.5 rounded-lg hover:bg-bg">
               Cancelar
             </button>
             <button onClick={addExtension} disabled={saving || !form.title.trim()}
@@ -202,28 +202,28 @@ export function ExtensionsPanel({
 
       {/* List */}
       {extensions.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-8 text-center text-gray-400 text-sm">
+        <div className="bg-surface rounded-2xl border border-dashed border-border p-8 text-center text-text-subtle text-sm">
           No hay recursos todavía.
           {isOwner && " Agregá links, archivos o apps que complementen este currículo."}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {extensions.map((ext) => (
-            <div key={ext.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-start gap-3 group">
+            <div key={ext.id} className="bg-surface rounded-xl border border-border p-4 flex items-start gap-3 group">
               <div className="bg-green-50 p-2 rounded-lg text-green-700 shrink-0">
                 {TYPE_ICONS[ext.type] ?? <Link className="w-4 h-4" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-medium text-gray-900 text-sm truncate">{ext.title}</p>
-                    {ext.description && <p className="text-gray-500 text-xs mt-0.5">{ext.description}</p>}
-                    <p className="text-xs text-gray-400 mt-1">{TYPE_LABELS[ext.type]}</p>
+                    <p className="font-medium text-text text-sm truncate">{ext.title}</p>
+                    {ext.description && <p className="text-text-muted text-xs mt-0.5">{ext.description}</p>}
+                    <p className="text-xs text-text-subtle mt-1">{TYPE_LABELS[ext.type]}</p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {ext.url && (
                       <a href={ext.url} target="_blank" rel="noopener noreferrer"
-                        className="p-1 text-gray-400 hover:text-green-700">
+                        className="p-1 text-text-subtle hover:text-green-700">
                         <ExternalLink className="w-4 h-4" />
                       </a>
                     )}

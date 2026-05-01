@@ -40,13 +40,13 @@ export function CorreosList({ messages, folder }: Props) {
   if (messages.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-24 text-center px-8">
-        <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
+        <div className="w-16 h-16 rounded-2xl bg-border-subtle flex items-center justify-center mb-4">
           <Inbox className="w-8 h-8 text-gray-300" />
         </div>
-        <p className="font-semibold text-gray-600 text-lg">
+        <p className="font-semibold text-text-muted text-lg">
           {FOLDER_LABELS[folder]} vacía
         </p>
-        <p className="text-sm text-gray-400 mt-1">
+        <p className="text-sm text-text-subtle mt-1">
           {folder === "bandeja"
             ? "Cuando alguien te escriba, aparecerá acá."
             : folder === "enviados"
@@ -60,14 +60,14 @@ export function CorreosList({ messages, folder }: Props) {
   return (
     <div>
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-100">
-        <h2 className="font-semibold text-gray-900 text-base">
+      <div className="px-6 py-4 border-b border-border-subtle">
+        <h2 className="font-semibold text-text text-base">
           {FOLDER_LABELS[folder]}
         </h2>
       </div>
 
       {/* Message rows */}
-      <ul className="divide-y divide-gray-100">
+      <ul className="divide-y divide-border-subtle">
         {messages.map((msg) => {
           const isUnread  = !msg.isRead && folder === "bandeja";
           const preview   = stripHtml(msg.body);
@@ -77,7 +77,7 @@ export function CorreosList({ messages, folder }: Props) {
             <li key={msg.id}>
               <Link
                 href={folder === "borradores" ? `/correos/redactar?id=${msg.id}` : `/correos/${msg.id}`}
-                className={`flex items-start gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group ${
+                className={`flex items-start gap-4 px-6 py-4 hover:bg-bg transition-colors group ${
                   isUnread ? "bg-green-50/40" : ""
                 }`}
               >
@@ -109,21 +109,21 @@ export function CorreosList({ messages, folder }: Props) {
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className={`text-sm truncate ${isUnread ? "font-bold text-gray-900" : "font-medium text-gray-700"}`}>
+                    <span className={`text-sm truncate ${isUnread ? "font-bold text-text" : "font-medium text-text"}`}>
                       {folder === "bandeja"
                         ? (msg.sender.name ?? "Usuario")
                         : folder === "enviados"
                         ? `Para: ${msg.sender.name ?? "Usuario"}`
                         : (msg.sender.name ? `Para: ${msg.sender.name}` : "Sin destinatario")}
                     </span>
-                    <span className="text-xs text-gray-400 shrink-0">
+                    <span className="text-xs text-text-subtle shrink-0">
                       {formatDate(new Date(msg.createdAt))}
                     </span>
                   </div>
-                  <p className={`text-sm truncate mt-0.5 ${isUnread ? "font-semibold text-gray-800" : "text-gray-600"}`}>
+                  <p className={`text-sm truncate mt-0.5 ${isUnread ? "font-semibold text-text" : "text-text-muted"}`}>
                     {msg.subject}
                   </p>
-                  <p className="text-xs text-gray-400 truncate mt-0.5">
+                  <p className="text-xs text-text-subtle truncate mt-0.5">
                     {preview || "Sin contenido"}
                   </p>
                 </div>

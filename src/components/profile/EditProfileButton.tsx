@@ -43,7 +43,7 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 border border-gray-200 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-2 border border-border text-text text-sm px-4 py-2 rounded-lg hover:bg-bg transition-colors"
       >
         <Pencil className="w-4 h-4" />
         Editar perfil
@@ -51,11 +51,11 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
 
       {open && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-xl">
-            <div className="flex items-center justify-between p-5 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Editar perfil</h2>
+          <div className="bg-surface rounded-2xl w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between p-5 border-b border-border-subtle">
+              <h2 className="font-semibold text-text">Editar perfil</h2>
               <button onClick={() => setOpen(false)}>
-                <X className="w-5 h-5 text-gray-400" />
+                <X className="w-5 h-5 text-text-subtle" />
               </button>
             </div>
             <div className="p-5 space-y-4">
@@ -66,19 +66,19 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
                 { key: "website", label: "Sitio web", placeholder: "https://..." },
               ].map(({ key, label, placeholder }) => (
                 <div key={key}>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-text mb-1">
                     {label}
                   </label>
                   <input
                     value={form[key as keyof typeof form]}
                     onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                     placeholder={placeholder}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
               ))}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text mb-1">
                   Bio
                 </label>
                 <textarea
@@ -86,14 +86,14 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
                   onChange={(e) => setForm({ ...form, bio: e.target.value })}
                   placeholder="Contá algo sobre vos..."
                   rows={3}
-                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                  className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
                 />
               </div>
             </div>
-            <div className="p-5 border-t border-gray-100 flex justify-end gap-3">
+            <div className="p-5 border-t border-border-subtle flex justify-end gap-3">
               <button
                 onClick={() => setOpen(false)}
-                className="text-sm text-gray-600 px-4 py-2 rounded-lg hover:bg-gray-50"
+                className="text-sm text-text-muted px-4 py-2 rounded-lg hover:bg-bg"
               >
                 Cancelar
               </button>

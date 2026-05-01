@@ -36,8 +36,8 @@ export function Sidebar() {
   const itemCls = (href: string) =>
     `flex items-center gap-3.5 px-4 py-3 rounded-xl text-base font-medium transition-all ${
       isActive(href)
-        ? "bg-white/20 text-white"
-        : "text-green-100 hover:bg-white/10 hover:text-white"
+        ? "bg-surface/20 text-white"
+        : "text-green-100 hover:bg-surface/10 hover:text-white"
     }`;
 
   return (
@@ -80,9 +80,9 @@ export function Sidebar() {
         {/* Notificaciones */}
         <NotificationBell
           triggerClass={`flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium transition-all ${
-            "text-green-100 hover:bg-white/10 hover:text-white"
+            "text-green-100 hover:bg-surface/10 hover:text-white"
           }`}
-          dropdownClass="absolute left-full bottom-0 ml-3 w-80 bg-white rounded-2xl border border-gray-200 shadow-xl z-50 overflow-hidden"
+          dropdownClass="absolute left-full bottom-0 ml-3 w-80 bg-surface rounded-2xl border border-border shadow-xl z-50 overflow-hidden"
           label="Notificaciones"
         />
 
@@ -100,8 +100,8 @@ export function Sidebar() {
           href={profileHref}
           className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
             username && pathname === `/${username}`
-              ? "bg-white/20 text-white"
-              : "text-green-100 hover:bg-white/10 hover:text-white"
+              ? "bg-surface/20 text-white"
+              : "text-green-100 hover:bg-surface/10 hover:text-white"
           }`}
         >
           {session.user?.image ? (
@@ -123,7 +123,7 @@ export function Sidebar() {
         {/* Cerrar sesión */}
         <button
           onClick={() => signOut()}
-          className="flex items-center gap-3.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-green-200 hover:bg-white/10 hover:text-white transition-all"
+          className="flex items-center gap-3.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-green-200 hover:bg-surface/10 hover:text-white transition-all"
         >
           <LogOut className="w-5 h-5 shrink-0" />
           Cerrar sesión

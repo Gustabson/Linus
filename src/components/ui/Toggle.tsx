@@ -25,7 +25,7 @@ export function Toggle({ checked, onChange, disabled, className }: Props) {
       )}
     >
       <span className={cn(
-        "pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg",
+        "pointer-events-none inline-block h-5 w-5 rounded-full bg-surface shadow-lg",
         "transform transition-transform duration-200",
         checked ? "translate-x-5" : "translate-x-0",
       )} />

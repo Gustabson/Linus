@@ -55,33 +55,33 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
   return (
     <div className="space-y-5">
       {/* Basic info */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-        <h2 className="font-semibold text-gray-900">Información general</h2>
+      <div className="bg-surface rounded-2xl border border-border p-6 space-y-4">
+        <h2 className="font-semibold text-text">Información general</h2>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+          <label className="block text-sm font-medium text-text mb-1">Título</label>
           <input
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+          <label className="block text-sm font-medium text-text mb-1">Descripción</label>
           <textarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             rows={3}
             placeholder="¿De qué trata este currículo?"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+            className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
           />
         </div>
       </div>
 
       {/* Visibility */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
-        <h2 className="font-semibold text-gray-900">Visibilidad</h2>
+      <div className="bg-surface rounded-2xl border border-border p-6 space-y-3">
+        <h2 className="font-semibold text-text">Visibilidad</h2>
         <div className="space-y-2">
           {visibilityOptions.map((opt) => (
             <button
@@ -91,15 +91,15 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
               className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all ${
                 form.visibility === opt.value
                   ? "border-green-500 bg-green-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  : "border-border hover:border-gray-300"
               }`}
             >
-              <div className={`p-1.5 rounded-lg ${form.visibility === opt.value ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+              <div className={`p-1.5 rounded-lg ${form.visibility === opt.value ? "bg-green-100 text-green-700" : "bg-border-subtle text-text-muted"}`}>
                 {opt.icon}
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900">{opt.label}</p>
-                <p className="text-xs text-gray-500">{opt.desc}</p>
+                <p className="text-sm font-medium text-text">{opt.label}</p>
+                <p className="text-xs text-text-muted">{opt.desc}</p>
               </div>
               <div className={`ml-auto w-4 h-4 rounded-full border-2 ${
                 form.visibility === opt.value ? "border-green-500 bg-green-500" : "border-gray-300"
@@ -124,9 +124,9 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
 
       {/* Danger zone */}
       {tree.contentType !== "KERNEL" && (
-        <div className="bg-white rounded-2xl border border-red-100 p-6 space-y-3">
+        <div className="bg-surface rounded-2xl border border-red-100 p-6 space-y-3">
           <h2 className="font-semibold text-red-700">Zona de peligro</h2>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-text-muted">
             Archivar el currículo lo ocultará de búsquedas pero los forks existentes seguirán funcionando.
           </p>
           <button

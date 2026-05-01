@@ -98,7 +98,7 @@ export function NewTreeForm({
   const selectedMeta  = CONTENT_TYPES.find((t) => t.value === contentType)!;
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
+    <form onSubmit={handleSubmit} className="bg-surface rounded-2xl border border-border p-6 space-y-5">
       {/* Type selector — hidden when type is locked from context */}
       {lockType ? (
         <div className={`flex items-center gap-3 p-3 rounded-xl border ${selectedStyle.borderCls} ${selectedStyle.lightBgCls}`}>
@@ -106,13 +106,13 @@ export function NewTreeForm({
             {selectedStyle.iconLg}
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">{selectedStyle.label}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{selectedMeta.desc}</p>
+            <p className="text-sm font-medium text-text">{selectedStyle.label}</p>
+            <p className="text-xs text-text-muted mt-0.5">{selectedMeta.desc}</p>
           </div>
         </div>
       ) : (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de contenido</label>
+          <label className="block text-sm font-medium text-text mb-2">Tipo de contenido</label>
           <div className="space-y-2">
             {CONTENT_TYPES.map((t) => {
               const ts      = CONTENT_TYPE_STYLE[t.value];
@@ -125,15 +125,15 @@ export function NewTreeForm({
                   className={`w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all ${
                     isActive
                       ? `${ts.accentBorderCls} ${ts.lightBgCls}`
-                      : "border-gray-200 hover:border-gray-300"
+                      : "border-border hover:border-gray-300"
                   }`}
                 >
-                  <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? ts.iconBgCls : "bg-gray-100 text-gray-500"}`}>
+                  <div className={`p-1.5 rounded-lg shrink-0 mt-0.5 ${isActive ? ts.iconBgCls : "bg-border-subtle text-text-muted"}`}>
                     {ts.iconLg}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{ts.label}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{t.desc}</p>
+                    <p className="text-sm font-medium text-text">{ts.label}</p>
+                    <p className="text-xs text-text-muted mt-0.5">{t.desc}</p>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 shrink-0 mt-1 ${isActive ? `${ts.accentBorderCls} ${ts.progressCls}` : "border-gray-300"}`} />
                 </button>
@@ -144,7 +144,7 @@ export function NewTreeForm({
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+        <label className="block text-sm font-medium text-text mb-1">Título *</label>
         <input
           name="title"
           required
@@ -155,21 +155,21 @@ export function NewTreeForm({
             contentType === "MODULE"   ? "Ej: Unidad de Fracciones - 4to grado" :
                                          "Ej: Guía de actividades de lectura"
           }
-          className={`w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 ${selectedStyle.ringCls}`}
+          className={`w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 ${selectedStyle.ringCls}`}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Descripción (opcional)</label>
+        <label className="block text-sm font-medium text-text mb-1">Descripción (opcional)</label>
         <textarea name="description" rows={3}
           placeholder="¿Para qué nivel? ¿Qué enfoque tiene? ¿En qué contexto?"
-          className={`w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 ${selectedStyle.ringCls} resize-none`} />
+          className={`w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 ${selectedStyle.ringCls} resize-none`} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Idioma</label>
-          <select name="language" className={`w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 ${selectedStyle.ringCls}`}>
+          <label className="block text-sm font-medium text-text mb-1">Idioma</label>
+          <select name="language" className={`w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 ${selectedStyle.ringCls}`}>
             <option value="es">Español</option>
             <option value="en">Inglés</option>
             <option value="pt">Portugués</option>
@@ -177,8 +177,8 @@ export function NewTreeForm({
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Visibilidad</label>
-          <select name="visibility" className={`w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 ${selectedStyle.ringCls}`}>
+          <label className="block text-sm font-medium text-text mb-1">Visibilidad</label>
+          <select name="visibility" className={`w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 ${selectedStyle.ringCls}`}>
             <option value="PUBLIC">Público</option>
             <option value="UNLISTED">No listado</option>
             <option value="PRIVATE">Privado</option>

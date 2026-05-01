@@ -48,7 +48,9 @@
       "Bash(sed -i 's/Seguí a otros docentes para ver sus publicaciones acá\\\\./Seguí a otras personas para ver sus publicaciones acá./g' src/components/social/PostFeed.tsx)",
       "Bash(sed -i 's/Elegí un nombre de usuario para que otros maestros puedan encontrarte\\\\./Elegí un nombre de usuario para que otros puedan encontrarte./g' src/components/layout/Navbar.tsx)",
       "Bash(sed -i 's/El currículo base de tu escuela o institución\\\\. Otros maestros lo pueden forkear y adaptar\\\\./El currículo base de tu escuela o institución. Cualquiera puede forkearlo y adaptarlo./g' src/components/trees/NewTreeForm.tsx)",
-      "Bash(npm uninstall *)"
+      "Bash(npm uninstall *)",
+      "Bash(grep -v \"^$\\\\|Retrieving\\\\|Fetching\\\\|Age\\\\|Project\")",
+      "WebFetch(domain:play.tailwindcss.com)"
     ]
   }
 }

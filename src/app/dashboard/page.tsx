@@ -63,12 +63,12 @@ export default async function DashboardPage({
           )}
           <div>
             <div>
-              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5">Espacio de trabajo</p>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <p className="text-xs font-medium text-text-subtle uppercase tracking-wide mb-0.5">Espacio de trabajo</p>
+              <h1 className="text-2xl font-bold text-text">
                 {user?.name?.split(" ")[0]} 👋
               </h1>
             </div>
-            {user?.username && <p className="text-sm text-gray-400">@{user.username}</p>}
+            {user?.username && <p className="text-sm text-text-subtle">@{user.username}</p>}
           </div>
         </div>
         <Link
@@ -86,23 +86,23 @@ export default async function DashboardPage({
           const ts = CONTENT_TYPE_STYLE[t.key];
           return (
             <Link key={t.key} href={`/dashboard?tab=${t.key}`}
-              className={`bg-white rounded-2xl border border-gray-200 px-4 py-3 ${ts.hoverBorderCls} transition-colors`}>
-              <div className="flex items-center gap-2 mb-1">{t.icon}<span className="text-xs text-gray-500">{t.label}</span></div>
-              <p className="text-2xl font-bold text-gray-900">{byType[t.key].length}</p>
+              className={`bg-surface rounded-2xl border border-border px-4 py-3 ${ts.hoverBorderCls} transition-colors`}>
+              <div className="flex items-center gap-2 mb-1">{t.icon}<span className="text-xs text-text-muted">{t.label}</span></div>
+              <p className="text-2xl font-bold text-text">{byType[t.key].length}</p>
             </Link>
           );
         })}
-        <div className="bg-white rounded-2xl border border-gray-200 px-4 py-3">
+        <div className="bg-surface rounded-2xl border border-border px-4 py-3">
           <div className="flex items-center gap-2 mb-1">
-            <GitFork className="w-4 h-4 text-gray-500" />
-            <span className="text-xs text-gray-500">Forks recibidos</span>
+            <GitFork className="w-4 h-4 text-text-muted" />
+            <span className="text-xs text-text-muted">Forks recibidos</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{totalForks}</p>
+          <p className="text-2xl font-bold text-text">{totalForks}</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200 pb-0">
+      <div className="flex gap-2 border-b border-border pb-0">
         {CONTENT_TABS.map((t) => {
           const ts       = CONTENT_TYPE_STYLE[t.key];
           const isActive = activeTab === t.key;
@@ -111,11 +111,11 @@ export default async function DashboardPage({
               className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
                 isActive
                   ? `${ts.accentBorderCls} ${ts.textCls}`
-                  : "border-transparent text-gray-500 hover:text-gray-900"
+                  : "border-transparent text-text-muted hover:text-text"
               }`}>
               {t.icon}
               {t.label}
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? ts.badgeCls : "bg-gray-100 text-gray-500"}`}>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? ts.badgeCls : "bg-border-subtle text-text-muted"}`}>
                 {byType[t.key].length}
               </span>
             </Link>
@@ -125,14 +125,14 @@ export default async function DashboardPage({
 
       {/* Content */}
       {activeTrees.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-12 text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+        <div className="bg-surface rounded-2xl border border-dashed border-gray-300 p-12 text-center">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-border-subtle flex items-center justify-center text-text-subtle">
             {CONTENT_TABS.find(t => t.key === activeTab)?.icon}
           </div>
-          <h3 className="font-medium text-gray-900 mb-1">
+          <h3 className="font-medium text-text mb-1">
             Todavía no tenés {CONTENT_TYPE_BADGE[activeTab].label.toLowerCase()}s
           </h3>
-          <p className="text-gray-500 text-sm mb-4">
+          <p className="text-text-muted text-sm mb-4">
             {activeTab === "KERNEL"
               ? "Creá el currículo base de tu escuela o forkeá uno existente."
               : activeTab === "MODULE"
@@ -154,7 +154,7 @@ export default async function DashboardPage({
             const badge = CONTENT_TYPE_BADGE[tree.contentType];
             const ts    = CONTENT_TYPE_STYLE[tree.contentType];
             return (
-              <div key={tree.id} className={`relative bg-white rounded-2xl border border-gray-200 ${ts.hoverBorderCls} hover:shadow-md transition-all group flex flex-col`}>
+              <div key={tree.id} className={`relative bg-surface rounded-2xl border border-border ${ts.hoverBorderCls} hover:shadow-md transition-all group flex flex-col`}>
                 <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
                 <div className="p-6 flex flex-col gap-4 flex-1">
@@ -164,14 +164,14 @@ export default async function DashboardPage({
                       {badge.label}
                     </span>
                     {tree.parentTree && (
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
+                      <span className="text-xs text-text-subtle flex items-center gap-1">
                         <GitFork className="w-3 h-3" />
                         Fork de {tree.parentTree.title}
                       </span>
                     )}
                     <span className={`ml-auto text-xs px-2.5 py-1 rounded-full font-medium ${
                       tree.visibility === "PUBLIC"   ? "bg-green-50 text-green-600" :
-                      tree.visibility === "UNLISTED" ? "bg-gray-100 text-gray-500"  :
+                      tree.visibility === "UNLISTED" ? "bg-border-subtle text-text-muted"  :
                                                        "bg-red-50 text-red-500"
                     }`}>
                       {tree.visibility === "PUBLIC" ? "Público" : tree.visibility === "UNLISTED" ? "No listado" : "Privado"}
@@ -179,12 +179,12 @@ export default async function DashboardPage({
                   </div>
 
                   {/* Title */}
-                  <h3 className={`text-base font-bold text-gray-900 ${ts.groupHoverTextCls} transition-colors line-clamp-2 flex-1`}>
+                  <h3 className={`text-base font-bold text-text ${ts.groupHoverTextCls} transition-colors line-clamp-2 flex-1`}>
                     {tree.title}
                   </h3>
 
                   {/* Stats */}
-                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                  <div className="flex items-center gap-4 text-sm text-text-subtle">
                     <span className="flex items-center gap-1"><Heart className="w-4 h-4" />{tree._count.likes}</span>
                     <span className="flex items-center gap-1"><GitFork className="w-4 h-4" />{tree._count.forks}</span>
                     {tree.contentType === "KERNEL" && (
@@ -194,13 +194,13 @@ export default async function DashboardPage({
                   </div>
                 </div>
 
-                <div className="border-t border-gray-100 px-6 py-3 flex items-center gap-3 flex-wrap">
+                <div className="border-t border-border-subtle px-6 py-3 flex items-center gap-3 flex-wrap">
                   <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}`}
-                    className="relative z-10 flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50">
+                    className="relative z-10 flex items-center gap-1.5 text-sm text-text-muted hover:text-green-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50">
                     <Eye className="w-4 h-4" /> Ver
                   </Link>
                   <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}/configuracion`}
-                    className="relative z-10 flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50">
+                    className="relative z-10 flex items-center gap-1.5 text-sm text-text-muted hover:text-green-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50">
                     <Settings className="w-4 h-4" /> Configurar
                   </Link>
                   <DeleteTreeButton slug={tree.slug} title={tree.title} hasForks={tree._count.forks > 0} />

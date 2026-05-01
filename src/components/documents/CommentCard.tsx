@@ -29,38 +29,38 @@ export function CommentCard({ comment, currentUserId, onDelete, formatDate }: Pr
   const isOwn = comment.author.id === currentUserId;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-2 group">
+    <div className="bg-surface rounded-xl border border-border p-4 space-y-2 group">
       {/* Quoted text */}
       {comment.quotedText && (
-        <div className="bg-gray-50 border-l-4 border-gray-300 pl-3 py-1.5 rounded-r-lg">
+        <div className="bg-bg border-l-4 border-gray-300 pl-3 py-1.5 rounded-r-lg">
           {comment.sectionType && (
-            <p className="text-xs text-gray-500 font-medium mb-0.5">{comment.sectionType}</p>
+            <p className="text-xs text-text-muted font-medium mb-0.5">{comment.sectionType}</p>
           )}
-          <p className="text-xs text-gray-600 italic line-clamp-2">&ldquo;{comment.quotedText}&rdquo;</p>
+          <p className="text-xs text-text-muted italic line-clamp-2">&ldquo;{comment.quotedText}&rdquo;</p>
         </div>
       )}
 
-      <p className="text-sm text-gray-800">{comment.content}</p>
+      <p className="text-sm text-text">{comment.content}</p>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {comment.author.image ? (
             <Image src={comment.author.image} alt="" width={20} height={20} className="rounded-full" />
           ) : (
-            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">
+            <div className="w-5 h-5 rounded-full bg-border flex items-center justify-center text-xs text-text-muted">
               {(comment.author.name ?? "?")[0]}
             </div>
           )}
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-text-muted">
             {comment.author.name}
             {comment.author.username && (
-              <span className="text-gray-400"> @{comment.author.username}</span>
+              <span className="text-text-subtle"> @{comment.author.username}</span>
             )}
           </span>
           <span className="text-xs text-gray-300">·</span>
-          <span className="text-xs text-gray-400">{formatDate(comment.createdAt)}</span>
+          <span className="text-xs text-text-subtle">{formatDate(comment.createdAt)}</span>
           {comment.isPrivate && (
-            <span className="flex items-center gap-0.5 text-xs text-gray-400">
+            <span className="flex items-center gap-0.5 text-xs text-text-subtle">
               <Lock className="w-3 h-3" /> privado
             </span>
           )}

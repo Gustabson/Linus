@@ -23,7 +23,7 @@ export function CorreosSidebar({ unreadCount }: Props) {
   }
 
   return (
-    <aside className="w-56 shrink-0 border-r border-gray-200 flex flex-col bg-white">
+    <aside className="w-56 shrink-0 border-r border-border flex flex-col bg-surface">
       {/* Redactar — full page navigation */}
       <div className="p-4">
         <Link
@@ -48,7 +48,7 @@ export function CorreosSidebar({ unreadCount }: Props) {
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
               isActive(href)
                 ? "bg-green-50 text-green-800"
-                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                : "text-text-muted hover:bg-border-subtle hover:text-text"
             }`}
           >
             <Icon className="w-4 h-4 shrink-0" />

@@ -58,8 +58,8 @@ export default async function ExplorarPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Explorar</h1>
-        <p className="text-gray-500 mt-1">Descubrí kernels, módulos y recursos de todo el mundo.</p>
+        <h1 className="text-3xl font-bold text-text">Explorar</h1>
+        <p className="text-text-muted mt-1">Descubrí kernels, módulos y recursos de todo el mundo.</p>
       </div>
 
       {/* Content type tabs */}
@@ -71,7 +71,7 @@ export default async function ExplorarPage({
               className={`flex items-center gap-2 text-base px-5 py-3 rounded-xl border font-medium transition-colors ${
                 contentType === tab.key
                   ? `${ts.btnCls} border-transparent`
-                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                  : "bg-surface text-text-muted border-border hover:border-gray-300"
               }`}>
               {tab.icon}
               {tab.label}
@@ -85,10 +85,10 @@ export default async function ExplorarPage({
         <input type="hidden" name="tipo" value={contentType} />
         <input type="hidden" name="sort" value={sort} />
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-subtle" />
           <input name="q" defaultValue={q}
             placeholder={`Buscar ${badge.label.toLowerCase()}s...`}
-            className={`w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl text-base focus:outline-none focus:ring-2 ${style.ringCls} bg-white`} />
+            className={`w-full pl-11 pr-4 py-3 border border-border rounded-xl text-base focus:outline-none focus:ring-2 ${style.ringCls} bg-surface`} />
         </div>
         <button type="submit" className={`px-6 py-3 rounded-xl text-base font-medium transition-colors ${style.btnCls}`}>
           Buscar
@@ -106,22 +106,22 @@ export default async function ExplorarPage({
             className={`flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl border font-medium transition-colors ${
               sort === opt.key
                 ? "bg-green-700 text-white border-green-700"
-                : "bg-white text-gray-600 border-gray-200 hover:border-green-300"
+                : "bg-surface text-text-muted border-border hover:border-green-300"
             }`}>
             {opt.icon}
             {opt.label}
           </Link>
         ))}
-        <p className="ml-auto text-sm text-gray-400">
+        <p className="ml-auto text-sm text-text-subtle">
           {sorted.length} resultado{sorted.length !== 1 ? "s" : ""}
         </p>
       </div>
 
       {/* Results */}
       {sorted.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-200">
+        <div className="text-center py-16 bg-surface rounded-2xl border border-dashed border-border">
           <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="text-gray-600 text-base">No se encontraron {badge.label.toLowerCase()}s.</p>
+          <p className="text-text-muted text-base">No se encontraron {badge.label.toLowerCase()}s.</p>
           <Link href="/nuevo" className={`inline-flex items-center gap-2 mt-4 px-5 py-3 rounded-xl text-base font-medium transition-colors ${style.btnCls}`}>
             Crear el primero
           </Link>
@@ -133,7 +133,7 @@ export default async function ExplorarPage({
             const tb = CONTENT_TYPE_BADGE[tree.contentType];
             const ts = CONTENT_TYPE_STYLE[tree.contentType];
             return (
-              <div key={tree.id} className={`relative bg-white rounded-2xl border border-gray-200 ${ts.hoverBorderCls} hover:shadow-sm transition-all group flex items-start gap-4 p-5`}>
+              <div key={tree.id} className={`relative bg-surface rounded-2xl border border-border ${ts.hoverBorderCls} hover:shadow-sm transition-all group flex items-start gap-4 p-5`}>
                 <Link href={`/${tree.owner.username ?? tree.owner.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
                 {/* Left: type indicator */}
@@ -146,16 +146,16 @@ export default async function ExplorarPage({
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${tb.cls}`}>{tb.label}</span>
                     {tree.forkDepth > 0 && (
-                      <span className="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="bg-border-subtle text-text-muted text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
                         <GitFork className="w-3 h-3" /> Fork
                       </span>
                     )}
                   </div>
-                  <h3 className={`text-base font-bold text-gray-900 ${ts.groupHoverTextCls} transition-colors line-clamp-1`}>
+                  <h3 className={`text-base font-bold text-text ${ts.groupHoverTextCls} transition-colors line-clamp-1`}>
                     {tree.title}
                   </h3>
                   {tree.description && (
-                    <p className="text-gray-500 text-sm line-clamp-1 mt-0.5">{tree.description}</p>
+                    <p className="text-text-muted text-sm line-clamp-1 mt-0.5">{tree.description}</p>
                   )}
                   <div className="flex items-center gap-3 mt-2">
                     <Link href={`/${tree.owner.username ?? tree.owner.id}`} className="relative z-10 flex items-center gap-1.5 hover:opacity-80 transition-opacity">
@@ -166,16 +166,16 @@ export default async function ExplorarPage({
                           {(tree.owner.name ?? "?")[0]}
                         </div>
                       )}
-                      <span className="text-xs text-gray-500">{tree.owner.name}</span>
+                      <span className="text-xs text-text-muted">{tree.owner.name}</span>
                     </Link>
                     <span className="text-xs text-gray-300">·</span>
-                    <span className="text-xs text-gray-400 flex items-center gap-1"><Heart className="w-3 h-3" />{tree._count.likes}</span>
-                    <span className="text-xs text-gray-400 flex items-center gap-1"><GitFork className="w-3 h-3" />{tree._count.forks}</span>
+                    <span className="text-xs text-text-subtle flex items-center gap-1"><Heart className="w-3 h-3" />{tree._count.likes}</span>
+                    <span className="text-xs text-text-subtle flex items-center gap-1"><GitFork className="w-3 h-3" />{tree._count.forks}</span>
                   </div>
                 </div>
 
                 {/* Right: date */}
-                <span className="text-xs text-gray-400 shrink-0 hidden sm:block">{formatDate(tree.createdAt)}</span>
+                <span className="text-xs text-text-subtle shrink-0 hidden sm:block">{formatDate(tree.createdAt)}</span>
               </div>
             );
           })}
@@ -187,7 +187,7 @@ export default async function ExplorarPage({
             const tb = CONTENT_TYPE_BADGE[tree.contentType];
             const ts = CONTENT_TYPE_STYLE[tree.contentType];
             return (
-              <div key={tree.id} className={`relative bg-white rounded-2xl border border-gray-200 p-6 ${ts.hoverBorderCls} hover:shadow-md transition-all group flex flex-col`}>
+              <div key={tree.id} className={`relative bg-surface rounded-2xl border border-border p-6 ${ts.hoverBorderCls} hover:shadow-md transition-all group flex flex-col`}>
                 <Link href={`/${tree.owner.username ?? tree.owner.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
                 {/* Author */}
@@ -200,22 +200,22 @@ export default async function ExplorarPage({
                       {(tree.owner.name ?? "?")[0]}
                     </div>
                   )}
-                  <span className="text-sm text-gray-500 hover:text-green-700 transition-colors">{tree.owner.name}</span>
+                  <span className="text-sm text-text-muted hover:text-green-700 transition-colors">{tree.owner.name}</span>
                 </Link>
 
-                <h3 className={`text-base font-bold text-gray-900 ${ts.groupHoverTextCls} transition-colors line-clamp-2 mb-1 flex-1`}>
+                <h3 className={`text-base font-bold text-text ${ts.groupHoverTextCls} transition-colors line-clamp-2 mb-1 flex-1`}>
                   {tree.title}
                 </h3>
                 {tree.description && (
-                  <p className="text-gray-500 text-sm line-clamp-2 mb-4 leading-relaxed">{tree.description}</p>
+                  <p className="text-text-muted text-sm line-clamp-2 mb-4 leading-relaxed">{tree.description}</p>
                 )}
 
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto">
+                <div className="flex items-center justify-between pt-3 border-t border-border-subtle mt-auto">
                   <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${tb.cls}`}>
                     {tb.icon}
                     {tb.label}
                   </span>
-                  <div className="flex items-center gap-3 text-sm text-gray-400">
+                  <div className="flex items-center gap-3 text-sm text-text-subtle">
                     <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" />{tree._count.likes}</span>
                     <span className="flex items-center gap-1"><GitFork className="w-3.5 h-3.5" />{tree._count.forks}</span>
                   </div>

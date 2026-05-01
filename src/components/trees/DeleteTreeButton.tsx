@@ -41,7 +41,7 @@ export function DeleteTreeButton({
         </button>
         <button
           onClick={() => setConfirming(false)}
-          className="text-xs text-gray-500 px-2 py-1 rounded-lg hover:bg-gray-100"
+          className="text-xs text-text-muted px-2 py-1 rounded-lg hover:bg-border-subtle"
         >
           No
         </button>
@@ -55,7 +55,7 @@ export function DeleteTreeButton({
       title={hasForks
         ? `Eliminar "${title}" (los forks existentes se mantienen intactos)`
         : `Eliminar "${title}"`}
-      className="relative z-10 flex items-center gap-1 text-xs text-gray-400 hover:text-red-600 transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
+      className="relative z-10 flex items-center gap-1 text-xs text-text-subtle hover:text-red-600 transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
     >
       <Trash2 className="w-3.5 h-3.5" />
       Eliminar
