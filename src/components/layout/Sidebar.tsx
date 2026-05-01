@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
   BookOpen, Home, LayoutDashboard, Search, Compass,
-  Plus, Settings, LogOut, AlertCircle, GitPullRequest,
+  Mail, Settings, LogOut, AlertCircle, GitPullRequest,
 } from "lucide-react";
 import Image from "next/image";
 import { NotificationBell } from "@/components/layout/NotificationBell";
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: "/explorar",    icon: Compass,         label: "Explorar"    },
   { href: "/buscar",      icon: Search,          label: "Buscar"      },
   { href: "/propuestas",  icon: GitPullRequest,  label: "Propuestas"  },
+  { href: "/correos",     icon: Mail,            label: "Correos"     },
 ];
 
 export function Sidebar() {
@@ -71,32 +72,6 @@ export function Sidebar() {
             {label}
           </Link>
         ))}
-
-        {/* CTA — compose a post */}
-        <Link
-          href="/"
-          className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-base font-semibold transition-all mt-3 shadow-sm ${
-            pathname === "/"
-              ? "bg-green-50 text-green-800"
-              : "bg-white text-green-700 hover:bg-green-50"
-          }`}
-        >
-          <Plus className="w-5 h-5 shrink-0" />
-          Crear publicación
-        </Link>
-
-        {/* Secondary — create educational content */}
-        <Link
-          href="/nuevo"
-          className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-            isActive("/nuevo")
-              ? "bg-white/20 text-white"
-              : "text-green-100 hover:bg-white/10 hover:text-white"
-          }`}
-        >
-          <BookOpen className="w-5 h-5 shrink-0" />
-          Nuevo kernel / módulo
-        </Link>
       </nav>
 
       {/* ── Bottom ───────────────────────────────────────────── */}
