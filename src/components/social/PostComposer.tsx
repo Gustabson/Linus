@@ -138,7 +138,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
                   {(() => {
                     const badge = CONTENT_TYPE_STYLE[attachedTree.contentType];
                     return (
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.badgeCls}`}>
                         {badge.label}
                       </span>
                     );
@@ -204,7 +204,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
                       className="w-full text-left px-3 py-2.5 hover:bg-primary/5 transition-colors"
                     >
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${badge.cls}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${badge.badgeCls}`}>
                           {badge.label}
                         </span>
                         <span className="text-sm font-medium text-text truncate">{tree.title}</span>

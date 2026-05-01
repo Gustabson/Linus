@@ -56,7 +56,8 @@
       "Bash(perl -i -pe 's/text-green-400/text-primary/g; s/hover:bg-green-200/hover:bg-primary\\\\/20/g; s/text-green-100/text-primary-fg/g; s/bg-green-200/bg-primary\\\\/20/g; s/ring-green-400/ring-primary\\\\/40/g;' src/components/documents/DocumentComments.tsx src/components/profile/FollowButton.tsx src/components/trees/ForkTree.tsx 'src/app/[username]/[slug]/[docSlug]/historial/page.tsx')",
       "Bash(rm src/app/kernel/page.tsx)",
       "Bash(rmdir src/app/kernel)",
-      "Bash(perl -i -pe ' *)"
+      "Bash(perl -i -pe ' *)",
+      "Bash(perl -i -pe 's/badge\\\\.cls\\\\b/badge.badgeCls/g; s/\\\\btb\\\\.cls\\\\b/tb.badgeCls/g; s/\\\\bts\\\\.cls\\\\b/ts.badgeCls/g;' src/components/social/PostComposer.tsx src/components/social/PostCard.tsx 'src/app/[username]/page.tsx' 'src/app/v/[publicId]/page.tsx' src/app/explorar/page.tsx)"
     ]
   }
 }

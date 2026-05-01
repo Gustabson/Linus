@@ -144,7 +144,7 @@ export default async function ExplorarPage({
                 {/* Center: content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${tb.cls}`}>{tb.label}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${tb.badgeCls}`}>{tb.label}</span>
                     {tree.forkDepth > 0 && (
                       <span className="bg-border-subtle text-text-muted text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
                         <GitFork className="w-3 h-3" /> Fork
@@ -211,7 +211,7 @@ export default async function ExplorarPage({
                 )}
 
                 <div className="flex items-center justify-between pt-3 border-t border-border-subtle mt-auto">
-                  <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${tb.cls}`}>
+                  <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${tb.badgeCls}`}>
                     {tb.icon}
                     {tb.label}
                   </span>

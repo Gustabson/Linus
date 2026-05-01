@@ -72,7 +72,7 @@ export default async function PublicVersionPage({
             href={`/${publication.tree.owner.username}/${publication.tree.slug}`}
             className="flex items-center gap-3 p-3 rounded-xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-colors group"
           >
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.badgeCls}`}>
               {badge.label}
             </span>
             <span className="font-semibold text-text group-hover:text-primary transition-colors flex-1">

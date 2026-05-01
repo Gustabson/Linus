@@ -5,15 +5,25 @@ import { getSession, unauthorized } from "@/lib/api-helpers";
 // ── GET /api/posts  (feed) ────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const tab     = searchParams.get("tab") ?? "tendencias";
-  const cursor  = searchParams.get("cursor");
-  const limit   = 20;
+  const tab      = searchParams.get("tab") ?? "tendencias";
+  const cursor   = searchParams.get("cursor");
+  const username = searchParams.get("username"); // profile feed filter
+  const limit    = 20;
 
   const session = await getSession();
 
-  let whereClause = {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let whereClause: Record<string, any> = {};
 
-  if (tab === "siguiendo" && session?.user?.id) {
+  // Profile feed: filter by a specific author's username
+  if (username) {
+    const author = await prisma.user.findUnique({
+      where:  { username },
+      select: { id: true },
+    });
+    if (!author) return NextResponse.json({ posts: [], nextCursor: null });
+    whereClause.authorId = author.id;
+  } else if (tab === "siguiendo" && session?.user?.id) {
     const follows = await prisma.userFollow.findMany({
       where:  { followerId: session.user.id },
       select: { followingId: true },
