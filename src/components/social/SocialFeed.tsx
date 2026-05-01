@@ -108,7 +108,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
             <div className="bg-white rounded-2xl border border-gray-200 p-4">
               <h3 className="font-semibold text-gray-900 text-sm mb-4 flex items-center gap-2">
                 <Users className="w-4 h-4 text-green-600" />
-                Docentes para seguir
+                Personas para seguir
               </h3>
               <div className="space-y-3">
                 {suggested.map((user) => (
@@ -148,7 +148,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
                 className="mt-4 flex items-center gap-1.5 text-sm text-green-700 hover:underline font-medium"
               >
                 <Compass className="w-4 h-4" />
-                Ver más docentes
+                Ver más personas
               </Link>
             </div>
           </div>

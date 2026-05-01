@@ -56,7 +56,7 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
           <RefreshCw className="w-8 h-8 mx-auto text-gray-200" />
           <p className="text-gray-500 font-medium">
             {tab === "siguiendo"
-              ? "Seguí a otros docentes para ver sus publicaciones acá."
+              ? "Seguí a otras personas para ver sus publicaciones acá."
               : "Todavía no hay publicaciones. ¡Sé el primero!"}
           </p>
         </div>

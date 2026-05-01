@@ -16,7 +16,7 @@ export function LandingPage() {
         </h1>
         <p className="text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">
           Como Linux para la educación. Un kernel creado por educadores expertos,
-          que cualquier maestro puede tomar, adaptar a su contexto y compartir de vuelta.
+          que cualquiera puede tomar, adaptar a su contexto y compartir de vuelta.
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link
@@ -39,7 +39,7 @@ export function LandingPage() {
       <section className="space-y-8">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900">¿Cómo funciona?</h2>
-          <p className="text-gray-500 mt-2">Simple para maestros, poderoso para la educación</p>
+          <p className="text-gray-500 mt-2">Simple para todos, poderoso para la educación</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[

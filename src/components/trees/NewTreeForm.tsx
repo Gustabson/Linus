@@ -10,7 +10,7 @@ import type { ContentType } from "@prisma/client";
 const CONTENT_TYPES: { value: ContentType; desc: string }[] = [
   {
     value: "KERNEL",
-    desc: "El currículo base de tu escuela o institución. Otros maestros lo pueden forkear y adaptar.",
+    desc: "El currículo base de tu escuela o institución. Cualquiera puede forkearlo y adaptarlo.",
   },
   {
     value: "MODULE",

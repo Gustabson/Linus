@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s · EduHub",
   },
   description:
-    "Plataforma colaborativa de recursos educativos. Forkea, adapta y compartí curriculos con maestros de todo el mundo.",
+    "Plataforma colaborativa de recursos educativos. Forkea, adapta y compartí currículos con personas de todo el mundo.",
   openGraph: {
     siteName: "EduHub",
     locale:   "es_AR",

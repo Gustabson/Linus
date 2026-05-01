@@ -84,6 +84,8 @@ model User {
   posts               Post[]
   postLikes           PostLike[]
   postComments        PostComment[]
+  sentMessages        Message[] @relation("MessageSender")
+  receivedMessages    Message[] @relation("MessageRecipient")
 }
 
 // ─── DOCUMENT TREES (kernels, modules, resources) ────────────────────────────
@@ -473,4 +475,33 @@ model PostComment {
 
   @@index([postId])
   @@index([authorId])
+}
+
+// ─── MESSAGES (Correos) ───────────────────────────────────────────────────────
+
+model Message {
+  id        String   @id @default(cuid())
+  subject   String
+  body      String   @db.Text
+  isRead    Boolean  @default(false)
+  isDraft   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  senderId    String
+  sender      User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+
+  recipientId String?
+  recipient   User? @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent   Message?  @relation("MessageThread", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies  Message[] @relation("MessageThread")
+
+  deletedBySender    Boolean @default(false)
+  deletedByRecipient Boolean @default(false)
+
+  @@index([recipientId, isRead])
+  @@index([senderId])
+  @@index([parentId])
+  @@index([createdAt])
 }

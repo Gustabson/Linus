@@ -59,7 +59,7 @@ export default async function ExplorarPage({
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Explorar</h1>
-        <p className="text-gray-500 mt-1">Descubrí kernels, módulos y recursos de maestros de todo el mundo.</p>
+        <p className="text-gray-500 mt-1">Descubrí kernels, módulos y recursos de todo el mundo.</p>
       </div>
 
       {/* Content type tabs */}

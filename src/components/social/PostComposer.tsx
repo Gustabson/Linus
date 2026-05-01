@@ -124,7 +124,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSubmit();
             }}
-            placeholder="¿Qué querés compartir con otros docentes?"
+            placeholder="¿Qué querés compartir con la comunidad?"
             rows={2}
             className="w-full resize-none text-[15px] leading-relaxed placeholder-gray-400 focus:outline-none text-gray-800"
           />

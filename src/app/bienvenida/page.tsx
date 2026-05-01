@@ -70,7 +70,7 @@ export default function BienvenidaPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900">¡Bienvenido a EduHub!</h1>
           <p className="text-gray-500 text-sm">
-            Elegí un nombre de usuario único. Lo van a usar otros maestros para encontrarte.
+            Elegí un nombre de usuario único. Las demás personas lo usarán para encontrarte.
           </p>
         </div>
 

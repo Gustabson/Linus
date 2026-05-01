@@ -38,7 +38,7 @@ export default async function BuscarPage({
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Buscar maestros</h1>
+      <h1 className="text-2xl font-bold text-gray-900">Buscar personas</h1>
 
       {/* Search form */}
       <form method="GET" action="/buscar" className="relative">
@@ -55,7 +55,7 @@ export default async function BuscarPage({
       {/* Results */}
       {q && users.length === 0 && (
         <p className="text-center text-gray-400 py-12">
-          No encontramos maestros con &ldquo;{q}&rdquo;
+          No encontramos personas con &ldquo;{q}&rdquo;
         </p>
       )}
 

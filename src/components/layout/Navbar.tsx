@@ -33,7 +33,7 @@ export function Navbar() {
           <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
             <p className="text-sm text-amber-800 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
-              Elegí un nombre de usuario para que otros maestros puedan encontrarte.
+              Elegí un nombre de usuario para que otros puedan encontrarte.
             </p>
             <Link
               href="/bienvenida"
