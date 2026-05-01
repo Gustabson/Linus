@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { BookOpen } from "lucide-react";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
@@ -35,6 +36,7 @@ export function NewTreeForm({
   const [contentType, setContentType] = useState(defaultType);
   const [title, setTitle] = useState("");
   const router = useRouter();
+  const { data: session } = useSession();
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -71,6 +73,8 @@ export function NewTreeForm({
       });
     }
 
+    const ownerUsername = session?.user?.username ?? session?.user?.name ?? "";
+
     // 3. Modules and resources always go directly to the document editor.
     //    Create the first document automatically using the same title.
     if (contentType === "MODULE" || contentType === "RESOURCE") {
@@ -81,13 +85,13 @@ export function NewTreeForm({
       });
       if (docRes.ok) {
         const doc = await docRes.json();
-        router.push(`/t/${json.slug}/${doc.slug}`);
+        router.push(`/${ownerUsername}/${json.slug}/${doc.slug}`);
         return;
       }
     }
 
     // Kernels go to the tree overview page
-    router.push(`/t/${json.slug}`);
+    router.push(`/${ownerUsername}/${json.slug}`);
   }
 
   const selectedStyle = CONTENT_TYPE_STYLE[contentType];

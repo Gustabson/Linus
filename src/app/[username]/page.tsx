@@ -171,7 +171,7 @@ export default async function UserProfilePage({
               const badge = CONTENT_TYPE_BADGE[tree.contentType] ?? CONTENT_TYPE_BADGE.KERNEL;
               const ts    = CONTENT_TYPE_STYLE[tree.contentType];
               return (
-                <Link key={tree.id} href={`/t/${tree.slug}`}
+                <Link key={tree.id} href={`/${user.username}/${tree.slug}`}
                   className={`bg-white rounded-2xl border border-gray-200 p-5 ${ts.hoverBorderCls} hover:shadow-sm transition-all group block`}>
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>

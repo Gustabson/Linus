@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { GitFork, BookOpen, Shield, ChevronRight, Plus, Settings, GitPullRequest, Eye } from "lucide-react";
+import { GitFork, BookOpen, Shield, ChevronRight, Settings, GitPullRequest, Eye } from "lucide-react";
 import { CONTENT_TYPE_STYLE, KERNEL_NEW_DOC_LABEL } from "@/lib/constants";
 import { TreePublishButton } from "@/components/trees/TreePublishButton";
 import Link from "next/link";
@@ -17,7 +17,7 @@ import { QuickAddDocument } from "@/components/trees/QuickAddDocument";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ username: string; slug: string }> }) {
   const { slug } = await params;
   const tree = await prisma.documentTree.findUnique({
     where:  { slug },
@@ -64,9 +64,9 @@ async function fetchForkSubtree(treeId: string, depth: number): Promise<{
 export default async function TreePage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ username: string; slug: string }>;
 }) {
-  const { slug } = await params;
+  const { username, slug } = await params;
   const session = await auth();
 
   const tree = await prisma.documentTree.findUnique({
@@ -118,7 +118,7 @@ export default async function TreePage({
   // MODULE / RESOURCE are single-document entities — the tree page is invisible to users.
   // Redirect straight to the document editor (auto-created on tree creation).
   if (tree.contentType !== "KERNEL" && tree.documents.length > 0) {
-    redirect(`/t/${tree.slug}/${tree.documents[0].slug}`);
+    redirect(`/${tree.owner.username}/${slug}/${tree.documents[0].slug}`);
   }
 
   const style = CONTENT_TYPE_STYLE[tree.contentType];
@@ -144,14 +144,26 @@ export default async function TreePage({
 
   // Build ancestor chain (walk up to find root; cap at 10 to guard against cycles)
   const MAX_ANCESTOR_DEPTH = 10;
-  const ancestors: { id: string; slug: string; title: string; contentType: string }[] = [];
+  const ancestors: { id: string; slug: string; title: string; contentType: string; ownerUsername: string | null }[] = [];
   let current = tree.parentTree as typeof tree.parentTree & { parentTreeId?: string | null } | null;
   let ancestorDepth = 0;
   while (current && ancestorDepth < MAX_ANCESTOR_DEPTH) {
-    ancestors.unshift({ id: current.id, slug: current.slug, title: current.title, contentType: current.contentType ?? "KERNEL" });
-    if (!current.parentTreeId) break;
+    // Fetch owner username for each ancestor
+    const ancestorWithOwner = await prisma.documentTree.findUnique({
+      where: { id: current.id },
+      select: { id: true, slug: true, title: true, contentType: true, parentTreeId: true, owner: { select: { username: true } } },
+    });
+    if (!ancestorWithOwner) break;
+    ancestors.unshift({
+      id: ancestorWithOwner.id,
+      slug: ancestorWithOwner.slug,
+      title: ancestorWithOwner.title,
+      contentType: ancestorWithOwner.contentType ?? "KERNEL",
+      ownerUsername: ancestorWithOwner.owner.username,
+    });
+    if (!ancestorWithOwner.parentTreeId) break;
     current = await prisma.documentTree.findUnique({
-      where: { id: current.parentTreeId },
+      where: { id: ancestorWithOwner.parentTreeId },
       select: { id: true, slug: true, title: true, contentType: true, parentTreeId: true },
     }) as typeof current;
     ancestorDepth++;
@@ -171,7 +183,7 @@ export default async function TreePage({
           {ancestors.map((a, i) => (
             <span key={a.id} className="flex items-center gap-2">
               {i > 0 && <ChevronRight className="w-4 h-4" />}
-              <Link href={`/t/${a.slug}`} className="hover:text-gray-900">
+              <Link href={`/${a.ownerUsername ?? a.id}/${a.slug}`} className="hover:text-gray-900">
                 {a.title}
               </Link>
             </span>
@@ -184,7 +196,7 @@ export default async function TreePage({
       {/* Header */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
         {/* Author row */}
-        <Link href={`/u/${authorSlug}`} className="flex items-center gap-3 group w-fit">
+        <Link href={`/${authorSlug}`} className="flex items-center gap-3 group w-fit">
           {tree.owner.image ? (
             <Image src={tree.owner.image} alt={tree.owner.name ?? ""} width={40} height={40}
               className="rounded-full ring-2 ring-transparent group-hover:ring-green-300 transition-all" />
@@ -252,22 +264,17 @@ export default async function TreePage({
               </Link>
             )}
             {/* Preview — always visible for kernels (shows full read-only view) */}
-            <Link href={`/t/${tree.slug}/preview`}
+            <Link href={`/${username}/${slug}/preview`}
               className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
               <Eye className="w-4 h-4" />
               Preview
             </Link>
             {isOwner && (
               <>
-                <Link href={`/t/${tree.slug}/configuracion`}
+                <Link href={`/${username}/${slug}/configuracion`}
                   className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors">
                   <Settings className="w-4 h-4" />
                   Configurar
-                </Link>
-                <Link href={`/t/${tree.slug}/nuevo`}
-                  className={`flex items-center gap-1.5 text-sm px-4 py-2 rounded-lg transition-colors ${style.btnCls}`}>
-                  <Plus className="w-4 h-4" />
-                  {KERNEL_NEW_DOC_LABEL}
                 </Link>
               </>
             )}
@@ -311,6 +318,7 @@ export default async function TreePage({
         </div>
         <QuickAddDocument
           treeSlug={tree.slug}
+          ownerUsername={tree.owner.username ?? ""}
           isOwner={isOwner}
           style={style}
           initialDocs={tree.documents.map((doc) => {
@@ -335,6 +343,7 @@ export default async function TreePage({
         <AttachmentsPanel
           kernelSlug={tree.slug}
           kernelId={tree.id}
+          ownerUsername={tree.owner.username ?? ""}
           initialAttachments={tree.attachments.map((a) => ({
             id: a.id,
             content: a.content,
@@ -353,7 +362,7 @@ export default async function TreePage({
             ...a,
             contentType: a.contentType,
             forkDepth: 0,
-            owner: { name: null, username: null, image: null },
+            owner: { name: null, username: a.ownerUsername, image: null },
             _count: { forks: 0, likes: 0 },
             forks: [],
           }))}

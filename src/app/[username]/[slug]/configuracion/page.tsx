@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic";
 export default async function TreeSettingsPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ username: string; slug: string }>;
 }) {
-  const { slug } = await params;
+  const { username, slug } = await params;
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -20,6 +20,7 @@ export default async function TreeSettingsPage({
       id: true, slug: true, title: true,
       description: true, visibility: true, contentType: true,
       ownerId: true,
+      owner: { select: { username: true } },
     },
   });
 
@@ -31,7 +32,7 @@ export default async function TreeSettingsPage({
         <h1 className="text-3xl font-bold text-gray-900">Configuración</h1>
         <p className="text-gray-500 mt-1">{tree.title}</p>
       </div>
-      <TreeSettingsForm tree={tree} />
+      <TreeSettingsForm tree={tree} ownerUsername={username} />
     </div>
   );
 }

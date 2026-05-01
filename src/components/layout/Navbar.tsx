@@ -23,7 +23,7 @@ export function Navbar() {
   }, [status, session?.user?.username, update]);
 
   const needsUsername = status === "authenticated" && !session?.user?.username;
-  const profileHref   = session?.user?.username ? `/u/${session.user.username}` : "/dashboard";
+  const profileHref   = session?.user?.username ? `/${session.user.username}` : "/dashboard";
 
   return (
     <>

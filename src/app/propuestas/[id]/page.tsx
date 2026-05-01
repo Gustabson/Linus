@@ -32,8 +32,8 @@ export default async function ProposalDetailPage({
   const proposal = await prisma.changeProposal.findUnique({
     where:   { id },
     include: {
-      sourceTree: { select: { slug: true, title: true, ownerId: true } },
-      targetTree: { select: { slug: true, title: true, ownerId: true } },
+      sourceTree: { select: { slug: true, title: true, ownerId: true, owner: { select: { username: true } } } },
+      targetTree: { select: { slug: true, title: true, ownerId: true, owner: { select: { username: true } } } },
       author:     { select: { name: true, username: true, image: true } },
       reviewer:   { select: { name: true, username: true } },
     },
@@ -91,13 +91,13 @@ export default async function ProposalDetailPage({
 
         {/* Flow: source → target */}
         <div className="flex items-center gap-3 text-sm flex-wrap">
-          <Link href={`/t/${proposal.sourceTree.slug}`}
+          <Link href={`/${proposal.sourceTree.owner.username ?? proposal.sourceTree.ownerId}/${proposal.sourceTree.slug}`}
             className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg hover:border-green-300 transition-colors">
             <GitPullRequest className="w-3.5 h-3.5 text-gray-400" />
             <span className="font-medium">{proposal.sourceTree.title}</span>
           </Link>
           <ArrowRight className="w-4 h-4 text-gray-400 shrink-0" />
-          <Link href={`/t/${proposal.targetTree.slug}`}
+          <Link href={`/${proposal.targetTree.owner.username ?? proposal.targetTree.ownerId}/${proposal.targetTree.slug}`}
             className="flex items-center gap-1.5 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:border-green-400 transition-colors">
             <GitMerge className="w-3.5 h-3.5 text-green-600" />
             <span className="font-medium">{proposal.targetTree.title}</span>
@@ -115,7 +115,7 @@ export default async function ProposalDetailPage({
           )}
           <span>
             Por{" "}
-            <Link href={`/u/${proposal.author.username ?? ""}`} className="text-green-700 hover:underline">
+            <Link href={`/${proposal.author.username ?? ""}`} className="text-green-700 hover:underline">
               {proposal.author.name}
             </Link>
             {" · "}{formatDate(proposal.createdAt)}

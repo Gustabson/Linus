@@ -13,7 +13,7 @@ interface TreeData {
   contentType: string;
 }
 
-export function TreeSettingsForm({ tree }: { tree: TreeData }) {
+export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; ownerUsername: string }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -39,7 +39,7 @@ export function TreeSettingsForm({ tree }: { tree: TreeData }) {
       setTimeout(() => setSaved(false), 2000);
       // If slug changed (title change), redirect
       if (data.slug && data.slug !== tree.slug) {
-        router.push(`/t/${data.slug}/configuracion`);
+        router.push(`/${ownerUsername}/${data.slug}/configuracion`);
       }
     } else {
       setError(data.error ?? "Error al guardar");

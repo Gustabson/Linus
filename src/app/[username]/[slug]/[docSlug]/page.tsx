@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
-}: { params: Promise<{ slug: string; docSlug: string }> }) {
+}: { params: Promise<{ username: string; slug: string; docSlug: string }> }) {
   const { slug, docSlug } = await params;
   const tree = await prisma.documentTree.findUnique({
     where:  { slug },
@@ -38,17 +38,22 @@ export async function generateMetadata({
 export default async function DocumentPage({
   params,
 }: {
-  params: Promise<{ slug: string; docSlug: string }>;
+  params: Promise<{ username: string; slug: string; docSlug: string }>;
 }) {
-  const { slug, docSlug } = await params;
+  const { username, slug, docSlug } = await params;
   const session = await auth();
 
   const tree = await prisma.documentTree.findUnique({
     where:  { slug },
-    select: { id: true, title: true, slug: true, ownerId: true, visibility: true, contentType: true, contentHash: true },
+    select: {
+      id: true, title: true, slug: true, ownerId: true,
+      visibility: true, contentType: true, contentHash: true,
+      owner: { select: { username: true } },
+    },
   });
 
   if (!tree) notFound();
+
   const isOwner = session?.user?.id === tree.ownerId;
   if (tree.visibility === "PRIVATE" && !isOwner) notFound();
 
@@ -87,6 +92,7 @@ export default async function DocumentPage({
             treeTitle={tree.title}
             docSlug={docSlug}
             docTitle={doc.title}
+            ownerUsername={username}
           />
         ) : (
           /* Module / resource: keep the full header with title + actions */
@@ -121,7 +127,7 @@ export default async function DocumentPage({
                 />
               )}
               <Link
-                href={`/t/${tree.slug}/${docSlug}/historial`}
+                href={`/${username}/${slug}/${docSlug}/historial`}
                 className={`flex items-center gap-1.5 text-sm text-gray-500 ${style.hoverTextCls} transition-colors`}
                 title="Ver historial de publicaciones"
               >
@@ -129,7 +135,7 @@ export default async function DocumentPage({
                 <span className="hidden sm:inline">Historial</span>
               </Link>
               <Link
-                href={`/t/${tree.slug}/${docSlug}/preview`}
+                href={`/${username}/${slug}/${docSlug}/preview`}
                 className="flex items-center gap-1.5 text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <Eye className="w-4 h-4" />

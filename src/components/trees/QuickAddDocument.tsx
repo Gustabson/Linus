@@ -16,13 +16,14 @@ interface DocCard {
 }
 
 interface Props {
-  treeSlug:    string;
-  isOwner:     boolean;
-  style:       ContentTypeStyle;
-  initialDocs: DocCard[];
+  treeSlug:      string;
+  ownerUsername: string;
+  isOwner:       boolean;
+  style:         ContentTypeStyle;
+  initialDocs:   DocCard[];
 }
 
-export function QuickAddDocument({ treeSlug, isOwner, style, initialDocs }: Props) {
+export function QuickAddDocument({ treeSlug, ownerUsername, isOwner, style, initialDocs }: Props) {
   const router = useRouter();
 
   const [docs, setDocs]         = useState<DocCard[]>(initialDocs);
@@ -61,7 +62,7 @@ export function QuickAddDocument({ treeSlug, isOwner, style, initialDocs }: Prop
     setAdding(false);
 
     // Navigate to the new document
-    router.push(`/t/${treeSlug}/${data.slug}`);
+    router.push(`/${ownerUsername}/${treeSlug}/${data.slug}`);
   }
 
   const completedCount = (doc: DocCard) => doc.sections.filter((s) => s.isComplete).length;
@@ -102,7 +103,7 @@ export function QuickAddDocument({ treeSlug, isOwner, style, initialDocs }: Prop
         return (
           <Link
             key={doc.id}
-            href={`/t/${treeSlug}/${doc.slug}`}
+            href={`/${ownerUsername}/${treeSlug}/${doc.slug}`}
             className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-gray-300 hover:shadow-sm transition-all block group"
           >
             <div className="flex items-start gap-4">

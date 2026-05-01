@@ -14,7 +14,7 @@ export async function POST(
   const { slug } = await params;
   const tree = await prisma.documentTree.findUnique({
     where:  { slug },
-    select: { id: true, slug: true, ownerId: true },
+    select: { id: true, slug: true, ownerId: true, owner: { select: { username: true } } },
   });
   if (!tree) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
@@ -37,7 +37,7 @@ export async function POST(
       type:        "NEW_LIKE",
       recipientId: tree.ownerId,
       actorId:     session.user.id,
-      link:        `/t/${tree.slug}`,
+      link:        `/${tree.owner.username ?? tree.ownerId}/${tree.slug}`,
     });
 
     return NextResponse.json({ liked: true, count });

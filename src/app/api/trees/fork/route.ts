@@ -131,11 +131,12 @@ export async function POST(req: NextRequest) {
   });
 
   // Notify original tree owner
+  const forkOwnerUsername = session.user.username ?? session.user.name ?? session.user.id;
   await createNotification({
     type:        "NEW_FORK",
     recipientId: source.ownerId,
     actorId:     session.user.id,
-    link:        `/t/${newTree.slug}`,
+    link:        `/${forkOwnerUsername}/${newTree.slug}`,
   });
 
   return NextResponse.json({ slug: newTree.slug });

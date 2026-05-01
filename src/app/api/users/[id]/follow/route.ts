@@ -43,7 +43,7 @@ export async function POST(
     type:        "NEW_FOLLOWER",
     recipientId: followingId,
     actorId:     session.user.id,
-    link:        actor?.username ? `/u/${actor.username}` : `/u/${session.user.id}`,
+    link:        actor?.username ? `/${actor.username}` : `/${session.user.id}`,
   });
 
   const count = await prisma.userFollow.count({ where: { followingId } });

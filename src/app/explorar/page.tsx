@@ -133,7 +133,7 @@ export default async function ExplorarPage({
             const ts = CONTENT_TYPE_STYLE[tree.contentType];
             return (
               <div key={tree.id} className={`relative bg-white rounded-2xl border border-gray-200 p-5 ${ts.hoverBorderCls} hover:shadow-sm transition-all group flex flex-col`}>
-                <Link href={`/t/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
+                <Link href={`/${tree.owner.username ?? tree.owner.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
                 <div className="flex items-center gap-2 mb-3">
                   <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${tb.cls}`}>
@@ -154,7 +154,7 @@ export default async function ExplorarPage({
                   <p className="text-gray-500 text-sm line-clamp-2 mb-3">{tree.description}</p>
                 )}
 
-                <Link href={`/u/${tree.owner.username ?? tree.owner.id}`}
+                <Link href={`/${tree.owner.username ?? tree.owner.id}`}
                   className="relative z-10 flex items-center gap-2 mb-3 w-fit">
                   {tree.owner.image ? (
                     <Image src={tree.owner.image} alt="" width={20} height={20} className="rounded-full" />

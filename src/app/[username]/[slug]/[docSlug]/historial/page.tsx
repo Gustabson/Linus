@@ -11,16 +11,17 @@ export const dynamic = "force-dynamic";
 export default async function HistorialPage({
   params,
 }: {
-  params: Promise<{ slug: string; docSlug: string }>;
+  params: Promise<{ username: string; slug: string; docSlug: string }>;
 }) {
-  const { slug, docSlug } = await params;
+  const { username, slug, docSlug } = await params;
   const session = await auth();
 
   const tree = await prisma.documentTree.findUnique({
     where:  { slug },
-    select: { id: true, title: true, slug: true, ownerId: true, visibility: true },
+    select: { id: true, title: true, slug: true, ownerId: true, visibility: true, owner: { select: { username: true } } },
   });
   if (!tree) notFound();
+
   const isOwner = session?.user?.id === tree.ownerId;
   if (tree.visibility === "PRIVATE" && !isOwner) notFound();
 
@@ -41,9 +42,9 @@ export default async function HistorialPage({
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
-        <Link href={`/t/${slug}`} className="hover:text-gray-900">{tree.title}</Link>
+        <Link href={`/${username}/${slug}`} className="hover:text-gray-900">{tree.title}</Link>
         <ChevronRight className="w-4 h-4" />
-        <Link href={`/t/${slug}/${docSlug}`} className="hover:text-gray-900">{doc.title}</Link>
+        <Link href={`/${username}/${slug}/${docSlug}`} className="hover:text-gray-900">{doc.title}</Link>
         <ChevronRight className="w-4 h-4" />
         <span className="text-gray-900">Historial</span>
       </nav>
@@ -112,7 +113,7 @@ export default async function HistorialPage({
                         </span>
                         {v.author && (
                           <span>
-                            por <Link href={v.author.username ? `/u/${v.author.username}` : "#"} className="text-green-700 hover:underline">
+                            por <Link href={v.author.username ? `/${v.author.username}` : "#"} className="text-green-700 hover:underline">
                               {v.author.name}
                             </Link>
                           </span>

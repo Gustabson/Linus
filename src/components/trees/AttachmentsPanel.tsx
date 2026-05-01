@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   Puzzle, Plus, X, Search, Loader2,
   Heart, GitFork, ExternalLink, FileText,
@@ -13,7 +14,7 @@ interface AttachedTree {
   slug: string;
   title: string;
   contentType: string;
-  owner: { name: string | null; username: string | null };
+  owner: { name: string | null; username: string | null; id?: string };
   _count: { likes: number; forks: number };
 }
 
@@ -46,6 +47,7 @@ function AttachSection({
 }) {
   const meta = MODULE_META;
   const router = useRouter();
+  const { data: session } = useSession();
   const [items, setItems] = useState(initialItems);
 
   // Inline create
@@ -112,7 +114,8 @@ function AttachSection({
     }
 
     // 4. Go straight to the section editor
-    router.push(`/t/${tree.slug}/${doc.slug}`);
+    const ownerUsernameForNav = session?.user?.username ?? session?.user?.name ?? "";
+    router.push(`/${ownerUsernameForNav}/${tree.slug}/${doc.slug}`);
   }
 
   async function attach(contentId: string) {
@@ -260,7 +263,7 @@ function AttachSection({
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <Link href={`/t/${tree.slug}`} target="_blank"
+                  <Link href={`/${tree.owner.username ?? tree.owner.name ?? tree.id}/${tree.slug}`} target="_blank"
                     className="p-1 text-gray-400 hover:text-green-700" title="Ver">
                     <ExternalLink className="w-3.5 h-3.5" />
                   </Link>
@@ -288,7 +291,7 @@ function AttachSection({
           {items.map((att) => (
             <div key={att.id}
               className="relative bg-white rounded-xl border border-gray-200 p-4 hover:border-green-300 transition-colors group flex flex-col gap-2">
-              <Link href={`/t/${att.content.slug}`} className="absolute inset-0 rounded-xl" aria-label={att.content.title} />
+              <Link href={`/${att.content.owner.username ?? att.content.owner.name ?? att.content.id}/${att.content.slug}`} className="absolute inset-0 rounded-xl" aria-label={att.content.title} />
 
               {/* Title row with detach button always visible */}
               <div className="flex items-start justify-between gap-2">
@@ -323,12 +326,14 @@ function AttachSection({
 export function AttachmentsPanel({
   kernelSlug,
   kernelId,
+  ownerUsername,
   initialAttachments,
   isOwner,
   isKernel,
 }: {
   kernelSlug: string;
   kernelId: string;
+  ownerUsername: string;
   initialAttachments: Attachment[];
   isOwner: boolean;
   isKernel: boolean;

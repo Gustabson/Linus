@@ -7,11 +7,12 @@ import { CONTENT_TYPE_STYLE, KERNEL_DOC_PLACEHOLDER, KERNEL_NEW_DOC_LABEL } from
 import type { ContentType } from "@prisma/client";
 
 interface Props {
-  treeSlug:    string;
-  contentType?: ContentType;
+  treeSlug:      string;
+  ownerUsername: string;
+  contentType?:  ContentType;
 }
 
-export function NewDocumentForm({ treeSlug, contentType = "KERNEL" }: Props) {
+export function NewDocumentForm({ treeSlug, ownerUsername, contentType = "KERNEL" }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
   const router = useRouter();
@@ -34,7 +35,7 @@ export function NewDocumentForm({ treeSlug, contentType = "KERNEL" }: Props) {
     setLoading(false);
 
     if (res.ok) {
-      router.push(`/t/${treeSlug}/${json.slug}`);
+      router.push(`/${ownerUsername}/${treeSlug}/${json.slug}`);
     } else {
       setError(json.error ?? "Error al crear el documento");
     }

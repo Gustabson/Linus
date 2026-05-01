@@ -11,17 +11,22 @@ export const dynamic = "force-dynamic";
 export default async function DocumentPreviewPage({
   params,
 }: {
-  params: Promise<{ slug: string; docSlug: string }>;
+  params: Promise<{ username: string; slug: string; docSlug: string }>;
 }) {
-  const { slug, docSlug } = await params;
+  const { username, slug, docSlug } = await params;
   const session = await auth();
 
   const tree = await prisma.documentTree.findUnique({
     where: { slug },
-    select: { id: true, title: true, slug: true, ownerId: true, visibility: true, contentType: true },
+    select: {
+      id: true, title: true, slug: true, ownerId: true,
+      visibility: true, contentType: true,
+      owner: { select: { username: true } },
+    },
   });
 
   if (!tree) notFound();
+
   const isOwner = session?.user?.id === tree.ownerId;
   if (tree.visibility === "PRIVATE" && !isOwner) notFound();
 
@@ -49,7 +54,7 @@ export default async function DocumentPreviewPage({
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <Link
-          href={`/t/${tree.slug}/${docSlug}`}
+          href={`/${username}/${slug}/${docSlug}`}
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -77,7 +82,7 @@ export default async function DocumentPreviewPage({
         )}
         <div className="flex items-center justify-center gap-3 pt-2">
           <Link
-            href={`/t/${tree.slug}`}
+            href={`/${username}/${slug}`}
             className="flex items-center gap-1.5 text-sm text-green-700 hover:underline"
           >
             <ExternalLink className="w-4 h-4" />
@@ -163,7 +168,7 @@ export default async function DocumentPreviewPage({
       {/* Footer */}
       <div className="text-center text-xs text-gray-400 pb-8 space-y-1">
         <p>Generado por EduHub · Conocimiento Educativo Abierto</p>
-        <Link href={`/t/${tree.slug}/${docSlug}`} className="text-green-700 hover:underline">
+        <Link href={`/${username}/${slug}/${docSlug}`} className="text-green-700 hover:underline">
           Ver versión completa con historial y comentarios
         </Link>
       </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { GitFork, X, Cpu, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface UserKernel { id: string; slug: string; title: string; }
 
@@ -21,6 +22,7 @@ export function ForkButton({
   const [loadingKernels, setLoadingKernels] = useState(false);
   const [selectedKernelId, setSelectedKernelId] = useState<string | null>(null);
   const router = useRouter();
+  const { data: session } = useSession();
 
   const needsKernelPicker = contentType === "MODULE" || contentType === "RESOURCE";
 
@@ -40,7 +42,8 @@ export function ForkButton({
         body: JSON.stringify({ treeId, targetKernelId: targetKernelId ?? null }),
       });
       const data = await res.json();
-      if (res.ok && data.slug) { setShowModal(false); router.push(`/t/${data.slug}`); }
+      const ownerUsername = session?.user?.username ?? session?.user?.name ?? "";
+      if (res.ok && data.slug) { setShowModal(false); router.push(`/${ownerUsername}/${data.slug}`); }
       else alert(data.error ?? "Error al forkear");
     } finally { setLoading(false); }
   }

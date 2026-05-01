@@ -8,10 +8,11 @@ import {
 } from "lucide-react";
 
 interface Props {
-  treeSlug:  string;
-  treeTitle: string;
-  docSlug:   string;
-  docTitle:  string;
+  treeSlug:      string;
+  treeTitle:     string;
+  docSlug:       string;
+  docTitle:      string;
+  ownerUsername: string;
 }
 
 type ImportState =
@@ -21,7 +22,7 @@ type ImportState =
   | { step: "done"; count: number }
   | { step: "error"; message: string };
 
-export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle }: Props) {
+export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUsername }: Props) {
   const router = useRouter();
 
   // ── Delete state ──────────────────────────────────────────────────────────
@@ -38,7 +39,7 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle }: Props) 
   function handleBack() {
     // Invalidate router cache before navigating so the kernel page re-fetches
     router.refresh();
-    router.push(`/t/${treeSlug}`);
+    router.push(`/${ownerUsername}/${treeSlug}`);
   }
 
   async function handleDelete() {
@@ -46,7 +47,7 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle }: Props) 
     const res = await fetch(`/api/trees/${treeSlug}/${docSlug}`, { method: "DELETE" });
     if (res.ok) {
       router.refresh();
-      router.push(`/t/${treeSlug}`);
+      router.push(`/${ownerUsername}/${treeSlug}`);
     } else {
       setDeleting(false);
       setShowDeleteConfirm(false);

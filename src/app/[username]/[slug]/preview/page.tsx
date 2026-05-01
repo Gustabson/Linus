@@ -12,9 +12,9 @@ export const dynamic = "force-dynamic";
 export default async function KernelPreviewPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ username: string; slug: string }>;
 }) {
-  const { slug } = await params;
+  const { username, slug } = await params;
   const session = await auth();
 
   const tree = await prisma.documentTree.findUnique({
@@ -62,6 +62,7 @@ export default async function KernelPreviewPage({
   });
 
   if (!tree) notFound();
+
   const isOwner = session?.user?.id === tree.ownerId;
   if (tree.visibility === "PRIVATE" && !isOwner) notFound();
 
@@ -72,7 +73,7 @@ export default async function KernelPreviewPage({
       {/* Top bar */}
       <div className="flex items-center justify-between">
         <Link
-          href={`/t/${slug}`}
+          href={`/${username}/${slug}`}
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -215,6 +216,7 @@ export default async function KernelPreviewPage({
           {tree.attachments.map((a) => {
             const ct     = CONTENT_TYPE_STYLE[a.content.contentType as keyof typeof CONTENT_TYPE_STYLE];
             const docSlug = a.content.documents[0]?.slug;
+            const contentOwnerUsername = a.content.owner.username;
             return (
               <div key={a.id} className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -224,8 +226,8 @@ export default async function KernelPreviewPage({
                   <span className="font-medium text-gray-900">{a.content.title}</span>
                   <span className="text-xs text-gray-400">por {a.content.owner.name}</span>
                 </div>
-                {docSlug && (
-                  <Link href={`/t/${a.content.slug}/${docSlug}/preview`}
+                {docSlug && contentOwnerUsername && (
+                  <Link href={`/${contentOwnerUsername}/${a.content.slug}/${docSlug}/preview`}
                     className="text-xs text-gray-500 hover:text-green-700 transition-colors whitespace-nowrap">
                     Ver preview →
                   </Link>
@@ -238,7 +240,7 @@ export default async function KernelPreviewPage({
 
       {/* Footer */}
       <div className="text-center text-xs text-gray-400 pb-8">
-        <Link href={`/t/${slug}`} className="text-green-700 hover:underline">
+        <Link href={`/${username}/${slug}`} className="text-green-700 hover:underline">
           Ver versión completa con edición, comentarios e historial
         </Link>
       </div>

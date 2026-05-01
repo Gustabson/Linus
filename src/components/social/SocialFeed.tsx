@@ -236,7 +236,7 @@ export async function SocialFeed({ userId }: Props) {
               <div className="space-y-3">
                 {suggestedSorted.map((user) => (
                   <div key={user.id} className="flex items-center gap-2.5">
-                    <Link href={`/u/${user.username ?? user.id}`} className="shrink-0">
+                    <Link href={`/${user.username ?? user.id}`} className="shrink-0">
                       {user.image ? (
                         <Image src={user.image} alt="" width={32} height={32} className="rounded-xl" />
                       ) : (
@@ -246,7 +246,7 @@ export async function SocialFeed({ userId }: Props) {
                       )}
                     </Link>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/u/${user.username ?? user.id}`} className="text-sm font-medium text-gray-900 hover:text-green-700 truncate block transition-colors">
+                      <Link href={`/${user.username ?? user.id}`} className="text-sm font-medium text-gray-900 hover:text-green-700 truncate block transition-colors">
                         {user.name}
                       </Link>
                       <p className="text-xs text-gray-400">
@@ -301,7 +301,7 @@ function TreeCard({ tree }: { tree: TreeWithMeta }) {
   const badge = CONTENT_TYPE_BADGE[tree.contentType];
   return (
     <div className="relative bg-white rounded-2xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all group p-5 flex flex-col gap-3">
-      <Link href={`/t/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
+      <Link href={`/${tree.owner.username ?? tree.owner.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
       {/* Type badge */}
       <div className="flex items-center gap-2">
@@ -329,7 +329,7 @@ function TreeCard({ tree }: { tree: TreeWithMeta }) {
       {/* Author + stats */}
       <div className="flex items-center justify-between pt-2 border-t border-gray-50 mt-auto">
         <Link
-          href={`/u/${tree.owner.username ?? tree.owner.id}`}
+          href={`/${tree.owner.username ?? tree.owner.id}`}
           className="relative z-10 flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
           {tree.owner.image ? (
@@ -371,7 +371,7 @@ function TrendingRow({ tree }: { tree: TreeWithMeta }) {
   const badge = CONTENT_TYPE_BADGE[tree.contentType];
   return (
     <Link
-      href={`/t/${tree.slug}`}
+      href={`/${tree.owner.username ?? tree.owner.id}/${tree.slug}`}
       className="flex items-start gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors group"
     >
       {/* Type dot */}

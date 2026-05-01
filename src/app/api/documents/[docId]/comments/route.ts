@@ -13,7 +13,7 @@ async function getVisibleDoc(docId: string, userId?: string) {
     select: {
       id:   true,
       slug: true,
-      tree: { select: { slug: true, ownerId: true, visibility: true } },
+      tree: { select: { slug: true, ownerId: true, visibility: true, owner: { select: { username: true } } } },
     },
   });
   if (!doc) return null;
@@ -100,7 +100,7 @@ export async function POST(
       type:        "NEW_COMMENT",
       recipientId: doc.tree.ownerId,
       actorId:     session.user.id,
-      link:        `/t/${doc.tree.slug}/${doc.slug}`,
+      link:        `/${doc.tree.owner.username ?? doc.tree.ownerId}/${doc.tree.slug}/${doc.slug}`,
     });
   }
 

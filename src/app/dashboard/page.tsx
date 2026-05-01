@@ -155,7 +155,7 @@ export default async function DashboardPage({
             const ts    = CONTENT_TYPE_STYLE[tree.contentType];
             return (
               <div key={tree.id} className={`relative bg-white rounded-2xl border border-gray-200 ${ts.hoverBorderCls} hover:shadow-sm transition-all group flex flex-col`}>
-                <Link href={`/t/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
+                <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
                 <div className="p-5 flex flex-col gap-3 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -192,11 +192,11 @@ export default async function DashboardPage({
                 </div>
 
                 <div className="border-t border-gray-100 px-5 py-2.5 flex items-center gap-2 flex-wrap">
-                  <Link href={`/t/${tree.slug}`}
+                  <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}`}
                     className="relative z-10 flex items-center gap-1 text-xs text-gray-500 hover:text-green-700 transition-colors px-2 py-1 rounded-lg hover:bg-green-50">
                     <Eye className="w-3.5 h-3.5" /> Ver
                   </Link>
-                  <Link href={`/t/${tree.slug}/configuracion`}
+                  <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}/configuracion`}
                     className="relative z-10 flex items-center gap-1 text-xs text-gray-500 hover:text-green-700 transition-colors px-2 py-1 rounded-lg hover:bg-green-50">
                     <Settings className="w-3.5 h-3.5" /> Configurar
                   </Link>

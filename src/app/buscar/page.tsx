@@ -66,7 +66,7 @@ export default async function BuscarPage({
             const isMe = session?.user?.id === user.id;
             return (
               <div key={user.id} className="relative bg-white rounded-2xl border border-gray-200 hover:border-green-300 hover:shadow-sm transition-all p-4 flex items-center gap-3">
-                <Link href={`/u/${user.username}`} className="absolute inset-0 rounded-2xl" aria-label={user.name ?? ""} />
+                <Link href={`/${user.username}`} className="absolute inset-0 rounded-2xl" aria-label={user.name ?? ""} />
                 {user.image ? (
                   <Image src={user.image} alt="" width={44} height={44} className="rounded-full shrink-0" />
                 ) : (
