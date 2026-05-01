@@ -53,11 +53,16 @@ export default async function CorreoDetallePage({
     })),
   };
 
+  const backHref  = isRecipient ? "/correos" : "/correos/enviados";
+  const backLabel = isRecipient ? "Bandeja de entrada" : "Enviados";
+
   return (
     <CorreosDetalle
       message={serialized}
       currentUserId={session.user.id}
       isRecipient={isRecipient}
+      backHref={backHref}
+      backLabel={backLabel}
     />
   );
 }

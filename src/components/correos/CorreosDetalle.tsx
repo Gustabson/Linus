@@ -14,34 +14,36 @@ interface UserMini {
   image:    string | null;
 }
 
-interface ReplyData {
+interface CorreoRespuesta {
   id:        string;
   body:      string;
   createdAt: string;
   sender:    UserMini;
 }
 
-interface MessageDetail {
+interface CorreoDetalle {
   id:          string;
   subject:     string;
   body:        string;
   createdAt:   string;
   sender:      UserMini;
   recipient:   UserMini | null;
-  replies:     ReplyData[];
+  replies:     CorreoRespuesta[];
 }
 
 interface Props {
-  message:       MessageDetail;
+  message:       CorreoDetalle;
   currentUserId: string;
   isRecipient:   boolean;
+  backHref:      string;
+  backLabel:     string;
 }
 
-export function CorreosDetalle({ message, currentUserId, isRecipient }: Props) {
+export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, backLabel }: Props) {
   const router = useRouter();
   const [showReply, setShowReply]   = useState(false);
   const [replyText, setReplyText]   = useState("");
-  const [replies, setReplies]       = useState<ReplyData[]>(message.replies);
+  const [replies, setReplies]       = useState<CorreoRespuesta[]>(message.replies);
   const [deleting, startDelete]     = useTransition();
   const [sending,  startSend]       = useTransition();
   const [error, setError]           = useState("");
@@ -88,11 +90,11 @@ export function CorreosDetalle({ message, currentUserId, isRecipient }: Props) {
     <div className="max-w-3xl mx-auto px-6 py-6">
       {/* Back */}
       <Link
-        href="/correos"
+        href={backHref}
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-700 transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />
-        Bandeja de entrada
+        {backLabel}
       </Link>
 
       {/* Subject */}

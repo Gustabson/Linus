@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Inbox } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
-interface MessageRow {
+interface CorreoRow {
   id:        string;
   subject:   string;
   isRead:    boolean;
@@ -20,7 +20,7 @@ interface MessageRow {
 }
 
 interface Props {
-  messages:      MessageRow[];
+  messages:      CorreoRow[];
   folder:        "bandeja" | "enviados" | "borradores";
   currentUserId: string;
 }
@@ -76,7 +76,7 @@ export function CorreosList({ messages, folder }: Props) {
           return (
             <li key={msg.id}>
               <Link
-                href={`/correos/${msg.id}`}
+                href={folder === "borradores" ? `/correos/redactar?id=${msg.id}` : `/correos/${msg.id}`}
                 className={`flex items-start gap-4 px-6 py-4 hover:bg-gray-50 transition-colors group ${
                   isUnread ? "bg-green-50/40" : ""
                 }`}

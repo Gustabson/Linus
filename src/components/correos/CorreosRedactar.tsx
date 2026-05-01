@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -16,11 +16,25 @@ import {
 } from "lucide-react";
 import { UserSearchInput } from "./UserSearchInput";
 
-export function CorreosRedactar() {
-  const router = useRouter();
+interface Props {
+  /** Present when editing an existing draft */
+  draftId?:         string;
+  initialSubject?:  string;
+  initialBody?:     string;
+  initialRecipient?: { username: string; name: string } | null;
+}
 
-  const [subject, setSubject]     = useState("");
-  const [recipient, setRecipient] = useState<{ username: string; name: string } | null>(null);
+export function CorreosRedactar({
+  draftId,
+  initialSubject  = "",
+  initialBody     = "",
+  initialRecipient = null,
+}: Props) {
+  const router = useRouter();
+  const isEditingDraft = !!draftId;
+
+  const [subject, setSubject]     = useState(initialSubject);
+  const [recipient, setRecipient] = useState<{ username: string; name: string } | null>(initialRecipient);
   const [sending,  startSend]     = useTransition();
   const [saving,   startSave]     = useTransition();
   const [error, setError]         = useState("");
@@ -42,24 +56,51 @@ export function CorreosRedactar() {
         class: "prose prose-base max-w-none focus:outline-none min-h-[320px] px-1 py-2 text-gray-800",
       },
     },
+    // Pre-fill body when editing a draft
+    content: initialBody || "",
   });
 
+  // Sync editor content after mount if editing a draft
+  useEffect(() => {
+    if (editor && initialBody && editor.isEmpty) {
+      editor.commands.setContent(initialBody);
+    }
+  }, [editor, initialBody]);
+
+  // ── Send ─────────────────────────────────────────────────────────────────────
   const handleSend = useCallback(() => {
     if (!editor) return;
     setError("");
     const htmlBody = editor.getHTML();
 
     startSend(async () => {
-      const res = await fetch("/api/correos", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          subject:           subject.trim(),
-          htmlBody,
-          recipientUsername: recipient?.username ?? null,
-          isDraft:           false,
-        }),
-      });
+      let res: Response;
+
+      if (isEditingDraft && draftId) {
+        // Update the existing draft record and mark as sent
+        res = await fetch(`/api/correos/${draftId}`, {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            subject,
+            htmlBody,
+            recipientUsername: recipient?.username ?? null,
+            isDraft: false,
+          }),
+        });
+      } else {
+        // Create a new message
+        res = await fetch("/api/correos", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            subject,
+            htmlBody,
+            recipientUsername: recipient?.username ?? null,
+            isDraft: false,
+          }),
+        });
+      }
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -70,24 +111,42 @@ export function CorreosRedactar() {
       setSent(true);
       setTimeout(() => router.push("/correos/enviados"), 1200);
     });
-  }, [editor, subject, recipient, router]);
+  }, [editor, subject, recipient, draftId, isEditingDraft, router]);
 
+  // ── Save draft ───────────────────────────────────────────────────────────────
   const handleSaveDraft = useCallback(() => {
     if (!editor) return;
     setError("");
     const htmlBody = editor.getHTML();
 
     startSave(async () => {
-      const res = await fetch("/api/correos", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          subject:           subject.trim() || "Borrador sin título",
-          htmlBody,
-          recipientUsername: recipient?.username ?? null,
-          isDraft:           true,
-        }),
-      });
+      let res: Response;
+
+      if (isEditingDraft && draftId) {
+        // Update existing draft
+        res = await fetch(`/api/correos/${draftId}`, {
+          method:  "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            subject:           subject || "Borrador sin título",
+            htmlBody,
+            recipientUsername: recipient?.username ?? null,
+            isDraft:           true,
+          }),
+        });
+      } else {
+        // Create a new draft
+        res = await fetch("/api/correos", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({
+            subject:           subject || "Borrador sin título",
+            htmlBody,
+            recipientUsername: recipient?.username ?? null,
+            isDraft:           true,
+          }),
+        });
+      }
 
       if (res.ok) {
         router.push("/correos/borradores");
@@ -96,8 +155,14 @@ export function CorreosRedactar() {
         setError(data.error ?? "Error al guardar el borrador.");
       }
     });
-  }, [editor, subject, recipient, router]);
+  }, [editor, subject, recipient, draftId, isEditingDraft, router]);
 
+  // ── Discard ──────────────────────────────────────────────────────────────────
+  function handleDiscard() {
+    router.push(isEditingDraft ? "/correos/borradores" : "/correos");
+  }
+
+  // ── Link helper ──────────────────────────────────────────────────────────────
   function setLink() {
     if (!editor) return;
     const prev = editor.getAttributes("link").href as string | undefined;
@@ -129,18 +194,20 @@ export function CorreosRedactar() {
   return (
     <div className="flex flex-col h-full">
 
-      {/* ── Page header ───────────────────────────────────────────── */}
+      {/* ── Header ────────────────────────────────────────────────── */}
       <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h2 className="font-semibold text-gray-900 text-base">Nuevo correo</h2>
+        <h2 className="font-semibold text-gray-900 text-base">
+          {isEditingDraft ? "Editar borrador" : "Nuevo correo"}
+        </h2>
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => router.push("/correos")}
+            onClick={handleDiscard}
             disabled={sending || saving}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
-            Descartar
+            {isEditingDraft ? "Cancelar" : "Descartar"}
           </button>
           <button
             onClick={handleSaveDraft}
@@ -167,14 +234,10 @@ export function CorreosRedactar() {
 
       {/* ── Fields ────────────────────────────────────────────────── */}
       <div className="border-b border-gray-100 divide-y divide-gray-100">
-
-        {/* Para */}
         <div className="flex items-center gap-3 px-6 py-3">
           <span className="text-sm text-gray-400 w-16 shrink-0">Para</span>
           <UserSearchInput value={recipient} onChange={setRecipient} />
         </div>
-
-        {/* Asunto */}
         <div className="flex items-center gap-3 px-6 py-3">
           <span className="text-sm text-gray-400 w-16 shrink-0">Asunto</span>
           <input
@@ -192,15 +255,15 @@ export function CorreosRedactar() {
       {editor && (
         <div className="flex items-center gap-0.5 px-4 py-2 border-b border-gray-100 flex-wrap bg-gray-50/60">
           <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()}
-            active={editor.isActive("bold")} title="Negrita (Ctrl+B)">
+            active={editor.isActive("bold")} title="Negrita">
             <Bold className="w-4 h-4" />
           </ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()}
-            active={editor.isActive("italic")} title="Cursiva (Ctrl+I)">
+            active={editor.isActive("italic")} title="Cursiva">
             <Italic className="w-4 h-4" />
           </ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleUnderline().run()}
-            active={editor.isActive("underline")} title="Subrayado (Ctrl+U)">
+            active={editor.isActive("underline")} title="Subrayado">
             <UnderlineIcon className="w-4 h-4" />
           </ToolBtn>
 
@@ -229,7 +292,7 @@ export function CorreosRedactar() {
           <div className="w-px h-5 bg-gray-200 mx-1" />
 
           <ToolBtn onClick={() => editor.chain().focus().setTextAlign("left").run()}
-            active={editor.isActive({ textAlign: "left" })} title="Alinear a la izquierda">
+            active={editor.isActive({ textAlign: "left" })} title="Izquierda">
             <AlignLeft className="w-4 h-4" />
           </ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().setTextAlign("center").run()}
@@ -237,20 +300,20 @@ export function CorreosRedactar() {
             <AlignCenter className="w-4 h-4" />
           </ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().setTextAlign("right").run()}
-            active={editor.isActive({ textAlign: "right" })} title="Alinear a la derecha">
+            active={editor.isActive({ textAlign: "right" })} title="Derecha">
             <AlignRight className="w-4 h-4" />
           </ToolBtn>
 
           <div className="w-px h-5 bg-gray-200 mx-1" />
 
           <ToolBtn onClick={setLink}
-            active={editor.isActive("link")} title="Insertar enlace">
+            active={editor.isActive("link")} title="Enlace">
             <LinkIcon className="w-4 h-4" />
           </ToolBtn>
         </div>
       )}
 
-      {/* ── Editor body ───────────────────────────────────────────── */}
+      {/* ── Editor ────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-6 py-4">
         <EditorContent editor={editor} />
       </div>
@@ -258,8 +321,8 @@ export function CorreosRedactar() {
       {/* ── Feedback ──────────────────────────────────────────────── */}
       {(error || sent) && (
         <div className={`px-6 py-3 border-t text-sm font-medium ${
-          sent  ? "bg-green-50 border-green-100 text-green-700"
-                : "bg-red-50 border-red-100 text-red-600"
+          sent ? "bg-green-50 border-green-100 text-green-700"
+               : "bg-red-50 border-red-100 text-red-600"
         }`}>
           {sent ? "✓ Correo enviado. Redirigiendo..." : error}
         </div>
