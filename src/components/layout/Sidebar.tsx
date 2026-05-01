@@ -36,15 +36,15 @@ export function Sidebar() {
   const itemCls = (href: string) =>
     `flex items-center gap-3.5 px-4 py-3 rounded-xl text-base font-medium transition-all ${
       isActive(href)
-        ? "bg-surface/20 text-white"
-        : "text-green-100 hover:bg-surface/10 hover:text-white"
+        ? "bg-white/15 text-white"
+        : "text-white/70 hover:bg-white/10 hover:text-white"
     }`;
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-green-700 flex flex-col z-40">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-primary flex flex-col z-40">
 
       {/* ── Logo ─────────────────────────────────────────────── */}
-      <div className="px-5 py-5 border-b border-green-600/60">
+      <div className="px-5 py-5 border-b border-white/20">
         <Link href="/" className="flex items-center gap-2.5 text-white font-bold text-xl">
           <BookOpen className="w-7 h-7" />
           EduHub
@@ -75,13 +75,11 @@ export function Sidebar() {
       </nav>
 
       {/* ── Bottom ───────────────────────────────────────────── */}
-      <div className="px-3 pb-4 border-t border-green-600/60 pt-3 space-y-1">
+      <div className="px-3 pb-4 border-t border-white/20 pt-3 space-y-1">
 
         {/* Notificaciones */}
         <NotificationBell
-          triggerClass={`flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium transition-all ${
-            "text-green-100 hover:bg-surface/10 hover:text-white"
-          }`}
+          triggerClass="flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium transition-all text-white/70 hover:bg-white/10 hover:text-white"
           dropdownClass="absolute left-full bottom-0 ml-3 w-80 bg-surface rounded-2xl border border-border shadow-xl z-50 overflow-hidden"
           label="Notificaciones"
         />
@@ -100,8 +98,8 @@ export function Sidebar() {
           href={profileHref}
           className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
             username && pathname === `/${username}`
-              ? "bg-surface/20 text-white"
-              : "text-green-100 hover:bg-surface/10 hover:text-white"
+              ? "bg-white/15 text-white"
+              : "text-white/70 hover:bg-white/10 hover:text-white"
           }`}
         >
           {session.user?.image ? (
@@ -113,7 +111,7 @@ export function Sidebar() {
               className="rounded-full shrink-0"
             />
           ) : (
-            <div className="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold shrink-0">
               {(session.user?.name ?? "?")[0]}
             </div>
           )}
@@ -123,7 +121,7 @@ export function Sidebar() {
         {/* Cerrar sesión */}
         <button
           onClick={() => signOut()}
-          className="flex items-center gap-3.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-green-200 hover:bg-surface/10 hover:text-white transition-all"
+          className="flex items-center gap-3.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/10 hover:text-white transition-all"
         >
           <LogOut className="w-5 h-5 shrink-0" />
           Cerrar sesión

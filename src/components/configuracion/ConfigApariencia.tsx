@@ -18,9 +18,16 @@ interface CustomColors {
   themePrimary: string;
 }
 
+interface ContentTypeColors {
+  themeKernel:   string;
+  themeModule:   string;
+  themeResource: string;
+}
+
 interface Props {
-  initialMode:   Mode;
-  initialColors: CustomColors;
+  initialMode:          Mode;
+  initialColors:        CustomColors;
+  initialContentColors: ContentTypeColors;
 }
 
 const COLOR_FIELDS: { key: keyof CustomColors; label: string; desc: string }[] = [
@@ -28,10 +35,16 @@ const COLOR_FIELDS: { key: keyof CustomColors; label: string; desc: string }[] =
   { key: "themeSurface", label: "Cards y paneles",  desc: "Fondo de tarjetas, menús y formularios" },
   { key: "themeBorder",  label: "Bordes",           desc: "Líneas divisorias y contornos" },
   { key: "themeText",    label: "Texto",            desc: "Color de todo el texto de la interfaz" },
-  { key: "themePrimary", label: "Color primario",   desc: "Botones principales y acentos" },
+  { key: "themePrimary", label: "Color primario",   desc: "Barra lateral, botones y acentos" },
 ];
 
-export function ConfigApariencia({ initialMode, initialColors }: Props) {
+const CONTENT_TYPE_FIELDS: { key: keyof ContentTypeColors; label: string; desc: string; default: string }[] = [
+  { key: "themeKernel",   label: "Kernel",  desc: "Currículos base y núcleos educativos", default: "#15803d" },
+  { key: "themeModule",   label: "Módulo",  desc: "Unidades didácticas independientes",   default: "#1d4ed8" },
+  { key: "themeResource", label: "Recurso", desc: "Materiales y herramientas de apoyo",   default: "#b45309" },
+];
+
+export function ConfigApariencia({ initialMode, initialColors, initialContentColors }: Props) {
   const { setTheme } = useTheme();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -41,6 +54,8 @@ export function ConfigApariencia({ initialMode, initialColors }: Props) {
   const [colors, setColors] = useState<CustomColors>(
     initialColors.themeBg ? initialColors : { ...PRESET_LIGHT }
   );
+  const [ctColors, setCtColors] = useState<ContentTypeColors>(initialContentColors);
+
   const [pending, startTransition] = useTransition();
   const [saved,   setSaved]        = useState(false);
   const [error,   setError]        = useState("");
@@ -48,7 +63,10 @@ export function ConfigApariencia({ initialMode, initialColors }: Props) {
   function handleSave() {
     setSaved(false); setError("");
     startTransition(async () => {
-      const body: Record<string, unknown> = { themeMode: mode };
+      const body: Record<string, unknown> = {
+        themeMode: mode,
+        ...ctColors,
+      };
       if (mode === "custom") Object.assign(body, colors);
 
       const res = await fetch("/api/configuracion", {
@@ -93,7 +111,7 @@ export function ConfigApariencia({ initialMode, initialColors }: Props) {
         ))}
       </div>
 
-      {/* Color pickers */}
+      {/* Color pickers — UI general (solo en modo personalizado) */}
       {mode === "custom" && (
         <div className="space-y-4 pt-1">
           <div className="flex items-center gap-2">
@@ -140,6 +158,48 @@ export function ConfigApariencia({ initialMode, initialColors }: Props) {
           </button>
         </div>
       )}
+
+      {/* ── Tipos de contenido ────────────────────────────────────────── */}
+      <div className="space-y-3 pt-2 border-t border-border">
+        <div>
+          <p className="text-sm font-medium text-text">Colores por tipo de contenido</p>
+          <p className="text-xs text-text-subtle mt-0.5">
+            Diferenciá visualmente kernels, módulos y recursos en toda la plataforma.
+            Se aplican en cualquier modo de tema.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {CONTENT_TYPE_FIELDS.map(({ key, label, desc, default: def }) => (
+            <div key={key} className="flex items-center gap-3 p-3 bg-bg rounded-xl border border-border">
+              <label className="relative shrink-0 cursor-pointer">
+                <div className="w-10 h-10 rounded-lg border border-border shadow-sm"
+                  style={{ backgroundColor: ctColors[key] || def }} />
+                <input type="color" value={ctColors[key] || def}
+                  onChange={e => setCtColors(c => ({ ...c, [key]: e.target.value }))}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+              </label>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-text leading-none">{label}</p>
+                <p className="text-xs text-text-subtle mt-0.5">{desc}</p>
+                <p className="text-xs font-mono text-text-subtle mt-0.5">{ctColors[key] || def}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setCtColors({
+            themeKernel:   "#15803d",
+            themeModule:   "#1d4ed8",
+            themeResource: "#b45309",
+          })}
+          className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Restaurar colores originales de tipos
+        </button>
+      </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
       <div className="flex items-center justify-end gap-3 pt-1">

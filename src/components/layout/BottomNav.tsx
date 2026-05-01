@@ -23,7 +23,7 @@ export function BottomNav() {
             key={href}
             href={href}
             className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 text-xs font-medium transition-colors ${
-              active ? "text-green-700" : "text-text-subtle hover:text-text-muted"
+              active ? "text-primary" : "text-text-subtle hover:text-text-muted"
             }`}
           >
             <Icon className={`w-5 h-5 ${href === "/nuevo" ? "stroke-[2.5]" : ""}`} />

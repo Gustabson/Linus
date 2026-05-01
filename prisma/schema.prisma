@@ -73,6 +73,11 @@ model User {
   themeText     String?  // --text
   themePrimary  String?  // --primary
 
+  // Content type accent colors
+  themeKernel   String?  // --kernel
+  themeModule   String?  // --module
+  themeResource String?  // --resource
+
   // Notification email preferences
   notifCorreos      Boolean @default(true)
   notifComentarios  Boolean @default(true)

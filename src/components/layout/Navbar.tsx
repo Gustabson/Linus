@@ -50,7 +50,7 @@ export function Navbar() {
           <div className="flex items-center justify-between h-16">
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 font-bold text-xl text-green-700 shrink-0">
+            <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary shrink-0">
               <BookOpen className="w-6 h-6" />
               <span>EduHub</span>
             </Link>
@@ -78,10 +78,10 @@ export function Navbar() {
                         alt=""
                         width={30}
                         height={30}
-                        className="rounded-full ring-2 ring-green-100"
+                        className="rounded-full ring-2 ring-primary/20"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-sm font-bold">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
                         {(session.user?.name ?? "?")[0]}
                       </div>
                     )}
@@ -98,7 +98,7 @@ export function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link href="/login" className="bg-green-700 text-white text-sm px-4 py-2 rounded-xl hover:bg-green-800 transition-colors font-medium">
+                  <Link href="/login" className="bg-primary text-primary-fg text-sm px-4 py-2 rounded-xl hover:bg-primary-h transition-colors font-medium">
                     Ingresar con Google
                   </Link>
                 </>
@@ -130,7 +130,7 @@ export function Navbar() {
                       icon={
                         session.user?.image
                           ? <Image src={session.user.image} alt="" width={18} height={18} className="rounded-full" />
-                          : <div className="w-[18px] h-[18px] rounded-full bg-green-100 flex items-center justify-center text-green-700 text-[9px] font-bold">{(session.user?.name ?? "?")[0]}</div>
+                          : <div className="w-[18px] h-[18px] rounded-full bg-primary/10 flex items-center justify-center text-primary text-[9px] font-bold">{(session.user?.name ?? "?")[0]}</div>
                       }
                       label="Mi perfil"
                       onClick={() => setOpen(false)}

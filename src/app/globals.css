@@ -23,6 +23,13 @@
   /* Peligro */
   --danger:       #ef4444;
   --danger-h:     #dc2626;
+  /* Tipos de contenido */
+  --kernel:       #15803d;
+  --kernel-h:     #166534;
+  --module:       #1d4ed8;
+  --module-h:     #1e40af;
+  --resource:     #b45309;
+  --resource-h:   #92400e;
 }
 
 .dark {
@@ -38,6 +45,13 @@
   --primary-fg:   #ffffff;
   --danger:       #f87171;
   --danger-h:     #ef4444;
+  /* Tipos de contenido — versiones más brillantes para fondo oscuro */
+  --kernel:       #22c55e;
+  --kernel-h:     #16a34a;
+  --module:       #3b82f6;
+  --module-h:     #2563eb;
+  --resource:     #f59e0b;
+  --resource-h:   #d97706;
 }
 
 /* ── Aliases Tailwind v4 (permite usar bg-surface, text-muted, etc.) ────────── */
@@ -54,6 +68,13 @@
   --color-primary-fg:   var(--primary-fg);
   --color-danger:       var(--danger);
   --color-danger-h:     var(--danger-h);
+  /* Tipos de contenido */
+  --color-kernel:       var(--kernel);
+  --color-kernel-h:     var(--kernel-h);
+  --color-module:       var(--module);
+  --color-module-h:     var(--module-h);
+  --color-resource:     var(--resource);
+  --color-resource-h:   var(--resource-h);
 }
 
 /* ── Base ───────────────────────────────────────────────────────────────────── */

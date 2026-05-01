@@ -34,6 +34,7 @@ export default async function RootLayout({
   // Load user theme server-side → apply before paint, no flash
   let initialTheme: "light" | "dark" = "light";
   let customVars: Record<string, string> | undefined;
+  const ctVars: Record<string, string> = {};
 
   if (session?.user?.id) {
     const prefs = await prisma.user.findUnique({
@@ -41,6 +42,7 @@ export default async function RootLayout({
       select: {
         themeMode: true, themeBg: true, themeSurface: true,
         themeBorder: true, themeText: true, themePrimary: true,
+        themeKernel: true, themeModule: true, themeResource: true,
       },
     });
 
@@ -60,14 +62,21 @@ export default async function RootLayout({
         ...(prefs.themePrimary ? { "--primary": prefs.themePrimary, "--primary-h": prefs.themePrimary } : {}),
       };
     }
+
+    // Content type colors apply in ALL modes (light, dark, custom)
+    if (prefs?.themeKernel)   { ctVars["--kernel"]   = prefs.themeKernel;   ctVars["--kernel-h"]   = prefs.themeKernel; }
+    if (prefs?.themeModule)   { ctVars["--module"]   = prefs.themeModule;   ctVars["--module-h"]   = prefs.themeModule; }
+    if (prefs?.themeResource) { ctVars["--resource"] = prefs.themeResource; ctVars["--resource-h"] = prefs.themeResource; }
   }
+
+  const htmlStyle = { ...ctVars, ...(customVars ?? {}) };
 
   return (
     <html
       lang="es"
       suppressHydrationWarning
       className={initialTheme === "dark" ? "dark" : ""}
-      style={customVars as React.CSSProperties}
+      style={htmlStyle as React.CSSProperties}
     >
       <body className="min-h-screen bg-bg">
         <ThemeProvider attribute="class" defaultTheme={initialTheme} enableSystem={false}>

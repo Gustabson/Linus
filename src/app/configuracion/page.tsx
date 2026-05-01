@@ -33,6 +33,9 @@ export default async function ConfiguracionPage() {
       themeBorder:   true,
       themeText:     true,
       themePrimary:  true,
+      themeKernel:   true,
+      themeModule:   true,
+      themeResource: true,
       notifCorreos:     true,
       notifComentarios: true,
       notifLikes:       true,
@@ -83,6 +86,11 @@ export default async function ConfiguracionPage() {
       <ConfigApariencia
         initialMode={themeMode}
         initialColors={themeColors}
+        initialContentColors={{
+          themeKernel:   user.themeKernel   ?? "#15803d",
+          themeModule:   user.themeModule   ?? "#1d4ed8",
+          themeResource: user.themeResource ?? "#b45309",
+        }}
       />
 
       <ConfigNotificaciones
