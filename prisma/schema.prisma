@@ -65,6 +65,14 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Custom theme
+  themeMode     String  @default("light") // "light" | "dark" | "custom"
+  themeBg       String?  // --bg
+  themeSurface  String?  // --surface
+  themeBorder   String?  // --border
+  themeText     String?  // --text
+  themePrimary  String?  // --primary
+
   // Notification email preferences
   notifCorreos      Boolean @default(true)
   notifComentarios  Boolean @default(true)

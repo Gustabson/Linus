@@ -5,6 +5,7 @@ import { ConfigPerfil }         from "@/components/configuracion/ConfigPerfil";
 import { ConfigCuenta }         from "@/components/configuracion/ConfigCuenta";
 import { ConfigApariencia }     from "@/components/configuracion/ConfigApariencia";
 import { ConfigNotificaciones } from "@/components/configuracion/ConfigNotificaciones";
+import { PRESET_LIGHT }         from "@/lib/theme";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,12 @@ export default async function ConfiguracionPage() {
       website:       true,
       location:      true,
       createdAt:     true,
+      themeMode:     true,
+      themeBg:       true,
+      themeSurface:  true,
+      themeBorder:   true,
+      themeText:     true,
+      themePrimary:  true,
       notifCorreos:     true,
       notifComentarios: true,
       notifLikes:       true,
@@ -39,18 +46,23 @@ export default async function ConfiguracionPage() {
 
   const providers = [...new Set(user.accounts.map((a) => a.provider))];
 
+  const themeMode = (user.themeMode ?? "light") as "light" | "dark" | "custom";
+  const themeColors = {
+    themeBg:      user.themeBg      ?? PRESET_LIGHT.themeBg,
+    themeSurface: user.themeSurface ?? PRESET_LIGHT.themeSurface,
+    themeBorder:  user.themeBorder  ?? PRESET_LIGHT.themeBorder,
+    themeText:    user.themeText    ?? PRESET_LIGHT.themeText,
+    themePrimary: user.themePrimary ?? PRESET_LIGHT.themePrimary,
+  };
+
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-6">
 
-      {/* Header */}
       <div className="pb-2">
-        <h1 className="text-2xl font-bold text-text dark:text-white">Configuración</h1>
-        <p className="text-sm text-text-muted dark:text-text-subtle mt-1">
-          Gestioná tu perfil, cuenta y preferencias.
-        </p>
+        <h1 className="text-2xl font-bold text-text">Configuración</h1>
+        <p className="text-sm text-text-muted mt-1">Gestioná tu perfil, cuenta y preferencias.</p>
       </div>
 
-      {/* Sections */}
       <ConfigPerfil
         initial={{
           name:     user.name,
@@ -68,7 +80,10 @@ export default async function ConfiguracionPage() {
         createdAt={user.createdAt.toISOString()}
       />
 
-      <ConfigApariencia />
+      <ConfigApariencia
+        initialMode={themeMode}
+        initialColors={themeColors}
+      />
 
       <ConfigNotificaciones
         initial={{
