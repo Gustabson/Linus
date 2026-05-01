@@ -171,9 +171,9 @@ export function ConfigApariencia({
           </div>
 
           <p className="text-xs text-text-subtle">
-            Si los colores quedan ilegibles, podés ir a{" "}
-            <a href="/reset" className="underline hover:text-text">eduhub.vercel.app/reset</a>
-            {" "}para restablecer el tema.
+            Si los colores quedan ilegibles, escribí{" "}
+            <a href="/reset" className="underline font-mono hover:text-text">/reset</a>
+            {" "}en la barra de dirección para restablecer el tema.
           </p>
 
           <button onClick={() => setColors({ ...PRESET_LIGHT })}
@@ -259,6 +259,11 @@ export function ConfigApariencia({
       </div>
 
       {error && <p className="text-sm text-danger">{error}</p>}
+      <p className="text-xs text-text-subtle">
+        ¿Quedó ilegible? Navegá a{" "}
+        <a href="/reset" className="underline font-mono hover:text-text">/reset</a>
+        {" "}para restablecer el tema a claro.
+      </p>
       <div className="flex items-center justify-end gap-3 pt-1">
         {saved && (
           <span className="flex items-center gap-1.5 text-sm text-primary font-medium">

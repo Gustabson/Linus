@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import Link from "next/link";
-import Image from "next/image";
+import Link   from "next/link";
+import Image  from "next/image";
 import { Bell, GitFork, Heart, MessageSquare, UserPlus } from "lucide-react";
 import type { NotificationType } from "@prisma/client";
 
@@ -41,12 +41,15 @@ interface BellProps {
   triggerClass?: string;
   dropdownClass?: string;
   label?: string;
+  /** If provided, the bell becomes a link (no dropdown) — used in the sidebar */
+  href?: string;
 }
 
 export function NotificationBell({
   triggerClass  = "relative flex items-center justify-center w-9 h-9 rounded-xl text-text-muted hover:text-text hover:bg-bg transition-colors",
   dropdownClass = "absolute right-0 top-11 w-80 bg-surface rounded-2xl border border-border shadow-lg z-50 overflow-hidden",
   label,
+  href,
 }: BellProps = {}) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount]     = useState(0);
@@ -94,6 +97,22 @@ export function NotificationBell({
     }
   }
 
+  // ── Link mode (sidebar) ──────────────────────────────────────────────────────
+  if (href) {
+    return (
+      <Link href={href} className={triggerClass} aria-label="Notificaciones">
+        <Bell className="w-5 h-5 shrink-0" />
+        {label && <span className="ml-1">{label}</span>}
+        {unreadCount > 0 && (
+          <span className="ml-auto w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </Link>
+    );
+  }
+
+  // ── Dropdown mode (navbar) ────────────────────────────────────────────────────
   return (
     <div className="relative" ref={dropdownRef}>
       <button

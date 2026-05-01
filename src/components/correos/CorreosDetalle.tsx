@@ -4,7 +4,18 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Trash2, Reply, Send, Loader2 } from "lucide-react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import TextAlign from "@tiptap/extension-text-align";
+import TiptapLink from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import {
+  ArrowLeft, Trash2, Reply, Send, Loader2,
+  Bold, Italic, Underline as UnderlineIcon,
+  List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
+  Link as LinkIcon, Heading2, Heading3,
+} from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 interface UserMini {
@@ -39,10 +50,168 @@ interface Props {
   backLabel:     string;
 }
 
+// ── Shared toolbar button ────────────────────────────────────────────────────
+function ToolBtn({
+  onClick, active = false, title, children,
+}: {
+  onClick: () => void; active?: boolean; title: string; children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
+      title={title}
+      className={`p-2 rounded-lg transition-colors ${
+        active
+          ? "bg-primary/10 text-primary"
+          : "text-text-muted hover:bg-border-subtle hover:text-text"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── Reply composer with full TipTap editor ────────────────────────────────
+function ReplyComposer({
+  onSend,
+  onCancel,
+  sending,
+}: {
+  onSend:   (html: string) => void;
+  onCancel: () => void;
+  sending:  boolean;
+}) {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      TiptapLink.configure({
+        openOnClick:    false,
+        HTMLAttributes: { target: "_blank", rel: "noopener noreferrer" },
+      }),
+      Placeholder.configure({ placeholder: "Escribí tu respuesta..." }),
+    ],
+    editorProps: {
+      attributes: {
+        class: "prose prose-sm max-w-none focus:outline-none min-h-[160px] px-1 py-2 text-text",
+      },
+    },
+    content: "",
+  });
+
+  function setLink() {
+    if (!editor) return;
+    const prev = editor.getAttributes("link").href as string | undefined;
+    const url  = window.prompt("URL del enlace:", prev ?? "https://");
+    if (url === null) return;
+    if (!url) { editor.chain().focus().unsetLink().run(); return; }
+    editor.chain().focus().setLink({ href: url }).run();
+  }
+
+  function handleSend() {
+    if (!editor || editor.isEmpty) return;
+    onSend(editor.getHTML());
+  }
+
+  return (
+    <div className="bg-surface rounded-2xl border border-border overflow-hidden">
+      <p className="text-sm font-medium text-text px-4 pt-4 pb-2">Tu respuesta</p>
+
+      {/* Toolbar */}
+      {editor && (
+        <div className="flex items-center gap-0.5 px-3 py-1.5 border-y border-border-subtle flex-wrap bg-bg">
+          <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()}
+            active={editor.isActive("bold")} title="Negrita">
+            <Bold className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()}
+            active={editor.isActive("italic")} title="Cursiva">
+            <Italic className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleUnderline().run()}
+            active={editor.isActive("underline")} title="Subrayado">
+            <UnderlineIcon className="w-4 h-4" />
+          </ToolBtn>
+
+          <div className="w-px h-5 bg-border mx-1" />
+
+          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            active={editor.isActive("heading", { level: 2 })} title="Título H2">
+            <Heading2 className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            active={editor.isActive("heading", { level: 3 })} title="Título H3">
+            <Heading3 className="w-4 h-4" />
+          </ToolBtn>
+
+          <div className="w-px h-5 bg-border mx-1" />
+
+          <ToolBtn onClick={() => editor.chain().focus().toggleBulletList().run()}
+            active={editor.isActive("bulletList")} title="Lista con viñetas">
+            <List className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            active={editor.isActive("orderedList")} title="Lista numerada">
+            <ListOrdered className="w-4 h-4" />
+          </ToolBtn>
+
+          <div className="w-px h-5 bg-border mx-1" />
+
+          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("left").run()}
+            active={editor.isActive({ textAlign: "left" })} title="Izquierda">
+            <AlignLeft className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("center").run()}
+            active={editor.isActive({ textAlign: "center" })} title="Centrar">
+            <AlignCenter className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("right").run()}
+            active={editor.isActive({ textAlign: "right" })} title="Derecha">
+            <AlignRight className="w-4 h-4" />
+          </ToolBtn>
+
+          <div className="w-px h-5 bg-border mx-1" />
+
+          <ToolBtn onClick={setLink} active={editor.isActive("link")} title="Enlace">
+            <LinkIcon className="w-4 h-4" />
+          </ToolBtn>
+        </div>
+      )}
+
+      {/* Editor area */}
+      <div className="px-4 py-3 min-h-[160px]">
+        <EditorContent editor={editor} />
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end gap-2 px-4 pb-4 pt-2 border-t border-border-subtle">
+        <button
+          onClick={onCancel}
+          className="text-sm text-text-muted px-4 py-2 rounded-xl hover:bg-bg transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleSend}
+          disabled={sending || !editor || editor.isEmpty}
+          className="flex items-center gap-2 text-sm font-semibold bg-primary text-primary-fg px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors"
+        >
+          {sending
+            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando...</>
+            : <><Send className="w-3.5 h-3.5" /> Enviar</>
+          }
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, backLabel }: Props) {
   const router = useRouter();
   const [showReply, setShowReply]   = useState(false);
-  const [replyText, setReplyText]   = useState("");
   const [replies, setReplies]       = useState<CorreoRespuesta[]>(message.replies);
   const [deleting, startDelete]     = useTransition();
   const [sending,  startSend]       = useTransition();
@@ -56,19 +225,17 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
     });
   }
 
-  function handleReply() {
-    if (!replyText.trim()) return;
+  function handleReply(htmlBody: string) {
     setError("");
     startSend(async () => {
-      const res  = await fetch(`/api/correos/${message.id}/reply`, {
+      const res = await fetch(`/api/correos/${message.id}/reply`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ htmlBody: `<p>${replyText.trim()}</p>` }),
+        body:    JSON.stringify({ htmlBody }),
       });
       if (res.ok) {
         const data = await res.json();
         setReplies((prev) => [...prev, { ...data, createdAt: data.createdAt }]);
-        setReplyText("");
         setShowReply(false);
       } else {
         const data = await res.json().catch(() => ({}));
@@ -187,40 +354,16 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
               Responder
             </button>
           ) : (
-            <div className="bg-surface rounded-2xl border border-border p-4 space-y-3">
-              <p className="text-sm font-medium text-text">Tu respuesta</p>
-              <textarea
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                placeholder="Escribí tu respuesta..."
-                rows={4}
-                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/40 resize-none"
-              />
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => { setShowReply(false); setReplyText(""); setError(""); }}
-                  className="text-sm text-text-muted px-4 py-2 rounded-xl hover:bg-bg"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleReply}
-                  disabled={sending || !replyText.trim()}
-                  className="flex items-center gap-2 text-sm font-semibold bg-primary text-white px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors"
-                >
-                  {sending
-                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando...</>
-                    : <><Send className="w-3.5 h-3.5" /> Enviar</>
-                  }
-                </button>
-              </div>
-            </div>
+            <ReplyComposer
+              onSend={handleReply}
+              onCancel={() => { setShowReply(false); setError(""); }}
+              sending={sending}
+            />
           )}
         </div>
       )}
 
-      {error && !showReply && (
+      {error && (
         <p className="mt-4 text-sm text-red-500">{error}</p>
       )}
     </div>

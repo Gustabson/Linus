@@ -77,10 +77,14 @@ export function Sidebar() {
       {/* ── Bottom ───────────────────────────────────────────── */}
       <div className="px-3 pb-4 border-t border-sidebar-text/20 pt-3 space-y-1">
 
-        {/* Notificaciones */}
+        {/* Notificaciones — link to full page */}
         <NotificationBell
-          triggerClass="flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium transition-all text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
-          dropdownClass="absolute left-full bottom-0 ml-3 w-80 bg-surface rounded-2xl border border-border shadow-xl z-50 overflow-hidden"
+          href="/notificaciones"
+          triggerClass={`flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium transition-all ${
+            isActive("/notificaciones")
+              ? "bg-sidebar-text/15 text-sidebar-text"
+              : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
+          }`}
           label="Notificaciones"
         />
 

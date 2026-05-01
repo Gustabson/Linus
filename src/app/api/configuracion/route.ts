@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
-import { isValidHex, validateTheme } from "@/lib/theme";
+import { isValidHex } from "@/lib/theme";
 
 // ── GET /api/configuracion ────────────────────────────────────────────────────
 export async function GET() {
@@ -77,22 +77,12 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: `Color inválido en ${key}` }, { status: 400 });
   }
 
-  // Validate custom theme
+  // Validate custom theme hex values (no contrast enforcement — user can reset via /reset)
   if (themeMode === "custom") {
     const hexFields = { themeBg, themeSurface, themeBorder, themeText, themePrimary };
     for (const [key, val] of Object.entries(hexFields)) {
       if (val !== undefined && val !== null && !isValidHex(String(val)))
         return NextResponse.json({ error: `Color inválido en ${key}` }, { status: 400 });
-    }
-    if (themeBg && themeText) {
-      const err = validateTheme({
-        themeBg:      String(themeBg),
-        themeSurface: String(themeSurface ?? themeBg),
-        themeBorder:  String(themeBorder ?? "#e5e7eb"),
-        themeText:    String(themeText),
-        themePrimary: String(themePrimary ?? "#15803d"),
-      });
-      if (err) return NextResponse.json({ error: err }, { status: 400 });
     }
   }
 

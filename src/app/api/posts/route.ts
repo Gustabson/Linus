@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const tab      = searchParams.get("tab") ?? "tendencias";
   const cursor   = searchParams.get("cursor");
+  const since    = searchParams.get("since");    // poll: posts newer than this ISO date
   const username = searchParams.get("username"); // profile feed filter
   const limit    = 20;
 
@@ -30,6 +31,31 @@ export async function GET(req: NextRequest) {
     });
     const ids = follows.map((f) => f.followingId);
     whereClause = { authorId: { in: ids } };
+  }
+
+  // `since` mode: return only posts newer than the given ISO timestamp (no pagination)
+  if (since) {
+    const newPosts = await prisma.post.findMany({
+      where:   { ...whereClause, createdAt: { gt: new Date(since) } },
+      orderBy: { createdAt: "desc" },
+      take:    50, // cap — won't paginate new-post burst
+      include: {
+        author: { select: { id: true, name: true, username: true, image: true } },
+        tree: {
+          select: {
+            id: true, slug: true, title: true, description: true,
+            contentType: true, forkDepth: true,
+            owner: { select: { username: true, name: true } },
+            _count: { select: { likes: true, forks: true } },
+          },
+        },
+        _count: { select: { likes: true, comments: true } },
+        likes:  session?.user?.id
+          ? { where: { userId: session.user.id }, select: { id: true } }
+          : false,
+      },
+    });
+    return NextResponse.json({ posts: newPosts, nextCursor: null });
   }
 
   const posts = await prisma.post.findMany({
