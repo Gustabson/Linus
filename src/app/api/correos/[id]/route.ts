@@ -96,9 +96,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     });
     if (!recipient)
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
-    if (recipient.id === session.user.id)
-      return NextResponse.json({ error: "No podés enviarte un correo a vos mismo" }, { status: 400 });
-
     recipientId = recipient.id;
   }
 
