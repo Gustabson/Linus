@@ -20,7 +20,7 @@ export default async function HistorialPage({
     where:  { slug },
     select: { id: true, title: true, slug: true, ownerId: true, visibility: true, owner: { select: { username: true } } },
   });
-  if (!tree) notFound();
+  if (!tree || tree.owner.username !== username) notFound();
 
   const isOwner = session?.user?.id === tree.ownerId;
   if (tree.visibility === "PRIVATE" && !isOwner) notFound();

@@ -24,7 +24,7 @@ export default async function TreeSettingsPage({
     },
   });
 
-  if (!tree || tree.ownerId !== session.user.id) notFound();
+  if (!tree || tree.owner.username !== username || tree.ownerId !== session.user.id) notFound();
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

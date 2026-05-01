@@ -52,7 +52,7 @@ export default async function DocumentPage({
     },
   });
 
-  if (!tree) notFound();
+  if (!tree || tree.owner.username !== username) notFound();
 
   const isOwner = session?.user?.id === tree.ownerId;
   if (tree.visibility === "PRIVATE" && !isOwner) notFound();
