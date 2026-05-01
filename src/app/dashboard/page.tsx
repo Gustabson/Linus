@@ -73,9 +73,9 @@ export default async function DashboardPage({
         </div>
         <Link
           href="/nuevo"
-          className="flex items-center gap-2 bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-green-800 transition-colors"
+          className="flex items-center gap-2 bg-green-700 text-white px-6 py-3 rounded-xl text-base font-semibold hover:bg-green-800 transition-colors shadow-sm"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
           Crear nuevo
         </Link>
       </div>
@@ -154,12 +154,13 @@ export default async function DashboardPage({
             const badge = CONTENT_TYPE_BADGE[tree.contentType];
             const ts    = CONTENT_TYPE_STYLE[tree.contentType];
             return (
-              <div key={tree.id} className={`relative bg-white rounded-2xl border border-gray-200 ${ts.hoverBorderCls} hover:shadow-sm transition-all group flex flex-col`}>
+              <div key={tree.id} className={`relative bg-white rounded-2xl border border-gray-200 ${ts.hoverBorderCls} hover:shadow-md transition-all group flex flex-col`}>
                 <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
-                <div className="p-5 flex flex-col gap-3 flex-1">
+                <div className="p-6 flex flex-col gap-4 flex-1">
+                  {/* Top row: badge + visibility */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${badge.cls}`}>
                       {badge.label}
                     </span>
                     {tree.parentTree && (
@@ -168,7 +169,7 @@ export default async function DashboardPage({
                         Fork de {tree.parentTree.title}
                       </span>
                     )}
-                    <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${
+                    <span className={`ml-auto text-xs px-2.5 py-1 rounded-full font-medium ${
                       tree.visibility === "PUBLIC"   ? "bg-green-50 text-green-600" :
                       tree.visibility === "UNLISTED" ? "bg-gray-100 text-gray-500"  :
                                                        "bg-red-50 text-red-500"
@@ -177,33 +178,35 @@ export default async function DashboardPage({
                     </span>
                   </div>
 
-                  <h3 className={`font-semibold text-gray-900 ${ts.groupHoverTextCls} transition-colors line-clamp-2 flex-1`}>
+                  {/* Title */}
+                  <h3 className={`text-base font-bold text-gray-900 ${ts.groupHoverTextCls} transition-colors line-clamp-2 flex-1`}>
                     {tree.title}
                   </h3>
 
-                  <div className="flex items-center gap-4 text-xs text-gray-400">
-                    <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{tree._count.likes}</span>
-                    <span className="flex items-center gap-1"><GitFork className="w-3 h-3" />{tree._count.forks}</span>
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                    <span className="flex items-center gap-1"><Heart className="w-4 h-4" />{tree._count.likes}</span>
+                    <span className="flex items-center gap-1"><GitFork className="w-4 h-4" />{tree._count.forks}</span>
                     {tree.contentType === "KERNEL" && (
-                      <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{tree._count.documents} docs</span>
+                      <span className="flex items-center gap-1"><BookOpen className="w-4 h-4" />{tree._count.documents} docs</span>
                     )}
-                    <span className="flex items-center gap-1 ml-auto"><Clock className="w-3 h-3" />{formatDate(tree.updatedAt)}</span>
+                    <span className="flex items-center gap-1 ml-auto text-xs"><Clock className="w-3.5 h-3.5" />{formatDate(tree.updatedAt)}</span>
                   </div>
                 </div>
 
-                <div className="border-t border-gray-100 px-5 py-2.5 flex items-center gap-2 flex-wrap">
+                <div className="border-t border-gray-100 px-6 py-3 flex items-center gap-3 flex-wrap">
                   <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}`}
-                    className="relative z-10 flex items-center gap-1 text-xs text-gray-500 hover:text-green-700 transition-colors px-2 py-1 rounded-lg hover:bg-green-50">
-                    <Eye className="w-3.5 h-3.5" /> Ver
+                    className="relative z-10 flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50">
+                    <Eye className="w-4 h-4" /> Ver
                   </Link>
                   <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}/configuracion`}
-                    className="relative z-10 flex items-center gap-1 text-xs text-gray-500 hover:text-green-700 transition-colors px-2 py-1 rounded-lg hover:bg-green-50">
-                    <Settings className="w-3.5 h-3.5" /> Configurar
+                    className="relative z-10 flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-700 transition-colors px-3 py-1.5 rounded-lg hover:bg-green-50">
+                    <Settings className="w-4 h-4" /> Configurar
                   </Link>
                   <DeleteTreeButton slug={tree.slug} title={tree.title} hasForks={tree._count.forks > 0} />
                   {tree._count.forks > 0 && (
-                    <span className="ml-auto relative z-10 flex items-center gap-1 text-xs text-gray-400">
-                      <TrendingUp className="w-3 h-3 text-green-500" />
+                    <span className="ml-auto relative z-10 flex items-center gap-1.5 text-sm text-green-600 font-medium">
+                      <TrendingUp className="w-4 h-4" />
                       {tree._count.forks} fork{tree._count.forks !== 1 ? "s" : ""}
                     </span>
                   )}

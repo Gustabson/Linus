@@ -115,7 +115,7 @@ export default async function UserProfilePage({
             </div>
 
             {user.bio && (
-              <p className="text-gray-600 leading-relaxed">{user.bio}</p>
+              <p className="text-gray-600 leading-relaxed text-base">{user.bio}</p>
             )}
 
             <div className="flex flex-wrap gap-4 text-sm text-gray-500">
@@ -170,9 +170,9 @@ export default async function UserProfilePage({
               const ts    = CONTENT_TYPE_STYLE[tree.contentType];
               return (
                 <Link key={tree.id} href={`/${user.username}/${tree.slug}`}
-                  className={`bg-white rounded-2xl border border-gray-200 p-5 ${ts.hoverBorderCls} hover:shadow-sm transition-all group block`}>
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
+                  className={`bg-white rounded-2xl border border-gray-200 p-6 ${ts.hoverBorderCls} hover:shadow-md transition-all group block`}>
+                  <div className="flex items-center gap-2 mb-3 flex-wrap">
+                    <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${badge.cls}`}>
                       {badge.icon}
                       {badge.label}
                     </span>
@@ -183,20 +183,20 @@ export default async function UserProfilePage({
                       </span>
                     )}
                   </div>
-                  <h3 className={`font-semibold text-gray-900 ${ts.groupHoverTextCls} transition-colors mb-1 line-clamp-2`}>
+                  <h3 className={`text-base font-bold text-gray-900 ${ts.groupHoverTextCls} transition-colors mb-2 line-clamp-2`}>
                     {tree.title}
                   </h3>
                   {tree.description && (
-                    <p className="text-gray-500 text-sm line-clamp-2 mb-3">{tree.description}</p>
+                    <p className="text-gray-500 text-sm line-clamp-2 mb-4 leading-relaxed">{tree.description}</p>
                   )}
-                  <div className="flex items-center gap-4 text-xs text-gray-400">
+                  <div className="flex items-center gap-4 text-sm text-gray-400 pt-3 border-t border-gray-100">
                     <span className="flex items-center gap-1">
-                      <Heart className="w-3 h-3" /> {tree._count.likes}
+                      <Heart className="w-4 h-4" /> {tree._count.likes}
                     </span>
                     <span className="flex items-center gap-1">
-                      <GitFork className="w-3 h-3" /> {tree._count.forks}
+                      <GitFork className="w-4 h-4" /> {tree._count.forks}
                     </span>
-                    <span className="ml-auto">{formatDate(tree.updatedAt)}</span>
+                    <span className="ml-auto text-xs">{formatDate(tree.updatedAt)}</span>
                   </div>
                 </Link>
               );

@@ -77,27 +77,27 @@ export async function SocialFeed({ userId }: Props) {
     <div className="max-w-6xl mx-auto">
 
       {/* ── Welcome banner ─────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-6 flex items-center justify-between gap-4 flex-wrap">
+      <div className="bg-gradient-to-r from-green-700 to-green-600 rounded-2xl p-6 mb-6 flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           {me?.image ? (
-            <Image src={me.image} alt="" width={48} height={48} className="rounded-2xl ring-2 ring-green-100" />
+            <Image src={me.image} alt="" width={56} height={56} className="rounded-2xl ring-2 ring-white/30" />
           ) : (
-            <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center text-green-700 text-xl font-bold">
+            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-white text-2xl font-bold">
               {firstName[0]}
             </div>
           )}
           <div>
-            <p className="text-lg font-bold text-gray-900">
+            <p className="text-xl font-bold text-white">
               Hola, {firstName} 👋
             </p>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-green-100 mt-0.5">
               Tu espacio para compartir y descubrir currículo educativo
             </p>
           </div>
         </div>
         <Link
           href="/nuevo"
-          className="flex items-center gap-2 bg-green-700 text-white text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-green-800 transition-colors shrink-0"
+          className="flex items-center gap-2 bg-white text-green-700 text-sm font-semibold px-5 py-3 rounded-xl hover:bg-green-50 transition-colors shrink-0 shadow-sm"
         >
           <Plus className="w-4 h-4" />
           Crear contenido
@@ -173,7 +173,7 @@ export async function SocialFeed({ userId }: Props) {
               </div>
               <Link
                 href="/dashboard"
-                className="w-full flex items-center justify-center gap-2 text-sm text-gray-600 border border-gray-200 py-2 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                className="w-full flex items-center justify-center gap-2 text-sm font-medium text-green-700 border border-green-200 py-2.5 rounded-xl hover:bg-green-50 hover:border-green-300 transition-colors"
               >
                 <Sparkles className="w-4 h-4" />
                 Ver mi espacio
@@ -300,65 +300,64 @@ type TreeWithMeta = {
 function TreeCard({ tree }: { tree: TreeWithMeta }) {
   const badge = CONTENT_TYPE_BADGE[tree.contentType];
   return (
-    <div className="relative bg-white rounded-2xl border border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all group p-5 flex flex-col gap-3">
+    <div className="relative bg-white rounded-2xl border border-gray-200 hover:border-green-200 hover:shadow-md transition-all group p-6 flex flex-col gap-4">
       <Link href={`/${tree.owner.username ?? tree.owner.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
-      {/* Type badge */}
-      <div className="flex items-center gap-2">
-        <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${badge.cls}`}>
-          {badge.icon}
-          {badge.label}
+      {/* Author row — top */}
+      <Link
+        href={`/${tree.owner.username ?? tree.owner.id}`}
+        className="relative z-10 flex items-center gap-2.5 w-fit hover:opacity-80 transition-opacity"
+      >
+        {tree.owner.image ? (
+          <Image src={tree.owner.image} alt="" width={32} height={32} className="rounded-full" />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-sm font-bold">
+            {(tree.owner.name ?? "?")[0]}
+          </div>
+        )}
+        <span className="text-sm text-gray-600 hover:text-green-700 transition-colors font-medium">
+          {tree.owner.name}
         </span>
-        {tree.forkDepth > 0 && (
-          <span className="text-xs text-gray-400 flex items-center gap-1">
-            <GitFork className="w-3 h-3" /> Fork
-          </span>
+      </Link>
+
+      {/* Title + description */}
+      <div className="space-y-1.5">
+        <h3 className="text-lg font-bold text-gray-900 group-hover:text-green-700 transition-colors leading-snug line-clamp-2">
+          {tree.title}
+        </h3>
+        {tree.description && (
+          <p className="text-gray-500 text-sm line-clamp-2 leading-relaxed">{tree.description}</p>
         )}
       </div>
 
-      {/* Title */}
-      <h3 className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors leading-snug line-clamp-2">
-        {tree.title}
-      </h3>
-
-      {/* Description */}
-      {tree.description && (
-        <p className="text-gray-500 text-sm line-clamp-2 leading-relaxed">{tree.description}</p>
-      )}
-
-      {/* Author + stats */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-50 mt-auto">
-        <Link
-          href={`/${tree.owner.username ?? tree.owner.id}`}
-          className="relative z-10 flex items-center gap-2 hover:opacity-80 transition-opacity"
-        >
-          {tree.owner.image ? (
-            <Image src={tree.owner.image} alt="" width={20} height={20} className="rounded-full" />
-          ) : (
-            <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-700 text-[10px] font-bold">
-              {(tree.owner.name ?? "?")[0]}
-            </div>
-          )}
-          <span className="text-xs text-gray-500 hover:text-green-700 transition-colors truncate max-w-[120px] font-medium">
-            {tree.owner.name}
+      {/* Footer: badge + stats */}
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto">
+        <div className="flex items-center gap-2">
+          <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${badge.cls}`}>
+            {badge.icon}
+            {badge.label}
           </span>
-        </Link>
-        <div className="flex items-center gap-3 text-xs text-gray-400">
+          {tree.forkDepth > 0 && (
+            <span className="text-xs text-gray-400 flex items-center gap-1">
+              <GitFork className="w-3 h-3" /> Fork
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 text-sm text-gray-400">
           <span className="flex items-center gap-1">
-            <Heart className="w-3.5 h-3.5" />
+            <Heart className="w-4 h-4" />
             {tree._count.likes}
           </span>
           <span className="flex items-center gap-1">
-            <GitFork className="w-3.5 h-3.5" />
+            <GitFork className="w-4 h-4" />
             {tree._count.forks}
           </span>
           {tree._count.documents !== undefined && (
             <span className="flex items-center gap-1">
-              <BookOpen className="w-3.5 h-3.5" />
+              <BookOpen className="w-4 h-4" />
               {tree._count.documents}
             </span>
           )}
-          <span className="hidden sm:block">{formatDate(tree.updatedAt)}</span>
         </div>
       </div>
     </div>
