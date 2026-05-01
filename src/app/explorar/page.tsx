@@ -3,7 +3,7 @@ import { GitFork, BookOpen, Search, Heart, TrendingUp, Clock } from "lucide-reac
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import Image from "next/image";
-import { CONTENT_TYPE_STYLE, CONTENT_TYPE_STYLE, CONTENT_TABS } from "@/lib/constants";
+import { CONTENT_TYPE_STYLE, CONTENT_TABS } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
