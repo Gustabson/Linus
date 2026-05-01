@@ -27,10 +27,8 @@ export function LayoutShell({ children, isLoggedIn }: Props) {
       <Sidebar />
 
       {/* Main content area */}
-      <main className="lg:ml-64 min-h-screen pb-20 lg:pb-0">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-          {children}
-        </div>
+      <main className="lg:ml-64 min-h-screen pb-20 lg:pb-0 px-4 sm:px-6 pt-6">
+        {children}
       </main>
 
       {/* Bottom tab bar — mobile only */}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
-  BookOpen, Home, LayoutDashboard, Search,
+  BookOpen, Home, LayoutDashboard, Search, Compass,
   Plus, Settings, LogOut, AlertCircle, GitPullRequest,
 } from "lucide-react";
 import Image from "next/image";
@@ -13,6 +13,7 @@ import { NotificationBell } from "@/components/layout/NotificationBell";
 const NAV_ITEMS = [
   { href: "/",            icon: Home,            label: "Inicio"      },
   { href: "/dashboard",   icon: LayoutDashboard, label: "Mi espacio"  },
+  { href: "/explorar",    icon: Compass,         label: "Explorar"    },
   { href: "/buscar",      icon: Search,          label: "Buscar"      },
   { href: "/propuestas",  icon: GitPullRequest,  label: "Propuestas"  },
 ];

@@ -74,8 +74,10 @@ export default async function HistorialPage({
           <div className="absolute left-[19px] top-0 bottom-0 w-px bg-gray-200" />
           <div className="space-y-3">
             {versions.map((v, idx) => {
-              const isCurrent    = idx === 0;
-              const matchingPub  = publications[idx];
+              const isCurrent   = idx === 0;
+              // Match publication by commitMessage — the publish route sets the same
+              // message on all versions and the TreePublication in the same transaction.
+              const matchingPub = publications.find(p => p.commitMessage === v.commitMessage);
               return (
                 <div key={v.id} className="relative flex gap-4">
                   <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center z-10 ${
