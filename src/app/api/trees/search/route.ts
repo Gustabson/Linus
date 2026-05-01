@@ -34,13 +34,15 @@ export async function GET(req: NextRequest) {
       id: true,
       slug: true,
       title: true,
+      description: true,
       contentType: true,
+      forkDepth: true,
       owner: { select: { name: true, username: true } },
       _count: { select: { likes: true, forks: true } },
     },
     orderBy: { updatedAt: "desc" },
-    take: 20,
+    take: Math.min(Number(searchParams.get("limit") ?? "20"), 20),
   });
 
-  return NextResponse.json(trees);
+  return NextResponse.json({ trees });
 }

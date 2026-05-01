@@ -1,0 +1,246 @@
+"use client";
+
+import { useState, useRef, useTransition } from "react";
+import Image from "next/image";
+import { Send, X, BookOpen, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import type { ContentType } from "@prisma/client";
+import { CONTENT_TYPE_BADGE } from "@/lib/constants";
+import type { PostData } from "./PostCard";
+
+interface Props {
+  currentUser: {
+    name:     string | null;
+    username: string | null;
+    image:    string | null;
+  };
+  onPostCreated: (post: PostData) => void;
+}
+
+interface TreeResult {
+  id:          string;
+  slug:        string;
+  title:       string;
+  description: string | null;
+  contentType: ContentType;
+  forkDepth:   number;
+  owner: { username: string | null; name: string | null };
+  _count: { likes: number; forks: number };
+}
+
+const MAX_CHARS = 2000;
+
+export function PostComposer({ currentUser, onPostCreated }: Props) {
+  const [content, setContent]         = useState("");
+  const [attachedTree, setAttachedTree] = useState<TreeResult | null>(null);
+  const [showTreeSearch, setShowTreeSearch] = useState(false);
+  const [treeQuery, setTreeQuery]     = useState("");
+  const [treeResults, setTreeResults] = useState<TreeResult[]>([]);
+  const [searching, setSearching]     = useState(false);
+  const [submitting, startSubmit]     = useTransition();
+  const [error, setError]             = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const charCount  = content.length;
+  const overLimit  = charCount > MAX_CHARS;
+  const canSubmit  = content.trim().length > 0 && !overLimit && !submitting;
+
+  function autoResize() {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = `${Math.min(ta.scrollHeight, 300)}px`;
+  }
+
+  async function searchTrees(q: string) {
+    setTreeQuery(q);
+    if (q.trim().length < 2) { setTreeResults([]); return; }
+    setSearching(true);
+    try {
+      const res  = await fetch(`/api/trees/search?q=${encodeURIComponent(q)}&limit=6&types=KERNEL,MODULE,RESOURCE`);
+      const data = await res.json();
+      setTreeResults(data.trees ?? []);
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function handleSubmit() {
+    if (!canSubmit) return;
+    setError("");
+
+    startSubmit(async () => {
+      const res  = await fetch("/api/posts", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          content,
+          treeId: attachedTree?.id ?? null,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? "Error al publicar");
+        return;
+      }
+
+      const post = await res.json();
+      onPostCreated(post);
+      setContent("");
+      setAttachedTree(null);
+      setShowTreeSearch(false);
+      setTreeQuery("");
+      setTreeResults([]);
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
+    });
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3">
+      <div className="flex gap-3">
+        {/* Avatar */}
+        <div className="shrink-0">
+          {currentUser.image ? (
+            <Image
+              src={currentUser.image}
+              alt=""
+              width={40}
+              height={40}
+              className="rounded-full"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm">
+              {(currentUser.name ?? "?")[0]}
+            </div>
+          )}
+        </div>
+
+        {/* Text area */}
+        <div className="flex-1 min-w-0">
+          <textarea
+            ref={textareaRef}
+            value={content}
+            onChange={(e) => { setContent(e.target.value); autoResize(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSubmit();
+            }}
+            placeholder="¿Qué querés compartir con otros docentes?"
+            rows={2}
+            className="w-full resize-none text-[15px] leading-relaxed placeholder-gray-400 focus:outline-none text-gray-800"
+          />
+
+          {/* Attached tree preview */}
+          {attachedTree && (
+            <div className="mt-2 border border-gray-200 rounded-xl p-3 flex items-start gap-2.5 bg-gray-50">
+              <BookOpen className="w-4 h-4 text-green-700 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  {(() => {
+                    const badge = CONTENT_TYPE_BADGE[attachedTree.contentType];
+                    return (
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.cls}`}>
+                        {badge.label}
+                      </span>
+                    );
+                  })()}
+                </div>
+                <p className="text-sm font-semibold text-gray-800 line-clamp-1">{attachedTree.title}</p>
+                <p className="text-xs text-gray-400">por {attachedTree.owner.name}</p>
+              </div>
+              <button
+                onClick={() => setAttachedTree(null)}
+                className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-gray-100" />
+
+      {/* Tree search toggle */}
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => setShowTreeSearch(!showTreeSearch)}
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-green-700 transition-colors"
+        >
+          <BookOpen className="w-4 h-4" />
+          {attachedTree ? "Cambiar contenido adjunto" : "Adjuntar kernel / módulo / recurso"}
+          {showTreeSearch ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </button>
+
+        {showTreeSearch && (
+          <div className="space-y-2">
+            <input
+              type="text"
+              value={treeQuery}
+              onChange={(e) => searchTrees(e.target.value)}
+              placeholder="Buscar por título..."
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-400"
+            />
+            {searching && (
+              <p className="text-xs text-gray-400 flex items-center gap-1.5 px-1">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Buscando...
+              </p>
+            )}
+            {treeResults.length > 0 && (
+              <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+                {treeResults.map((tree) => {
+                  const badge = CONTENT_TYPE_BADGE[tree.contentType];
+                  return (
+                    <button
+                      key={tree.id}
+                      type="button"
+                      onClick={() => {
+                        setAttachedTree(tree);
+                        setShowTreeSearch(false);
+                        setTreeQuery("");
+                        setTreeResults([]);
+                      }}
+                      className="w-full text-left px-3 py-2.5 hover:bg-green-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${badge.cls}`}>
+                          {badge.label}
+                        </span>
+                        <span className="text-sm font-medium text-gray-800 truncate">{tree.title}</span>
+                        <span className="text-xs text-gray-400 shrink-0">por {tree.owner.name}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {treeQuery.trim().length >= 2 && !searching && treeResults.length === 0 && (
+              <p className="text-xs text-gray-400 px-1">Sin resultados.</p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Footer: char count + submit */}
+      <div className="flex items-center justify-between">
+        <span className={`text-xs ${overLimit ? "text-red-500 font-medium" : "text-gray-400"}`}>
+          {charCount}/{MAX_CHARS}
+        </span>
+        <div className="flex items-center gap-3">
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className="flex items-center gap-1.5 bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-green-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {submitting
+              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Publicando...</>
+              : <><Send className="w-3.5 h-3.5" /> Publicar</>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

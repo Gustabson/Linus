@@ -81,6 +81,9 @@ model User {
   following               UserFollow[]         @relation("Follower")
   notificationsReceived   Notification[]       @relation("NotificationRecipient")
   notificationsGiven      Notification[]       @relation("NotificationActor")
+  posts               Post[]
+  postLikes           PostLike[]
+  postComments        PostComment[]
 }
 
 // ─── DOCUMENT TREES (kernels, modules, resources) ────────────────────────────
@@ -130,6 +133,8 @@ model DocumentTree {
   attachments  TreeAttachment[] @relation("KernelAttachments")
   // Kernels this module/resource is attached to
   attachedTo   TreeAttachment[] @relation("AttachedContent")
+  // Social posts that share/reference this tree
+  posts        Post[]
 
   @@index([ownerId])
   @@index([parentTreeId])
@@ -415,4 +420,57 @@ model TreeExtension {
   author   User   @relation(fields: [authorId], references: [id])
 
   @@index([treeId])
+}
+
+// ─── SOCIAL POSTS ─────────────────────────────────────────────────────────────
+
+model Post {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  // Optional attached kernel / module / resource
+  treeId String?
+  tree   DocumentTree? @relation(fields: [treeId], references: [id], onDelete: SetNull)
+
+  likes    PostLike[]
+  comments PostComment[]
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model PostLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model PostComment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([authorId])
 }

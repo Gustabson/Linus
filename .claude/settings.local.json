@@ -27,7 +27,19 @@
       "Bash(2>&1)",
       "Bash(npx dotenv-cli *)",
       "Bash(ls node_modules/mammoth)",
-      "Bash(ls node_modules/pdf-parse)"
+      "Bash(ls node_modules/pdf-parse)",
+      "Bash(grep -rn \"createNotification\\\\|/t/\\\\${\" \"/home/gustavo/Desktop/Aplicaciones/Git Edu/src/app/api\" --include=\"*.ts\")",
+      "Bash(mkdir -p \"/home/gustavo/Desktop/Aplicaciones/Git Edu/src/app/[username]/[slug]/preview\")",
+      "Bash(mkdir -p \"/home/gustavo/Desktop/Aplicaciones/Git Edu/src/app/[username]/[slug]/configuracion\")",
+      "Bash(mkdir -p \"/home/gustavo/Desktop/Aplicaciones/Git Edu/src/app/[username]/[slug]/[docSlug]/historial\")",
+      "Bash(mkdir -p \"/home/gustavo/Desktop/Aplicaciones/Git Edu/src/app/[username]/[slug]/[docSlug]/preview\")",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_QryaNJwqn9R4@ep-small-frog-acthkzfj.sa-east-1.aws.neon.tech/neondb?sslmode=require\" npx prisma migrate dev --name replace_ledger_with_publications)",
+      "Bash(sed -i 's|href=\"/explorar\"|href=\"/buscar\"|g' src/components/landing/LandingPage.tsx src/app/dashboard/page.tsx src/components/layout/Navbar.tsx)",
+      "Bash(sed -i 's|label=\"Explorar\"|label=\"Buscar\"|g' src/components/layout/Navbar.tsx)",
+      "Bash(npx vercel *)",
+      "Bash(export DATABASE_URL='postgresql://neondb_owner:npg_QryaNJwqn9R4@ep-small-frog-acthkzfj.sa-east-1.aws.neon.tech/neondb?sslmode=require')",
+      "Bash(xargs ls *)"
     ]
   }
 }

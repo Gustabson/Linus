@@ -72,7 +72,7 @@ function AttachSection({
       const res = await fetch(
         `/api/trees/search?q=${encodeURIComponent(query)}&types=MODULE&exclude=${kernelId}`
       );
-      if (res.ok) setResults(await res.json());
+      if (res.ok) { const data = await res.json(); setResults(data.trees ?? data); }
       setSearching(false);
     }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };

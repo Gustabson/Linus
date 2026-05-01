@@ -72,17 +72,30 @@ export function Sidebar() {
           </Link>
         ))}
 
-        {/* CTA */}
+        {/* CTA — compose a post */}
         <Link
-          href="/nuevo"
+          href="/"
           className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-base font-semibold transition-all mt-3 shadow-sm ${
-            isActive("/nuevo")
+            pathname === "/"
               ? "bg-green-50 text-green-800"
               : "bg-white text-green-700 hover:bg-green-50"
           }`}
         >
           <Plus className="w-5 h-5 shrink-0" />
-          Crear contenido
+          Crear publicación
+        </Link>
+
+        {/* Secondary — create educational content */}
+        <Link
+          href="/nuevo"
+          className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+            isActive("/nuevo")
+              ? "bg-white/20 text-white"
+              : "text-green-100 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          <BookOpen className="w-5 h-5 shrink-0" />
+          Nuevo kernel / módulo
         </Link>
       </nav>
 
