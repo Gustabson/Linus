@@ -43,54 +43,52 @@ export function ConfigPerfil({ initial }: Props) {
     });
   }
 
-  const field = "w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors";
-  const label = "block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5";
+  const inputCls = "w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors";
 
   return (
-    <section className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-5">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
       <div>
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white">Perfil público</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Esta información es visible para el resto de la comunidad.
-        </p>
+        <h2 className="text-base font-semibold text-gray-900">Perfil público</h2>
+        <p className="text-sm text-gray-500 mt-0.5">Esta información es visible para el resto de la comunidad.</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className={label}>Nombre completo</label>
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-gray-700">Nombre completo</label>
           <input value={name} onChange={e => setName(e.target.value)}
-            placeholder="Tu nombre" maxLength={80} className={field} />
+            placeholder="Tu nombre" maxLength={80} className={inputCls} />
         </div>
-        <div>
-          <label className={label}>Nombre de usuario</label>
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-gray-700">Nombre de usuario</label>
           <div className="relative">
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm select-none">@</span>
-            <input value={username} onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
+            <input value={username}
+              onChange={e => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
               placeholder="usuario" maxLength={30}
-              className={`${field} pl-8`} />
+              className={`${inputCls} pl-8`} />
           </div>
-          <p className="text-xs text-gray-400 mt-1">Solo letras minúsculas, números, _ y -</p>
+          <p className="text-xs text-gray-400">Solo letras minúsculas, números, _ y -</p>
         </div>
       </div>
 
-      <div>
-        <label className={label}>Biografía</label>
+      <div className="space-y-1.5">
+        <label className="block text-sm font-medium text-gray-700">Biografía</label>
         <textarea value={bio} onChange={e => setBio(e.target.value)}
           placeholder="Contá algo sobre vos..." maxLength={300} rows={3}
-          className={`${field} resize-none`} />
-        <p className="text-xs text-gray-400 mt-1 text-right">{bio.length}/300</p>
+          className={`${inputCls} resize-none`} />
+        <p className="text-xs text-gray-400 text-right">{bio.length}/300</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className={label}>Sitio web</label>
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-gray-700">Sitio web</label>
           <input value={website} onChange={e => setWebsite(e.target.value)}
-            placeholder="https://tusitio.com" type="url" className={field} />
+            placeholder="https://tusitio.com" type="url" className={inputCls} />
         </div>
-        <div>
-          <label className={label}>Ubicación</label>
+        <div className="space-y-1.5">
+          <label className="block text-sm font-medium text-gray-700">Ubicación</label>
           <input value={location} onChange={e => setLocation(e.target.value)}
-            placeholder="Ciudad, País" maxLength={60} className={field} />
+            placeholder="Ciudad, País" maxLength={60} className={inputCls} />
         </div>
       </div>
 
@@ -102,18 +100,15 @@ export function ConfigPerfil({ initial }: Props) {
 
       <div className="flex items-center justify-end gap-3 pt-1">
         {saved && (
-          <span className="flex items-center gap-1.5 text-sm text-green-600 font-medium">
+          <span className="flex items-center gap-1.5 text-sm text-green-700 font-medium">
             <Check className="w-4 h-4" /> Guardado
           </span>
         )}
-        <button
-          onClick={handleSave}
-          disabled={pending}
-          className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl disabled:opacity-50 transition-colors"
-        >
+        <button onClick={handleSave} disabled={pending}
+          className="flex items-center gap-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl disabled:opacity-50 transition-colors">
           {pending ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : "Guardar cambios"}
         </button>
       </div>
-    </section>
+    </div>
   );
 }

@@ -1,17 +1,17 @@
 "use client";
 
-import { ShieldCheck, Mail } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 interface Props {
   email:         string | null;
-  emailVerified: Date | string | null;
+  emailVerified: string | null;
   providers:     string[];
-  createdAt:     Date | string;
+  createdAt:     string;
 }
 
 function GoogleIcon() {
   return (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+    <svg className="w-4 h-4" viewBox="0 0 24 24">
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
       <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
@@ -31,7 +31,7 @@ function GitHubIcon() {
 const PROVIDER_ICONS: Record<string, React.ReactNode> = {
   google:      <GoogleIcon />,
   github:      <GitHubIcon />,
-  credentials: <Mail className="w-4 h-4" />,
+  credentials: <span className="text-xs">✉</span>,
 };
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -41,32 +41,30 @@ const PROVIDER_LABELS: Record<string, string> = {
 };
 
 export function ConfigCuenta({ email, emailVerified, providers, createdAt }: Props) {
-  const verified    = !!emailVerified;
-  const joinedDate  = new Date(createdAt).toLocaleDateString("es-AR", {
+  const verified   = !!emailVerified;
+  const joinedDate = new Date(createdAt).toLocaleDateString("es-AR", {
     year: "numeric", month: "long", day: "numeric",
   });
 
   return (
-    <section className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 space-y-5">
+    <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
       <div>
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white">Cuenta</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Información de tu cuenta y métodos de inicio de sesión.
-        </p>
+        <h2 className="text-base font-semibold text-gray-900">Cuenta</h2>
+        <p className="text-sm text-gray-500 mt-0.5">Información de tu cuenta y métodos de inicio de sesión.</p>
       </div>
 
-      {/* Email row */}
-      <div className="flex items-start justify-between gap-4 py-3 border-b border-gray-100 dark:border-gray-800">
-        <div className="space-y-0.5">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Correo electrónico</p>
-          <p className="text-sm text-gray-900 dark:text-white">{email ?? "—"}</p>
+      {/* Email */}
+      <div className="flex items-center justify-between gap-4 py-3 border-b border-gray-100">
+        <div>
+          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-0.5">Correo electrónico</p>
+          <p className="text-sm text-gray-900">{email ?? "—"}</p>
         </div>
         {verified ? (
-          <span className="flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-1 rounded-full shrink-0">
+          <span className="flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-full shrink-0">
             <ShieldCheck className="w-3.5 h-3.5" /> Verificado
           </span>
         ) : (
-          <span className="text-xs font-medium text-amber-600 bg-amber-50 dark:bg-amber-900/30 px-2.5 py-1 rounded-full shrink-0">
+          <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full shrink-0">
             Sin verificar
           </span>
         )}
@@ -74,26 +72,22 @@ export function ConfigCuenta({ email, emailVerified, providers, createdAt }: Pro
 
       {/* Providers */}
       <div className="space-y-2">
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Métodos de acceso</p>
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Métodos de acceso</p>
         <div className="flex flex-wrap gap-2">
           {providers.map((p) => (
-            <span
-              key={p}
-              className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full"
-            >
-              {PROVIDER_ICONS[p] ?? <Mail className="w-4 h-4" />}
+            <span key={p}
+              className="flex items-center gap-1.5 text-xs font-medium text-gray-700 bg-gray-100 px-3 py-1.5 rounded-full">
+              {PROVIDER_ICONS[p] ?? "•"}
               {PROVIDER_LABELS[p] ?? p}
             </span>
           ))}
         </div>
       </div>
 
-      {/* Member since */}
-      <div className="pt-1 border-t border-gray-100 dark:border-gray-800">
-        <p className="text-xs text-gray-400">
-          Miembro desde el {joinedDate}
-        </p>
-      </div>
-    </section>
+      {/* Joined */}
+      <p className="text-xs text-gray-400 pt-1 border-t border-gray-100">
+        Miembro desde el {joinedDate}
+      </p>
+    </div>
   );
 }
