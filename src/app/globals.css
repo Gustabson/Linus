@@ -1,35 +1,91 @@
 @import "tailwindcss";
 
+/* ── Dark mode: usa la clase .dark en <html> (next-themes) ─────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Tokens semánticos ─────────────────────────────────────────────────────── */
+:root {
+  /* Fondo general */
+  --bg:           #f9fafb;
+  /* Superficie de cards / paneles */
+  --surface:      #ffffff;
+  /* Bordes */
+  --border:       #e5e7eb;
+  --border-subtle:#f3f4f6;
+  /* Texto */
+  --text:         #111827;
+  --text-muted:   #6b7280;
+  --text-subtle:  #9ca3af;
+  /* Primario */
+  --primary:      #15803d;
+  --primary-h:    #166534;
+  --primary-fg:   #ffffff;
+  /* Peligro */
+  --danger:       #ef4444;
+  --danger-h:     #dc2626;
+}
+
+.dark {
+  --bg:           #0f172a;
+  --surface:      #1e293b;
+  --border:       #334155;
+  --border-subtle:#1e293b;
+  --text:         #f1f5f9;
+  --text-muted:   #94a3b8;
+  --text-subtle:  #64748b;
+  --primary:      #22c55e;
+  --primary-h:    #16a34a;
+  --primary-fg:   #ffffff;
+  --danger:       #f87171;
+  --danger-h:     #ef4444;
+}
+
+/* ── Aliases Tailwind v4 (permite usar bg-surface, text-muted, etc.) ────────── */
+@theme inline {
+  --color-bg:           var(--bg);
+  --color-surface:      var(--surface);
+  --color-border:       var(--border);
+  --color-border-subtle:var(--border-subtle);
+  --color-text:         var(--text);
+  --color-text-muted:   var(--text-muted);
+  --color-text-subtle:  var(--text-subtle);
+  --color-primary:      var(--primary);
+  --color-primary-h:    var(--primary-h);
+  --color-primary-fg:   var(--primary-fg);
+  --color-danger:       var(--danger);
+  --color-danger-h:     var(--danger-h);
+}
+
+/* ── Base ───────────────────────────────────────────────────────────────────── */
 @layer base {
   body {
-    background: #f9fafb;
-    color: #111827;
+    background-color: var(--bg);
+    color: var(--text);
     font-family: system-ui, -apple-system, sans-serif;
+    transition: background-color 0.2s, color 0.2s;
   }
 }
 
-/* TipTap editor styles */
+/* ── TipTap editor ──────────────────────────────────────────────────────────── */
 .tiptap {
   min-height: 200px;
   outline: none;
 }
-
 .tiptap p.is-editor-empty:first-child::before {
-  color: #9ca3af;
+  color: var(--text-subtle);
   content: attr(data-placeholder);
   float: left;
   height: 0;
   pointer-events: none;
 }
-
 .tiptap h1 { font-size: 1.875rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; }
-.tiptap h2 { font-size: 1.5rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
-.tiptap h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
+.tiptap h2 { font-size: 1.5rem;   font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+.tiptap h3 { font-size: 1.25rem;  font-weight: 600; margin-top: 1rem;    margin-bottom: 0.5rem; }
 .tiptap p  { margin-bottom: 0.75rem; line-height: 1.625; }
-.tiptap ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.75rem; }
+.tiptap ul { list-style-type: disc;    padding-left: 1.5rem; margin-bottom: 0.75rem; }
 .tiptap ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 0.75rem; }
-.tiptap blockquote { border-left: 4px solid #86efac; padding-left: 1rem; font-style: italic; color: #4b5563; margin: 1rem 0; }
+.tiptap blockquote { border-left: 4px solid #86efac; padding-left: 1rem; font-style: italic; color: var(--text-muted); margin: 1rem 0; }
 .tiptap strong { font-weight: 600; }
-.tiptap em { font-style: italic; }
-.tiptap a { color: #15803d; text-decoration: underline; }
-.tiptap hr { border-color: #e5e7eb; margin: 1.5rem 0; }
+.tiptap em     { font-style: italic; }
+.tiptap a      { color: var(--primary); text-decoration: underline; }
+.tiptap hr     { border-color: var(--border); margin: 1.5rem 0; }
