@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeLedgerEntry } from "@/lib/ledger";
 import { getSession, unauthorized, uniqueSlug } from "@/lib/api-helpers";
 import type { TreeVisibility, ContentType } from "@prisma/client";
 
@@ -31,14 +30,6 @@ export async function DELETE(
 
   await prisma.documentTree.delete({ where: { id: tree.id } });
 
-  await writeLedgerEntry({
-    eventType:    "TREE_ARCHIVED",
-    subjectId:    tree.id,
-    subjectType:  "tree",
-    eventPayload: { treeId: tree.id, title: tree.title, action: "deleted" },
-    actorId:      session.user.id,
-  });
-
   return NextResponse.json({ ok: true });
 }
 
@@ -63,13 +54,6 @@ export async function PATCH(
       where: { id: tree.id },
       data:  { visibility: "PRIVATE" },
     });
-    await writeLedgerEntry({
-      eventType:    "TREE_ARCHIVED",
-      subjectId:    tree.id,
-      subjectType:  "tree",
-      eventPayload: { treeId: tree.id },
-      actorId:      session.user.id,
-    });
     return NextResponse.json({ ok: true });
   }
 
@@ -92,16 +76,6 @@ export async function PATCH(
       slug:        newSlug,
     },
   });
-
-  if (visibility && visibility !== tree.visibility) {
-    await writeLedgerEntry({
-      eventType:    "TREE_VISIBILITY_CHANGED",
-      subjectId:    tree.id,
-      subjectType:  "tree",
-      eventPayload: { from: tree.visibility, to: visibility },
-      actorId:      session.user.id,
-    });
-  }
 
   return NextResponse.json({ slug: updated.slug });
 }

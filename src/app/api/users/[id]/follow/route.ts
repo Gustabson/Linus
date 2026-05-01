@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { writeLedgerEntry } from "@/lib/ledger";
 import { createNotification } from "@/lib/notifications";
 import { NextResponse } from "next/server";
 
@@ -24,14 +23,6 @@ export async function POST(
     where: { followerId_followingId: { followerId: session.user.id, followingId } },
     create: { followerId: session.user.id, followingId },
     update: {},
-  });
-
-  await writeLedgerEntry({
-    eventType: "USER_FOLLOWED",
-    subjectId: followingId,
-    subjectType: "User",
-    eventPayload: { followerId: session.user.id, followingId },
-    actorId: session.user.id,
   });
 
   // Notify the followed user
@@ -61,14 +52,6 @@ export async function DELETE(
 
   await prisma.userFollow.deleteMany({
     where: { followerId: session.user.id, followingId },
-  });
-
-  await writeLedgerEntry({
-    eventType: "USER_UNFOLLOWED",
-    subjectId: followingId,
-    subjectType: "User",
-    eventPayload: { followerId: session.user.id, followingId },
-    actorId: session.user.id,
   });
 
   const count = await prisma.userFollow.count({ where: { followingId } });

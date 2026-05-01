@@ -47,7 +47,7 @@ export default async function DocumentPage({
     where:  { slug },
     select: {
       id: true, title: true, slug: true, ownerId: true,
-      visibility: true, contentType: true, contentHash: true,
+      visibility: true, contentType: true,
       owner: { select: { username: true } },
     },
   });
@@ -80,6 +80,14 @@ export default async function DocumentPage({
 
   // For module/resource: is there a DRAFT (unpublished edits since last tree-publish)?
   const hasChanges = !isKernel && latestVersion?.status === "DRAFT";
+
+  const latestPublication = isOwner && !isKernel
+    ? await prisma.treePublication.findFirst({
+        where:   { treeId: tree.id },
+        orderBy: { publishedAt: "desc" },
+        select:  { publicId: true },
+      })
+    : null;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -122,7 +130,7 @@ export default async function DocumentPage({
                 <TreePublishButton
                   treeSlug={tree.slug}
                   contentType={tree.contentType}
-                  initialHash={tree.contentHash ?? null}
+                  initialPublicId={latestPublication?.publicId ?? null}
                   hasChanges={hasChanges}
                 />
               )}

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeLedgerEntry } from "@/lib/ledger";
 import { getSession, unauthorized, uniqueSlug } from "@/lib/api-helpers";
 import type { TreeVisibility, ContentType } from "@prisma/client";
 
@@ -34,14 +33,6 @@ export async function POST(req: NextRequest) {
 
   await prisma.treeMembership.create({
     data: { treeId: tree.id, userId: session.user.id, role: "OWNER" },
-  });
-
-  await writeLedgerEntry({
-    eventType:    "TREE_CREATED",
-    subjectId:    tree.id,
-    subjectType:  "tree",
-    eventPayload: { treeId: tree.id, title: tree.title, slug: tree.slug, contentType: resolvedType },
-    actorId:      session.user.id,
   });
 
   return NextResponse.json({ slug: tree.slug, id: tree.id });

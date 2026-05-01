@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { writeLedgerEntry } from "@/lib/ledger";
 
 const USERNAME_REGEX = /^[a-z0-9_-]{3,32}$/;
 
@@ -28,14 +27,6 @@ export async function PATCH(req: NextRequest) {
   await prisma.user.update({
     where: { id: session.user.id },
     data: { username },
-  });
-
-  await writeLedgerEntry({
-    eventType: "USERNAME_SET",
-    subjectId: session.user.id,
-    subjectType: "user",
-    eventPayload: { username },
-    actorId: session.user.id,
   });
 
   return NextResponse.json({ ok: true, username });

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, GitFork, Shield, Users, ArrowRight, Globe } from "lucide-react";
+import { BookOpen, GitFork, GitCommit, Users, ArrowRight, Globe } from "lucide-react";
 
 export function LandingPage() {
   return (
@@ -70,25 +70,21 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* Trust / Ledger */}
+      {/* Trust / Publications */}
       <section className="bg-white rounded-2xl border border-gray-200 p-8 md:p-12">
         <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
           <div className="bg-green-50 p-4 rounded-2xl shrink-0">
-            <Shield className="w-10 h-10 text-green-700" />
+            <GitCommit className="w-10 h-10 text-green-700" />
           </div>
           <div className="space-y-3">
             <h2 className="text-2xl font-bold text-gray-900">
-              Autoría verificada. Historial inmutable.
+              Publicaciones verificables. Historial claro.
             </h2>
             <p className="text-gray-500 leading-relaxed">
-              Cada cambio queda registrado en un ledger criptográfico. Cada documento
-              tiene un hash único. Si alguien modifica el pasado, la cadena se rompe
-              y se detecta automáticamente. Tu contribución queda para siempre.
+              Cada publicación genera un ID único que cualquier persona puede usar para
+              verificar exactamente qué contenido fue publicado y cuándo. Tu contribución
+              queda registrada de forma permanente.
             </p>
-            <Link href="/ledger" className="text-green-700 text-sm font-medium hover:underline flex items-center gap-1">
-              Ver el ledger público
-              <ArrowRight className="w-3 h-3" />
-            </Link>
           </div>
         </div>
       </section>

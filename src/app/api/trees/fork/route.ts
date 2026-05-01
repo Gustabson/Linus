@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeLedgerEntry } from "@/lib/ledger";
 import { getSession, unauthorized, uniqueSlug } from "@/lib/api-helpers";
 import { copySectionFields } from "@/lib/sections";
 import { createNotification } from "@/lib/notifications";
@@ -113,21 +112,6 @@ export async function POST(req: NextRequest) {
     }
 
     return tree;
-  });
-
-  await writeLedgerEntry({
-    eventType:    "TREE_FORKED",
-    subjectId:    newTree.id,
-    subjectType:  "tree",
-    eventPayload: {
-      sourceTreeId:    source.id,
-      sourceTreeTitle: source.title,
-      newTreeId:       newTree.id,
-      forkDepth:       newTree.forkDepth,
-      contentType:     source.contentType,
-      targetKernelId:  targetKernelId ?? null,
-    },
-    actorId: session.user.id,
   });
 
   // Notify original tree owner

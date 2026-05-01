@@ -1,7 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
-import { createHash } from "crypto";
 import { KERNEL_SECTIONS } from "./seed-data/sections";
 
 const pool = new Pool({
@@ -32,7 +31,6 @@ async function main() {
       description: "El currículo educativo base. 10 secciones para cubrir todos los aspectos de la educación. Forkeable, adaptable, abierto.",
       language: "es",
       visibility: "PUBLIC",
-      isKernel: true,
       forkDepth: 0,
       ownerId: owner.id,
     },
@@ -59,16 +57,11 @@ async function main() {
   if (existing) {
     console.log("✓ Version already exists, skipping");
   } else {
-    const contentHash = createHash("sha256")
-      .update(JSON.stringify(KERNEL_SECTIONS))
-      .digest("hex");
-
     const version = await prisma.documentVersion.create({
       data: {
         documentId: doc.id,
         authorId: owner.id,
         commitMessage: "Kernel inicial — 10 secciones base",
-        contentHash,
         sections: {
           create: KERNEL_SECTIONS.map((s) => ({
             sectionType: s.sectionType,
@@ -86,28 +79,10 @@ async function main() {
       data: { currentVersionId: version.id },
     });
 
-    // 6. First ledger entry
-    const entryHash = createHash("sha256")
-      .update(`TREE_CREATED|${kernel.id}|${owner.id}|genesis`)
-      .digest("hex");
-
-    await prisma.ledgerEntry.create({
-      data: {
-        eventType: "TREE_CREATED",
-        subjectId: kernel.id,
-        subjectType: "tree",
-        eventPayload: { treeId: kernel.id, title: kernel.title, isKernel: true },
-        previousEntryHash: null,
-        entryHash,
-        actorId: owner.id,
-      },
-    });
-
-    console.log("✓ 10 sections + ledger entry created");
+    console.log("✓ 10 sections created");
   }
 
   console.log("\n🎉 Seed complete!");
-  console.log("   → https://linus-jet.vercel.app/t/kernel");
 }
 
 main()

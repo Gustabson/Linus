@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { GitFork, BookOpen, Shield, ChevronRight, Settings, GitPullRequest, Eye } from "lucide-react";
+import { GitFork, BookOpen, ChevronRight, Settings, GitPullRequest, Eye } from "lucide-react";
 import { CONTENT_TYPE_STYLE, KERNEL_NEW_DOC_LABEL } from "@/lib/constants";
 import { TreePublishButton } from "@/components/trees/TreePublishButton";
 import Link from "next/link";
@@ -114,6 +114,12 @@ export default async function TreePage({
 
   // Whether the tree has at least one document with a DRAFT (unpublished changes)
   const hasChanges = tree.documents.some((doc) => doc.versions[0]?.status === "DRAFT");
+
+  const latestPublication = await prisma.treePublication.findFirst({
+    where:   { treeId: tree.id },
+    orderBy: { publishedAt: "desc" },
+    select:  { publicId: true },
+  });
 
   // MODULE / RESOURCE are single-document entities — the tree page is invisible to users.
   // Redirect straight to the document editor (auto-created on tree creation).
@@ -298,7 +304,7 @@ export default async function TreePage({
               <TreePublishButton
                 treeSlug={tree.slug}
                 contentType={tree.contentType}
-                initialHash={tree.contentHash ?? null}
+                initialPublicId={latestPublication?.publicId ?? null}
                 hasChanges={hasChanges}
               />
             </div>
@@ -379,14 +385,6 @@ export default async function TreePage({
         isOwner={isOwner}
       />
 
-      {/* Ledger */}
-      <div className="flex items-center gap-2 text-sm text-gray-400 bg-gray-50 rounded-xl px-4 py-3">
-        <Shield className="w-4 h-4 text-green-600" />
-        Todos los cambios están en el{" "}
-        <Link href={`/ledger?tree=${tree.id}`} className="text-green-700 hover:underline">
-          ledger criptográfico
-        </Link>.
-      </div>
     </div>
   );
 }

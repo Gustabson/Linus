@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeLedgerEntry } from "@/lib/ledger";
 import { getSession, getOwnedKernel, unauthorized, forbidden } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -39,14 +38,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     },
   });
 
-  await writeLedgerEntry({
-    eventType:    "CONTENT_ATTACHED",
-    subjectId:    kernel.id,
-    subjectType:  "tree",
-    eventPayload: { contentId, contentTitle: content.title, contentType: content.contentType },
-    actorId:      session.user.id,
-  });
-
   return NextResponse.json(attachment);
 }
 
@@ -62,14 +53,6 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   await prisma.treeAttachment.deleteMany({
     where: { kernelId: kernel.id, contentId },
-  });
-
-  await writeLedgerEntry({
-    eventType:    "CONTENT_DETACHED",
-    subjectId:    kernel.id,
-    subjectType:  "tree",
-    eventPayload: { contentId },
-    actorId:      session.user.id,
   });
 
   return NextResponse.json({ ok: true });

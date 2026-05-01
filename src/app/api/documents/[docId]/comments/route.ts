@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeLedgerEntry } from "@/lib/ledger";
 import { createNotification } from "@/lib/notifications";
 import { getSession, unauthorized, forbidden } from "@/lib/api-helpers";
 
@@ -84,14 +83,6 @@ export async function POST(
     include: {
       author: { select: { id: true, name: true, username: true, image: true } },
     },
-  });
-
-  await writeLedgerEntry({
-    eventType:    "COMMENT_ADDED",
-    subjectId:    docId,
-    subjectType:  "document",
-    eventPayload: { commentId: comment.id, isPrivate: comment.isPrivate },
-    actorId:      session.user.id,
   });
 
   // Notify tree owner of public comments (not for own comments)

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { writeLedgerEntry } from "@/lib/ledger";
 import { createNotification } from "@/lib/notifications";
 
 // GET /api/proposals — list received (owner of target) + sent (author)
@@ -78,14 +77,6 @@ export async function POST(req: NextRequest) {
       targetTreeId: source.parentTreeId,
       authorId:     session.user.id,
     },
-  });
-
-  await writeLedgerEntry({
-    eventType:    "PROPOSAL_OPENED",
-    subjectId:    proposal.id,
-    subjectType:  "proposal",
-    eventPayload: { sourceTreeId: source.id, targetTreeId: source.parentTreeId, title },
-    actorId:      session.user.id,
   });
 
   await createNotification({

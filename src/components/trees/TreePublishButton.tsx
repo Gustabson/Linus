@@ -1,41 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Loader2, X, Check, Copy, Shield } from "lucide-react";
+import { Upload, Loader2, X, ExternalLink } from "lucide-react";
+import Link from "next/link";
 import type { ContentType } from "@prisma/client";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 
 interface Props {
-  treeSlug:         string;
-  contentType:      ContentType;
-  /** SHA-256 hash of the last published version, or null if never published */
-  initialHash:      string | null;
-  /** Whether the tree has at least one DRAFT document version (unpublished changes) */
-  hasChanges:       boolean;
+  treeSlug:       string;
+  contentType:    ContentType;
+  initialPublicId: string | null;
+  hasChanges:     boolean;
 }
 
 export function TreePublishButton({
   treeSlug,
   contentType,
-  initialHash,
+  initialPublicId,
   hasChanges: initialHasChanges,
 }: Props) {
   const style = CONTENT_TYPE_STYLE[contentType];
 
-  const [hash, setHash]               = useState<string | null>(initialHash);
+  const [publicId, setPublicId]       = useState<string | null>(initialPublicId);
   const [hasChanges, setHasChanges]   = useState(initialHasChanges);
   const [showModal, setShowModal]     = useState(false);
   const [commitMsg, setCommitMsg]     = useState("");
   const [publishing, setPublishing]   = useState(false);
   const [error, setError]             = useState("");
-  const [copied, setCopied]           = useState(false);
 
   async function handlePublish(e: React.FormEvent) {
     e.preventDefault();
     setPublishing(true);
     setError("");
 
-    const res = await fetch(`/api/trees/${treeSlug}/publish`, {
+    const res  = await fetch(`/api/trees/${treeSlug}/publish`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ commitMessage: commitMsg }),
@@ -43,7 +41,7 @@ export function TreePublishButton({
     const data = await res.json();
 
     if (res.ok) {
-      setHash(data.contentHash);
+      setPublicId(data.publicId);
       setHasChanges(false);
       setShowModal(false);
       setCommitMsg("");
@@ -53,40 +51,24 @@ export function TreePublishButton({
     setPublishing(false);
   }
 
-  function copyHash() {
-    if (!hash) return;
-    navigator.clipboard.writeText(hash);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
   return (
     <>
-      {/* ── Inline strip ── */}
       <div className="flex items-center gap-2 flex-wrap">
-        {/* Hash chip */}
-        {hash ? (
-          <button
-            onClick={copyHash}
-            title={`Hash completo: ${hash}`}
-            className={`group flex items-center gap-1.5 font-mono text-xs ${style.lightBgCls} ${style.textCls} px-2.5 py-1.5 rounded-lg border border-transparent hover:border-current transition-all`}
+        {/* Public ID chip */}
+        {publicId ? (
+          <Link
+            href={`/v/${publicId}`}
+            className={`flex items-center gap-1.5 font-mono text-xs ${style.lightBgCls} ${style.textCls} px-2.5 py-1.5 rounded-lg border border-transparent hover:border-current transition-all`}
           >
-            <Shield className="w-3 h-3 shrink-0" />
-            {hash.slice(0, 12)}…
-            {copied
-              ? <Check className="w-3 h-3 text-green-600 shrink-0" />
-              : <Copy  className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-            }
-          </button>
+            {publicId}
+            <ExternalLink className="w-3 h-3" />
+          </Link>
         ) : (
-          <span className="text-xs text-gray-400 flex items-center gap-1">
-            <Shield className="w-3 h-3" />
-            Sin publicar
-          </span>
+          <span className="text-xs text-gray-400">Sin publicar</span>
         )}
 
-        {/* Publish action */}
-        {hasChanges ? (
+        {/* Publish button */}
+        {hasChanges && (
           <button
             onClick={() => setShowModal(true)}
             className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl transition-colors ${style.btnCls}`}
@@ -94,32 +76,29 @@ export function TreePublishButton({
             <Upload className="w-3.5 h-3.5" />
             Publicar
           </button>
-        ) : hash ? (
+        )}
+        {!hasChanges && publicId && (
           <span className={`text-xs font-medium ${style.textCls}`}>✓ Publicado</span>
-        ) : null}
+        )}
       </div>
 
-      {/* ── Publish modal ── */}
+      {/* Publish modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-gray-900 flex items-center gap-2">
                 <Upload className="w-4 h-4 text-green-700" />
-                Publicar {style.label.toLowerCase()}
+                Publicar {style.label?.toLowerCase() ?? "contenido"}
               </h2>
-              <button
-                onClick={() => { setShowModal(false); setError(""); }}
-                className="text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => { setShowModal(false); setError(""); }} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <p className="text-sm text-gray-500">
-              Se calcula un hash SHA-256 de todo el contenido y queda registrado en el ledger
-              criptográfico. Este hash identifica esta versión de forma permanente y permite
-              verificar que no fue modificada.
+              Se genera un ID único para esta versión. Cualquiera puede usarlo para
+              verificar exactamente qué contenido estaba publicado en este momento.
             </p>
 
             <form onSubmit={handlePublish} className="space-y-3">
@@ -130,7 +109,7 @@ export function TreePublishButton({
                 <textarea
                   value={commitMsg}
                   onChange={(e) => setCommitMsg(e.target.value)}
-                  placeholder="Ej: Actualización de objetivos de aprendizaje"
+                  placeholder="Ej: Actualicé los objetivos de la unidad 2"
                   rows={2}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-400 resize-none"
                 />

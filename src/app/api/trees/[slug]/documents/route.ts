@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { writeLedgerEntry } from "@/lib/ledger";
 import { getSession, getOwnedTree, unauthorized, forbidden, uniqueSlug } from "@/lib/api-helpers";
 
 export async function POST(
@@ -40,14 +39,6 @@ export async function POST(
       data:  { currentVersionId: version.id },
     });
     return newDoc;
-  });
-
-  await writeLedgerEntry({
-    eventType:    "DOCUMENT_CREATED",
-    subjectId:    doc.id,
-    subjectType:  "document",
-    eventPayload: { documentId: doc.id, treeId: tree.id, title: doc.title },
-    actorId:      session.user.id,
   });
 
   return NextResponse.json({ slug: docSlug, id: doc.id });

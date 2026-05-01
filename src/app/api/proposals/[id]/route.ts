@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { writeLedgerEntry } from "@/lib/ledger";
 import { createNotification } from "@/lib/notifications";
 import { copySectionFields } from "@/lib/sections";
-import { createHash } from "crypto";
 
 type Params = { params: Promise<{ id: string }> };
-const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
 // GET /api/proposals/[id] — full detail with docs from both trees
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -88,10 +85,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       where: { id },
       data:  { status: "WITHDRAWN", reviewedAt: new Date(), reviewerId: userId },
     });
-    await writeLedgerEntry({
-      eventType: "PROPOSAL_WITHDRAWN", subjectId: id, subjectType: "proposal",
-      eventPayload: { proposalId: id }, actorId: userId,
-    });
     return NextResponse.json({ ok: true, status: "WITHDRAWN" });
   }
 
@@ -100,10 +93,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     await prisma.changeProposal.update({
       where: { id },
       data:  { status: "REJECTED", reviewedAt: new Date(), reviewerId: userId },
-    });
-    await writeLedgerEntry({
-      eventType: "PROPOSAL_REVIEWED", subjectId: id, subjectType: "proposal",
-      eventPayload: { proposalId: id, decision: "rejected" }, actorId: userId,
     });
     await createNotification({
       type: "PROPOSAL_REVIEWED", recipientId: proposal.authorId,
@@ -145,7 +134,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             documentId:    targetDoc.id,
             authorId:      userId,
             commitMessage: `Merge de propuesta: ${proposal.title}`,
-            contentHash:   sha256(JSON.stringify(sourceVersion.sections.map(copySectionFields))),
             parentVersionId: targetVersion?.id ?? null,
             sections: {
               create: sourceVersion.sections.map(copySectionFields),
@@ -164,10 +152,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       });
     });
 
-    await writeLedgerEntry({
-      eventType: "PROPOSAL_MERGED", subjectId: id, subjectType: "proposal",
-      eventPayload: { proposalId: id, targetTreeId: proposal.targetTreeId }, actorId: userId,
-    });
     await createNotification({
       type: "PROPOSAL_REVIEWED", recipientId: proposal.authorId,
       actorId: userId, link: `/propuestas/${id}`,

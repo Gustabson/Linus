@@ -72,7 +72,7 @@ model User {
   committedVersions   DocumentVersion[]
   proposals           ChangeProposal[]  @relation("ProposalAuthor")
   reviewedProposals   ChangeProposal[]  @relation("ProposalReviewer")
-  ledgerEntries       LedgerEntry[]
+  publications        TreePublication[]
   likes               TreeLike[]
   extensions          TreeExtension[]
   comments            DocumentComment[]
@@ -109,12 +109,7 @@ model DocumentTree {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
-  // ── Publication seal ─────────────────────────────────────────────────────
-  // Set when the owner explicitly publishes. The hash covers ALL documents
-  // inside this tree so one fingerprint certifies the whole entity.
-  contentHash          String?
-  publishedAt          DateTime?
-  publishCommitMessage String?
+  publishedAt  DateTime?
 
   ownerId      String
   owner        User           @relation("TreeOwner", fields: [ownerId], references: [id])
@@ -129,6 +124,7 @@ model DocumentTree {
   proposalsTo   ChangeProposal[] @relation("TargetTree")
   likes        TreeLike[]
   extensions   TreeExtension[]
+  publications TreePublication[]
 
   // Modules/Resources attached to this kernel
   attachments  TreeAttachment[] @relation("KernelAttachments")
@@ -206,7 +202,6 @@ enum VersionStatus {
 model DocumentVersion {
   id            String        @id @default(cuid())
   commitMessage String        @default("")
-  contentHash   String?                           // null for drafts; meaningful hash on publish
   status        VersionStatus @default(PUBLISHED) // PUBLISHED default preserves existing records
   createdAt     DateTime      @default(now())
 
@@ -311,53 +306,22 @@ model ChangeProposal {
   @@index([status])
 }
 
-// ─── LEDGER (append-only audit chain) ─────────────────────────────────────────
+// ─── PUBLICATIONS (Git-like publish records) ──────────────────────────────────
 
-enum LedgerEventType {
-  // Account
-  ACCOUNT_CREATED
-  // Tree
-  TREE_CREATED
-  TREE_FORKED
-  TREE_VISIBILITY_CHANGED
-  TREE_ARCHIVED
-  // Document
-  DOCUMENT_CREATED
-  VERSION_COMMITTED
-  // Proposals
-  PROPOSAL_OPENED
-  PROPOSAL_REVIEWED
-  PROPOSAL_MERGED
-  PROPOSAL_WITHDRAWN
-  // Export
-  DOCUMENT_EXPORTED
-  // Social
-  COMMENT_ADDED
-  USERNAME_SET
-  USER_FOLLOWED
-  USER_UNFOLLOWED
-  // Attachments
-  CONTENT_ATTACHED
-  CONTENT_DETACHED
-}
+model TreePublication {
+  id            String   @id @default(cuid())
+  publicId      String   @unique
+  commitMessage String   @default("Publicación")
+  publishedAt   DateTime @default(now())
 
-model LedgerEntry {
-  id                Int             @id @default(autoincrement())
-  eventType         LedgerEventType
-  subjectId         String
-  subjectType       String
-  eventPayload      Json
-  eventTimestamp    DateTime        @default(now())
-  previousEntryHash String?
-  entryHash         String          @unique
+  treeId   String
+  tree     DocumentTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
 
-  actorId String
-  actor   User   @relation(fields: [actorId], references: [id])
+  authorId String
+  author   User @relation(fields: [authorId], references: [id])
 
-  @@index([actorId])
-  @@index([subjectId])
-  @@index([eventType])
-  @@index([eventTimestamp])
+  @@index([treeId])
+  @@index([publicId])
 }
 
 // ─── FOLLOWS ──────────────────────────────────────────────────────────────────
