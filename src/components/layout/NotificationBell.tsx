@@ -37,7 +37,17 @@ function formatRelative(dateStr: string) {
 
 const POLL_MS = 60_000;
 
-export function NotificationBell() {
+interface BellProps {
+  triggerClass?: string;
+  dropdownClass?: string;
+  label?: string;
+}
+
+export function NotificationBell({
+  triggerClass  = "relative flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors",
+  dropdownClass = "absolute right-0 top-11 w-80 bg-white rounded-2xl border border-gray-200 shadow-lg z-50 overflow-hidden",
+  label,
+}: BellProps = {}) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount]     = useState(0);
   const [open, setOpen]                   = useState(false);
@@ -88,19 +98,20 @@ export function NotificationBell() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={handleOpen}
-        className="relative flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+        className={triggerClass}
         aria-label="Notificaciones"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-5 h-5 shrink-0" />
+        {label && <span className="ml-1">{label}</span>}
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+          <span className={`${label ? "ml-auto" : "absolute top-1 right-1"} w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none`}>
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl border border-gray-200 shadow-lg z-50 overflow-hidden">
+        <div className={dropdownClass}>
           <div className="px-4 py-3 border-b border-gray-100">
             <span className="text-sm font-semibold text-gray-900">Notificaciones</span>
           </div>

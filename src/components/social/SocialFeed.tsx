@@ -5,23 +5,27 @@ import { formatDate } from "@/lib/utils";
 import { CONTENT_TYPE_BADGE } from "@/lib/constants";
 import { FollowButton } from "@/components/profile/FollowButton";
 import {
-  GitFork, Heart, Plus, Users, Flame, BookOpen,
-  ArrowRight, Rss, Compass, Sparkles,
+  GitFork, Heart, Users, BookOpen,
+  Compass, Flame, Rss,
 } from "lucide-react";
 import type { ContentType } from "@prisma/client";
 
 interface Props {
   userId: string;
+  tab?:   string;
 }
 
-export async function SocialFeed({ userId }: Props) {
+export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
+  const isTendencias = tab !== "siguiendo";
+
   const follows = await prisma.userFollow.findMany({
     where:  { followerId: userId },
     select: { followingId: true },
   });
   const followingIds = follows.map((f) => f.followingId);
 
-  const [feed, trendingRaw, suggested, me] = await Promise.all([
+  const [feedRaw, trendingRaw, suggested] = await Promise.all([
+    /* Feed — content from followed users */
     followingIds.length > 0
       ? prisma.documentTree.findMany({
           where:   { ownerId: { in: followingIds }, visibility: "PUBLIC" },
@@ -30,20 +34,22 @@ export async function SocialFeed({ userId }: Props) {
             _count: { select: { likes: true, forks: true, documents: true } },
           },
           orderBy: { updatedAt: "desc" },
-          take: 20,
+          take: 30,
         })
       : Promise.resolve([]),
 
+    /* Trending — best public content from everyone */
     prisma.documentTree.findMany({
       where:   { visibility: "PUBLIC", ownerId: { not: userId } },
       include: {
         owner:  { select: { id: true, name: true, username: true, image: true } },
-        _count: { select: { likes: true, forks: true } },
+        _count: { select: { likes: true, forks: true, documents: true } },
       },
       orderBy: { createdAt: "desc" },
-      take: 40,
+      take: 60,
     }),
 
+    /* Suggested users to follow */
     prisma.user.findMany({
       where: {
         id:         { notIn: [userId, ...followingIds] },
@@ -51,206 +57,82 @@ export async function SocialFeed({ userId }: Props) {
         username:   { not: null },
       },
       include: { _count: { select: { followers: true, ownedTrees: true } } },
-      take: 15,
-    }),
-
-    prisma.user.findUnique({
-      where:  { id: userId },
-      select: {
-        name: true, username: true, image: true,
-        _count: { select: { ownedTrees: true, followers: true, following: true } },
-      },
+      take: 5,
     }),
   ]);
 
   const trending = [...trendingRaw]
     .sort((a, b) => (b._count.likes * 2 + b._count.forks * 3) - (a._count.likes * 2 + a._count.forks * 3))
-    .slice(0, 6);
+    .slice(0, 20);
 
   const suggestedSorted = [...suggested]
-    .sort((a, b) => b._count.followers - a._count.followers)
-    .slice(0, 5);
+    .sort((a, b) => b._count.followers - a._count.followers);
 
-  const firstName = me?.name?.split(" ")[0] ?? "Maestro";
+  /* Active feed items */
+  const items = isTendencias ? trending : feedRaw;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-4xl mx-auto">
 
-      {/* ── Welcome banner ─────────────────────────────────────────── */}
-      <div className="bg-gradient-to-r from-green-700 to-green-600 rounded-2xl p-6 mb-6 flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-4">
-          {me?.image ? (
-            <Image src={me.image} alt="" width={56} height={56} className="rounded-2xl ring-2 ring-white/30" />
-          ) : (
-            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-white text-2xl font-bold">
-              {firstName[0]}
-            </div>
-          )}
-          <div>
-            <p className="text-xl font-bold text-white">
-              Hola, {firstName} 👋
-            </p>
-            <p className="text-sm text-green-100 mt-0.5">
-              Tu espacio para compartir y descubrir currículo educativo
-            </p>
-          </div>
+      {/* ── Sticky tab bar ──────────────────────────────────────── */}
+      <div className="sticky top-0 z-20 bg-gray-50 -mx-4 sm:-mx-6 px-4 sm:px-6 mb-6">
+        <div className="flex border-b border-gray-200">
+          <TabLink
+            href="/?tab=tendencias"
+            active={isTendencias}
+            icon={<Flame className="w-4 h-4" />}
+            label="Tendencias"
+          />
+          <TabLink
+            href="/?tab=siguiendo"
+            active={!isTendencias}
+            icon={<Rss className="w-4 h-4" />}
+            label="Siguiendo"
+          />
         </div>
-        <Link
-          href="/nuevo"
-          className="flex items-center gap-2 bg-white text-green-700 text-sm font-semibold px-5 py-3 rounded-xl hover:bg-green-50 transition-colors shrink-0 shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Crear contenido
-        </Link>
       </div>
 
-      {/* ── Main grid: feed + sidebar ───────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+      {/* ── Main grid: feed + sidebar ──────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 items-start">
 
-        {/* ── Feed column ────────────────────────────────────────────── */}
-        <div className="min-w-0">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2 text-base">
-              <Rss className="w-4 h-4 text-green-600" />
-              De quienes seguís
-            </h2>
-            <Link href="/buscar" className="text-xs text-green-700 hover:underline font-medium">
-              Descubrir maestros →
-            </Link>
-          </div>
-
-          {feed.length === 0 ? (
-            <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-10 text-center space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center mx-auto">
-                <Users className="w-7 h-7 text-gray-300" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-700">Tu feed está vacío</p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Seguí a otros maestros para ver aquí su contenido más reciente.
-                </p>
-              </div>
-              <Link
-                href="/buscar"
-                className="inline-flex items-center gap-2 bg-gray-900 text-white text-sm font-medium px-5 py-2.5 rounded-xl hover:bg-gray-800 transition-colors"
-              >
-                <Compass className="w-4 h-4" />
-                Buscar maestros
-              </Link>
-            </div>
+        {/* ── Feed column ────────────────────────────────────────── */}
+        <div className="min-w-0 space-y-3">
+          {items.length === 0 ? (
+            <EmptyState tab={tab} />
           ) : (
-            <div className="space-y-3">
-              {feed.map((tree) => (
-                <TreeCard key={tree.id} tree={tree} />
-              ))}
-            </div>
+            items.map((tree) => <TreeCard key={tree.id} tree={tree} />)
           )}
         </div>
 
-        {/* ── Sidebar ────────────────────────────────────────────────── */}
-        <div className="space-y-4 lg:sticky lg:top-24">
-
-          {/* My stats */}
-          {me && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-4">
-              <div className="flex items-center gap-3">
-                {me.image ? (
-                  <Image src={me.image} alt="" width={36} height={36} className="rounded-xl" />
-                ) : (
-                  <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm">
-                    {firstName[0]}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm truncate">{me.name}</p>
-                  {me.username && <p className="text-xs text-gray-400">@{me.username}</p>}
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <StatBubble value={me._count.ownedTrees} label="contenidos" />
-                <StatBubble value={me._count.followers}  label="seguidores" />
-                <StatBubble value={me._count.following}  label="siguiendo"  />
-              </div>
-              <Link
-                href="/dashboard"
-                className="w-full flex items-center justify-center gap-2 text-sm font-medium text-green-700 border border-green-200 py-2.5 rounded-xl hover:bg-green-50 hover:border-green-300 transition-colors"
-              >
-                <Sparkles className="w-4 h-4" />
-                Ver mi espacio
-              </Link>
-            </div>
-          )}
-
-          {/* Trending — side by side with feed on desktop */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-900 text-sm flex items-center gap-2">
-                <Flame className="w-4 h-4 text-orange-500" />
-                Tendencias
-              </h3>
-              <Link href="/explorar" className="text-xs text-green-700 hover:underline font-medium">
-                Ver todo →
-              </Link>
-            </div>
-
-            {trending.length === 0 ? (
-              <p className="text-sm text-gray-400 py-2">
-                Todavía no hay contenido público.
-              </p>
-            ) : (
-              <div className="space-y-1">
-                {trending.map((tree) => (
-                  <TrendingRow key={tree.id} tree={tree} />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quick links */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-4">
-            <h3 className="font-semibold text-gray-900 text-sm mb-3">Accesos rápidos</h3>
-            <div className="space-y-0.5">
-              {[
-                { href: "/explorar",               icon: "📚", label: "Explorar kernels"  },
-                { href: "/explorar?tipo=MODULE",   icon: "🧩", label: "Explorar módulos"  },
-                { href: "/explorar?tipo=RESOURCE", icon: "📎", label: "Explorar recursos" },
-                { href: "/buscar",                 icon: "👥", label: "Buscar maestros"   },
-                { href: "/ledger",                 icon: "🔏", label: "Ledger público"    },
-              ].map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className="flex items-center gap-2.5 text-sm text-gray-600 hover:text-green-700 py-2 px-2 rounded-xl hover:bg-green-50 transition-colors"
-                >
-                  <span className="text-base leading-none">{l.icon}</span>
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Suggested follows */}
-          {suggestedSorted.length > 0 && (
+        {/* ── Right sidebar ──────────────────────────────────────── */}
+        {suggestedSorted.length > 0 && (
+          <div className="lg:sticky lg:top-20 space-y-4">
             <div className="bg-white rounded-2xl border border-gray-200 p-4">
-              <h3 className="font-semibold text-gray-900 text-sm mb-3">Maestros para seguir</h3>
+              <h3 className="font-semibold text-gray-900 text-sm mb-4 flex items-center gap-2">
+                <Users className="w-4 h-4 text-green-600" />
+                Maestros para seguir
+              </h3>
               <div className="space-y-3">
                 {suggestedSorted.map((user) => (
                   <div key={user.id} className="flex items-center gap-2.5">
                     <Link href={`/${user.username ?? user.id}`} className="shrink-0">
                       {user.image ? (
-                        <Image src={user.image} alt="" width={32} height={32} className="rounded-xl" />
+                        <Image src={user.image} alt="" width={36} height={36} className="rounded-xl" />
                       ) : (
-                        <div className="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center text-green-700 text-xs font-bold">
+                        <div className="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center text-green-700 text-sm font-bold">
                           {(user.name ?? "?")[0]}
                         </div>
                       )}
                     </Link>
                     <div className="flex-1 min-w-0">
-                      <Link href={`/${user.username ?? user.id}`} className="text-sm font-medium text-gray-900 hover:text-green-700 truncate block transition-colors">
+                      <Link
+                        href={`/${user.username ?? user.id}`}
+                        className="text-sm font-semibold text-gray-900 hover:text-green-700 truncate block transition-colors"
+                      >
                         {user.name}
                       </Link>
                       <p className="text-xs text-gray-400">
-                        {user._count.ownedTrees} contenidos
+                        {user._count.ownedTrees} contenido{user._count.ownedTrees !== 1 ? "s" : ""}
                       </p>
                     </div>
                     <FollowButton
@@ -263,27 +145,84 @@ export async function SocialFeed({ userId }: Props) {
                   </div>
                 ))}
               </div>
+              <Link
+                href="/buscar"
+                className="mt-4 flex items-center gap-1.5 text-sm text-green-700 hover:underline font-medium"
+              >
+                <Compass className="w-4 h-4" />
+                Ver más maestros
+              </Link>
             </div>
-          )}
-
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ── Stat bubble ────────────────────────────────────────────────────────────────
+// ── Tab link ──────────────────────────────────────────────────────────────────
 
-function StatBubble({ value, label }: { value: number; label: string }) {
+function TabLink({
+  href, active, icon, label,
+}: {
+  href: string; active: boolean; icon: React.ReactNode; label: string;
+}) {
   return (
-    <div className="bg-gray-50 rounded-xl py-2 px-1">
-      <p className="font-bold text-gray-900 text-base">{value}</p>
-      <p className="text-gray-400 text-xs mt-0.5">{label}</p>
+    <Link
+      href={href}
+      className={`flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${
+        active
+          ? "border-green-700 text-green-700"
+          : "border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300"
+      }`}
+    >
+      {icon}
+      {label}
+    </Link>
+  );
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+function EmptyState({ tab }: { tab: string }) {
+  if (tab === "siguiendo") {
+    return (
+      <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center mx-auto">
+          <Users className="w-7 h-7 text-gray-300" />
+        </div>
+        <div>
+          <p className="font-bold text-gray-700 text-lg">Tu feed está vacío</p>
+          <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+            Seguí a otros maestros para ver aquí su contenido más reciente.
+          </p>
+        </div>
+        <Link
+          href="/buscar"
+          className="inline-flex items-center gap-2 bg-green-700 text-white text-sm font-semibold px-5 py-3 rounded-xl hover:bg-green-800 transition-colors"
+        >
+          <Compass className="w-4 h-4" />
+          Buscar maestros
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center space-y-3">
+      <BookOpen className="w-10 h-10 mx-auto text-gray-200" />
+      <p className="text-gray-500 font-medium">Todavía no hay contenido público.</p>
+      <Link
+        href="/nuevo"
+        className="inline-flex items-center gap-2 bg-green-700 text-white text-sm font-semibold px-5 py-3 rounded-xl hover:bg-green-800 transition-colors"
+      >
+        Crear el primero
+      </Link>
     </div>
   );
 }
 
-// ── Tree card — full feed version ─────────────────────────────────────────────
+// ── Tree card ─────────────────────────────────────────────────────────────────
 
 type TreeWithMeta = {
   id: string;
@@ -301,9 +240,13 @@ function TreeCard({ tree }: { tree: TreeWithMeta }) {
   const badge = CONTENT_TYPE_BADGE[tree.contentType];
   return (
     <div className="relative bg-white rounded-2xl border border-gray-200 hover:border-green-200 hover:shadow-md transition-all group p-6 flex flex-col gap-4">
-      <Link href={`/${tree.owner.username ?? tree.owner.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
+      <Link
+        href={`/${tree.owner.username ?? tree.owner.id}/${tree.slug}`}
+        className="absolute inset-0 rounded-2xl"
+        aria-label={tree.title}
+      />
 
-      {/* Author row — top */}
+      {/* Author */}
       <Link
         href={`/${tree.owner.username ?? tree.owner.id}`}
         className="relative z-10 flex items-center gap-2.5 w-fit hover:opacity-80 transition-opacity"
@@ -315,7 +258,7 @@ function TreeCard({ tree }: { tree: TreeWithMeta }) {
             {(tree.owner.name ?? "?")[0]}
           </div>
         )}
-        <span className="text-sm text-gray-600 hover:text-green-700 transition-colors font-medium">
+        <span className="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors">
           {tree.owner.name}
         </span>
       </Link>
@@ -330,7 +273,7 @@ function TreeCard({ tree }: { tree: TreeWithMeta }) {
         )}
       </div>
 
-      {/* Footer: badge + stats */}
+      {/* Footer */}
       <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto">
         <div className="flex items-center gap-2">
           <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${badge.cls}`}>
@@ -344,58 +287,13 @@ function TreeCard({ tree }: { tree: TreeWithMeta }) {
           )}
         </div>
         <div className="flex items-center gap-3 text-sm text-gray-400">
-          <span className="flex items-center gap-1">
-            <Heart className="w-4 h-4" />
-            {tree._count.likes}
-          </span>
-          <span className="flex items-center gap-1">
-            <GitFork className="w-4 h-4" />
-            {tree._count.forks}
-          </span>
+          <span className="flex items-center gap-1"><Heart className="w-4 h-4" />{tree._count.likes}</span>
+          <span className="flex items-center gap-1"><GitFork className="w-4 h-4" />{tree._count.forks}</span>
           {tree._count.documents !== undefined && (
-            <span className="flex items-center gap-1">
-              <BookOpen className="w-4 h-4" />
-              {tree._count.documents}
-            </span>
+            <span className="flex items-center gap-1"><BookOpen className="w-4 h-4" />{tree._count.documents}</span>
           )}
         </div>
       </div>
     </div>
-  );
-}
-
-// ── Trending row — compact sidebar version ────────────────────────────────────
-
-function TrendingRow({ tree }: { tree: TreeWithMeta }) {
-  const badge = CONTENT_TYPE_BADGE[tree.contentType];
-  return (
-    <Link
-      href={`/${tree.owner.username ?? tree.owner.id}/${tree.slug}`}
-      className="flex items-start gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors group"
-    >
-      {/* Type dot */}
-      <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
-        tree.contentType === "KERNEL"   ? "bg-green-500"  :
-        tree.contentType === "MODULE"   ? "bg-blue-500"   : "bg-amber-500"
-      }`} />
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-gray-800 group-hover:text-green-700 transition-colors line-clamp-2 leading-snug">
-          {tree.title}
-        </p>
-        <div className="flex items-center gap-2 mt-1 text-xs text-gray-400">
-          <span className={`${badge.cls} px-1.5 py-0.5 rounded-full text-[10px] font-medium`}>
-            {badge.label}
-          </span>
-          <span className="flex items-center gap-0.5">
-            <Heart className="w-3 h-3" />
-            {tree._count.likes}
-          </span>
-          <span className="flex items-center gap-0.5">
-            <GitFork className="w-3 h-3" />
-            {tree._count.forks}
-          </span>
-        </div>
-      </div>
-    </Link>
   );
 }

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Navbar } from "@/components/layout/Navbar";
-import { Toaster } from "@/components/ui/Toaster";
+import { auth }            from "@/lib/auth";
 import { SessionProvider } from "@/components/layout/SessionProvider";
+import { LayoutShell }     from "@/components/layout/LayoutShell";
+import { Toaster }         from "@/components/ui/Toaster";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -22,19 +25,21 @@ export const metadata: Metadata = {
   twitter: { card: "summary" },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session    = await auth();
+  const isLoggedIn = !!session?.user?.id;
+
   return (
     <html lang="es">
       <body className="min-h-screen bg-gray-50">
-        <SessionProvider>
-          <Navbar />
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <SessionProvider session={session}>
+          <LayoutShell isLoggedIn={isLoggedIn}>
             {children}
-          </main>
+          </LayoutShell>
           <Toaster />
         </SessionProvider>
       </body>
