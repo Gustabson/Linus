@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, MessageCircle, GitFork, BookOpen } from "lucide-react";
+import { Heart, MessageCircle, GitFork, BookOpen, Send, Loader2, Trash2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
@@ -30,21 +30,215 @@ export interface PostData {
     _count: { likes: number; forks: number };
   } | null;
   _count:     { likes: number; comments: number };
-  likes:      { id: string }[];  // current user's like, empty if not liked
+  likes:      { id: string }[];
   isAuthenticated?: boolean;
 }
 
-export function PostCard({ post, isAuthenticated = false }: { post: PostData; isAuthenticated?: boolean }) {
-  const [likeCount, setLikeCount]   = useState(post._count.likes);
-  const [liked, setLiked]           = useState(post.likes.length > 0);
-  const [liking, setLiking]         = useState(false);
+interface PostComment {
+  id:        string;
+  content:   string;
+  createdAt: string;
+  author: {
+    id:       string;
+    name:     string | null;
+    username: string | null;
+    image:    string | null;
+  };
+}
+
+// ── Comment section ───────────────────────────────────────────────────────────
+function CommentSection({
+  postId,
+  currentUserId,
+  isAuthenticated,
+  initialCount,
+}: {
+  postId:        string;
+  currentUserId: string | null;
+  isAuthenticated: boolean;
+  initialCount:  number;
+}) {
+  const [comments, setComments]   = useState<PostComment[]>([]);
+  const [count, setCount]         = useState(initialCount);
+  const [loaded, setLoaded]       = useState(false);
+  const [loading, setLoading]     = useState(false);
+  const [text, setText]           = useState("");
+  const [sending, setSending]     = useState(false);
+  const [error, setError]         = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  async function load() {
+    if (loaded) return;
+    setLoading(true);
+    try {
+      const res  = await fetch(`/api/posts/${postId}/comments`);
+      const data = await res.json();
+      setComments(data.comments ?? []);
+      setLoaded(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSend() {
+    if (!text.trim() || sending) return;
+    setSending(true);
+    setError("");
+    try {
+      const res  = await fetch(`/api/posts/${postId}/comments`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ content: text.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error ?? "Error al comentar"); return; }
+      setComments((prev) => [...prev, data.comment]);
+      setCount((c) => c + 1);
+      setText("");
+      if (inputRef.current) inputRef.current.style.height = "auto";
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleDelete(commentId: string) {
+    const res = await fetch(`/api/posts/${postId}/comments`, {
+      method:  "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ commentId }),
+    });
+    if (res.ok) {
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      setCount((c) => Math.max(0, c - 1));
+    }
+  }
+
+  function autoResize(el: HTMLTextAreaElement) {
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  }
+
+  return (
+    <div className="pt-2 border-t border-border-subtle space-y-3">
+      {/* Load trigger */}
+      {!loaded && (
+        <button
+          onClick={load}
+          className="text-xs text-text-subtle hover:text-primary transition-colors"
+        >
+          {loading
+            ? <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Cargando...</span>
+            : count > 0
+              ? `Ver ${count} comentario${count !== 1 ? "s" : ""}`
+              : "Sin comentarios aún"
+          }
+        </button>
+      )}
+
+      {/* Comments list */}
+      {loaded && (
+        <div className="space-y-2.5">
+          {comments.length === 0 && (
+            <p className="text-xs text-text-subtle">Sin comentarios aún.</p>
+          )}
+          {comments.map((c) => {
+            const authorHref = c.author.username ? `/${c.author.username}` : "#";
+            const isOwn = c.author.id === currentUserId;
+            return (
+              <div key={c.id} className="flex gap-2.5 group">
+                <Link href={authorHref} className="shrink-0">
+                  {c.author.image ? (
+                    <Image src={c.author.image} alt="" width={28} height={28} className="rounded-full" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                      {(c.author.name ?? "?")[0]}
+                    </div>
+                  )}
+                </Link>
+                <div className="flex-1 min-w-0 bg-bg rounded-xl px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <Link href={authorHref} className="text-xs font-semibold text-text hover:text-primary transition-colors truncate">
+                        {c.author.name ?? "Usuario"}
+                      </Link>
+                      <span className="text-[10px] text-text-subtle shrink-0">
+                        {formatDate(new Date(c.createdAt))}
+                      </span>
+                    </div>
+                    {isOwn && (
+                      <button
+                        onClick={() => handleDelete(c.id)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-text-subtle hover:text-red-500 shrink-0"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-sm text-text mt-0.5 break-words">{c.content}</p>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Input */}
+          {isAuthenticated && (
+            <div className="flex gap-2.5 pt-1">
+              <div className="w-7 shrink-0" />
+              <div className="flex-1 flex gap-2 items-end bg-bg rounded-xl border border-border px-3 py-2 focus-within:border-primary/40 transition-colors">
+                <textarea
+                  ref={inputRef}
+                  value={text}
+                  onChange={(e) => { setText(e.target.value); autoResize(e.target); }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+                  }}
+                  placeholder="Escribí un comentario..."
+                  rows={1}
+                  maxLength={500}
+                  className="flex-1 resize-none text-sm text-text placeholder:text-text-subtle focus:outline-none leading-relaxed"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!text.trim() || sending}
+                  className="shrink-0 text-primary hover:text-primary-h disabled:opacity-30 transition-colors pb-0.5"
+                >
+                  {sending
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <Send className="w-4 h-4" />
+                  }
+                </button>
+              </div>
+            </div>
+          )}
+
+          {error && <p className="text-xs text-red-500 pl-9">{error}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── PostCard ──────────────────────────────────────────────────────────────────
+export function PostCard({
+  post,
+  isAuthenticated = false,
+  currentUserId   = null,
+}: {
+  post:             PostData;
+  isAuthenticated?: boolean;
+  currentUserId?:   string | null;
+}) {
+  const [likeCount, setLikeCount] = useState(post._count.likes);
+  const [liked, setLiked]         = useState(post.likes.length > 0);
+  const [liking, setLiking]       = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
   async function toggleLike() {
     if (!isAuthenticated || liking) return;
     setLiking(true);
-    // Optimistic update
-    setLiked(prev => !prev);
-    setLikeCount(prev => liked ? prev - 1 : prev + 1);
+    setLiked((prev) => !prev);
+    setLikeCount((prev) => liked ? prev - 1 : prev + 1);
 
     try {
       const res  = await fetch(`/api/posts/${post.id}/like`, { method: "POST" });
@@ -53,8 +247,7 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
         setLiked(data.liked);
         setLikeCount(data.count);
       } else {
-        // Revert on error
-        setLiked(prev => !prev);
+        setLiked((prev) => !prev);
         setLikeCount(post._count.likes);
       }
     } finally {
@@ -67,17 +260,12 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
 
   return (
     <article className="bg-surface rounded-2xl border border-border hover:border-gray-300 transition-colors p-5 space-y-4">
+
       {/* Header — author */}
       <div className="flex items-center gap-3">
         <Link href={authorHref} className="shrink-0">
           {post.author.image ? (
-            <Image
-              src={post.author.image}
-              alt=""
-              width={40}
-              height={40}
-              className="rounded-full"
-            />
+            <Image src={post.author.image} alt="" width={40} height={40} className="rounded-full" />
           ) : (
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
               {(post.author.name ?? "?")[0]}
@@ -165,11 +353,26 @@ export function PostCard({ post, isAuthenticated = false }: { post: PostData; is
           <span>{likeCount}</span>
         </button>
 
-        <span className="flex items-center gap-1.5 text-sm text-text-subtle">
-          <MessageCircle className="w-4 h-4" />
+        <button
+          onClick={() => setShowComments((v) => !v)}
+          className={`flex items-center gap-1.5 text-sm transition-colors ${
+            showComments ? "text-primary" : "text-text-subtle hover:text-primary"
+          }`}
+        >
+          <MessageCircle className={`w-4 h-4 ${showComments ? "fill-primary/20" : ""}`} />
           <span>{post._count.comments}</span>
-        </span>
+        </button>
       </div>
+
+      {/* Comments section */}
+      {showComments && (
+        <CommentSection
+          postId={post.id}
+          currentUserId={currentUserId}
+          isAuthenticated={isAuthenticated}
+          initialCount={post._count.comments}
+        />
+      )}
     </article>
   );
 }

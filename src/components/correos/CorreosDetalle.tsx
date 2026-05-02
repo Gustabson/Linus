@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -10,11 +10,16 @@ import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import TiptapLink from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
+import Highlight from "@tiptap/extension-highlight";
+import Superscript from "@tiptap/extension-superscript";
+import Subscript from "@tiptap/extension-subscript";
 import {
   ArrowLeft, Trash2, Reply, Send, Loader2,
   Bold, Italic, Underline as UnderlineIcon,
   List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
   Link as LinkIcon, Heading2, Heading3,
+  Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
+  Highlighter, Smile,
 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
@@ -82,10 +87,32 @@ function ReplyComposer({
   onCancel: () => void;
   sending:  boolean;
 }) {
+  const [showEmoji, setShowEmoji] = useState(false);
+  const emojiRef = useRef<HTMLDivElement>(null);
+
+  const EMOJI_GROUPS: { label: string; emojis: string[] }[] = [
+    { label: "Frecuentes",  emojis: ["😊","👍","❤️","🎉","🙏","😂","🔥","✅","⭐","💡","📚","✏️","🧠","🎓","💪"] },
+    { label: "Académico",   emojis: ["📖","📝","📌","📎","🔍","📊","📈","🧪","🔬","⚗️","🧮","📐","📏","💻","🖊️"] },
+    { label: "Expresiones", emojis: ["😀","😎","🤔","🤩","😍","🥳","😅","🤗","👏","🙌","💯","🚀","⚡","🌟","✨"] },
+  ];
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (emojiRef.current && !emojiRef.current.contains(e.target as Node))
+        setShowEmoji(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       Underline,
+      Highlight.configure({ multicolor: false }),
+      Superscript,
+      Subscript,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TiptapLink.configure({
         openOnClick:    false,
@@ -174,9 +201,49 @@ function ReplyComposer({
 
           <div className="w-px h-5 bg-border mx-1" />
 
+          <ToolBtn onClick={() => editor.chain().focus().toggleHighlight().run()} active={editor.isActive("highlight")} title="Resaltado">
+            <Highlighter className="w-4 h-4" />
+          </ToolBtn>
+
+          <div className="w-px h-5 bg-border mx-1" />
+
+          <ToolBtn onClick={() => editor.chain().focus().toggleSuperscript().run()} active={editor.isActive("superscript")} title="Superíndice">
+            <SuperscriptIcon className="w-4 h-4" />
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleSubscript().run()} active={editor.isActive("subscript")} title="Subíndice">
+            <SubscriptIcon className="w-4 h-4" />
+          </ToolBtn>
+
+          <div className="w-px h-5 bg-border mx-1" />
+
           <ToolBtn onClick={setLink} active={editor.isActive("link")} title="Enlace">
             <LinkIcon className="w-4 h-4" />
           </ToolBtn>
+
+          {/* Emoji picker */}
+          <div className="relative" ref={emojiRef}>
+            <ToolBtn onClick={() => setShowEmoji((v) => !v)} active={showEmoji} title="Emojis">
+              <Smile className="w-4 h-4" />
+            </ToolBtn>
+            {showEmoji && (
+              <div className="absolute top-full left-0 mt-1 w-64 bg-surface border border-border rounded-2xl shadow-xl z-50 p-3 space-y-2">
+                {EMOJI_GROUPS.map((group) => (
+                  <div key={group.label}>
+                    <p className="text-[10px] font-semibold text-text-subtle uppercase tracking-wide mb-1">{group.label}</p>
+                    <div className="flex flex-wrap gap-0.5">
+                      {group.emojis.map((emoji) => (
+                        <button key={emoji} type="button"
+                          onClick={() => { editor.chain().focus().insertContent(emoji).run(); setShowEmoji(false); }}
+                          className="w-8 h-8 flex items-center justify-center text-lg hover:bg-bg rounded-lg transition-colors">
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

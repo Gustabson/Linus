@@ -150,6 +150,7 @@ export function ProfileFeed({
               key={post.id}
               post={post}
               isAuthenticated={isAuthenticated}
+              currentUserId={currentUser?.id ?? null}
             />
           ))}
 

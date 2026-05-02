@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
 import Image from "next/image";
-import { Send, X, BookOpen, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { Send, X, BookOpen, ChevronDown, ChevronUp, Loader2, Smile } from "lucide-react";
 import type { ContentType } from "@prisma/client";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import type { PostData } from "./PostCard";
@@ -29,16 +29,45 @@ interface TreeResult {
 
 const MAX_CHARS = 2000;
 
+const QUICK_EMOJIS = ["😊","👍","❤️","🎉","🙏","😂","🔥","✅","⭐","💡","📚","✏️","🧠","🎓","💪","📖","📝","🤔","🚀","🌟"];
+
 export function PostComposer({ currentUser, onPostCreated }: Props) {
   const [content, setContent]         = useState("");
   const [attachedTree, setAttachedTree] = useState<TreeResult | null>(null);
   const [showTreeSearch, setShowTreeSearch] = useState(false);
+  const [showEmoji, setShowEmoji]     = useState(false);
   const [treeQuery, setTreeQuery]     = useState("");
   const [treeResults, setTreeResults] = useState<TreeResult[]>([]);
   const [searching, setSearching]     = useState(false);
   const [submitting, startSubmit]     = useTransition();
   const [error, setError]             = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const emojiRef    = useRef<HTMLDivElement>(null);
+
+  // Close emoji popover on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (emojiRef.current && !emojiRef.current.contains(e.target as Node))
+        setShowEmoji(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  function insertEmoji(emoji: string) {
+    const ta = textareaRef.current;
+    if (!ta) { setContent((c) => c + emoji); setShowEmoji(false); return; }
+    const start = ta.selectionStart;
+    const end   = ta.selectionEnd;
+    const next  = content.slice(0, start) + emoji + content.slice(end);
+    setContent(next);
+    setShowEmoji(false);
+    // Restore cursor after emoji
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.setSelectionRange(start + emoji.length, start + emoji.length);
+    });
+  }
 
   const charCount  = content.length;
   const overLimit  = charCount > MAX_CHARS;
@@ -222,17 +251,45 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
         )}
       </div>
 
-      {/* Footer: char count + submit */}
-      <div className="flex items-center justify-between">
-        <span className={`text-xs ${overLimit ? "text-red-500 font-medium" : "text-text-subtle"}`}>
-          {charCount}/{MAX_CHARS}
-        </span>
+      {/* Footer: emoji + char count + submit */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {/* Emoji picker */}
+          <div className="relative" ref={emojiRef}>
+            <button
+              type="button"
+              onClick={() => setShowEmoji((v) => !v)}
+              title="Emojis"
+              className={`p-1.5 rounded-lg transition-colors ${showEmoji ? "bg-primary/10 text-primary" : "text-text-subtle hover:text-primary hover:bg-primary/5"}`}
+            >
+              <Smile className="w-4 h-4" />
+            </button>
+            {showEmoji && (
+              <div className="absolute bottom-full left-0 mb-2 w-64 bg-surface border border-border rounded-2xl shadow-xl z-50 p-3">
+                <p className="text-[10px] font-semibold text-text-subtle uppercase tracking-wide mb-2">Emojis</p>
+                <div className="flex flex-wrap gap-0.5">
+                  {QUICK_EMOJIS.map((emoji) => (
+                    <button key={emoji} type="button" onClick={() => insertEmoji(emoji)}
+                      className="w-8 h-8 flex items-center justify-center text-lg hover:bg-bg rounded-lg transition-colors">
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <span className={`text-xs ${overLimit ? "text-red-500 font-medium" : "text-text-subtle"}`}>
+            {charCount}/{MAX_CHARS}
+          </span>
+        </div>
+
         <div className="flex items-center gap-3">
           {error && <p className="text-xs text-red-500">{error}</p>}
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex items-center gap-1.5 bg-primary text-white text-sm font-semibold px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 bg-primary text-primary-fg text-sm font-semibold px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {submitting
               ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Publicando...</>

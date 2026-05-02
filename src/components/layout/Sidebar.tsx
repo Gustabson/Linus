@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useEffect, useCallback, useState } from "react";
 import {
   BookOpen, Home, LayoutDashboard, Search, Compass,
   Mail, Settings, LogOut, AlertCircle, GitPullRequest,
@@ -10,23 +11,54 @@ import {
 import Image from "next/image";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 
-const NAV_ITEMS = [
-  { href: "/",            icon: Home,            label: "Inicio"      },
-  { href: "/dashboard",   icon: LayoutDashboard, label: "Mi espacio"  },
-  { href: "/explorar",    icon: Compass,         label: "Explorar"    },
-  { href: "/buscar",      icon: Search,          label: "Buscar"      },
-  { href: "/propuestas",  icon: GitPullRequest,  label: "Propuestas"  },
-  { href: "/correos",     icon: Mail,            label: "Correos"     },
-];
+const POLL_MS = 60_000;
+
+// ── Sidebar badge counts (correos + propuestas) ────────────────────────────
+function useSidebarCounts() {
+  const [correos,   setCorroes]   = useState(0);
+  const [propuestas, setPropuestas] = useState(0);
+
+  const fetchCounts = useCallback(async () => {
+    try {
+      const [c, p] = await Promise.all([
+        fetch("/api/correos/no-leidos").then((r) => r.ok ? r.json() : { count: 0 }),
+        fetch("/api/proposals/pending").then((r) => r.ok ? r.json() : { count: 0 }),
+      ]);
+      setCorroes(c.count ?? 0);
+      setPropuestas(p.count ?? 0);
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
+    fetchCounts();
+    const id = setInterval(fetchCounts, POLL_MS);
+    function onVisible() { if (document.visibilityState === "visible") fetchCounts(); }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVisible); };
+  }, [fetchCounts]);
+
+  return { correos, propuestas };
+}
+
+// ── Small pill badge ───────────────────────────────────────────────────────
+function NavBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="ml-auto min-w-[1.25rem] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 export function Sidebar() {
-  const pathname      = usePathname();
-  const { data: session } = useSession();
+  const pathname           = usePathname();
+  const { data: session }  = useSession();
+  const { correos, propuestas } = useSidebarCounts();
 
   if (!session) return null;
 
-  const username    = session.user?.username;
-  const profileHref = username ? `/${username}` : "/bienvenida";
+  const username      = session.user?.username;
+  const profileHref   = username ? `/${username}` : "/bienvenida";
   const needsUsername = !username;
 
   function isActive(href: string) {
@@ -39,6 +71,15 @@ export function Sidebar() {
         ? "bg-sidebar-text/15 text-sidebar-text"
         : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
     }`;
+
+  const NAV_ITEMS: { href: string; icon: React.ElementType; label: string; badge?: number }[] = [
+    { href: "/",           icon: Home,           label: "Inicio"     },
+    { href: "/dashboard",  icon: LayoutDashboard, label: "Mi espacio" },
+    { href: "/explorar",   icon: Compass,         label: "Explorar"   },
+    { href: "/buscar",     icon: Search,          label: "Buscar"     },
+    { href: "/propuestas", icon: GitPullRequest,  label: "Propuestas", badge: propuestas },
+    { href: "/correos",    icon: Mail,            label: "Correos",    badge: correos    },
+  ];
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar-bg flex flex-col z-40">
@@ -66,10 +107,11 @@ export function Sidebar() {
 
       {/* ── Navigation ───────────────────────────────────────── */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map(({ href, icon: Icon, label }) => (
+        {NAV_ITEMS.map(({ href, icon: Icon, label, badge }) => (
           <Link key={href} href={href} className={itemCls(href)}>
             <Icon className="w-5 h-5 shrink-0" />
             {label}
+            <NavBadge count={badge ?? 0} />
           </Link>
         ))}
       </nav>
@@ -77,7 +119,7 @@ export function Sidebar() {
       {/* ── Bottom ───────────────────────────────────────────── */}
       <div className="px-3 pb-4 border-t border-sidebar-text/20 pt-3 space-y-1">
 
-        {/* Notificaciones — link to full page */}
+        {/* Notificaciones — link to full page with unread badge */}
         <NotificationBell
           href="/notificaciones"
           triggerClass={`flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium transition-all ${
@@ -107,13 +149,7 @@ export function Sidebar() {
           }`}
         >
           {session.user?.image ? (
-            <Image
-              src={session.user.image}
-              alt=""
-              width={28}
-              height={28}
-              className="rounded-full shrink-0"
-            />
+            <Image src={session.user.image} alt="" width={28} height={28} className="rounded-full shrink-0" />
           ) : (
             <div className="w-7 h-7 rounded-full bg-sidebar-text/20 flex items-center justify-center text-sidebar-text text-xs font-bold shrink-0">
               {(session.user?.name ?? "?")[0]}

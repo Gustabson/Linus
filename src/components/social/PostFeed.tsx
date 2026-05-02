@@ -138,6 +138,7 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
               key={post.id}
               post={post}
               isAuthenticated={true}
+              currentUserId={currentUser.id}
             />
           ))}
 
