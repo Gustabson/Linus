@@ -55,7 +55,7 @@ export function LayoutShell({ children, isLoggedIn }: Props) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* ── Main content ────────────────────────────────────────────────── */}
-      <main className={`lg:ml-64 min-h-screen pb-16 md:pb-0 ${mobilePt} md:pt-16 lg:pt-6 px-4 sm:px-6`}>
+      <main className={`lg:ml-64 min-h-screen pb-16 md:pb-0 ${mobilePt} md:pt-14 lg:pt-6 px-4 sm:px-6`}>
         {children}
       </main>
 
