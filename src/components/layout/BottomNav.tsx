@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 
 // ── BottomNav: visible only on mobile (<768px) ────────────────────────────
+// Styled with sidebar colors (--sidebar-bg / --sidebar-text) so user
+// theme customizations apply to the mobile bar too.
+//
 // 3 items: Inicio | Mi espacio (modal) | Configuración (modal)
 // Mi espacio modal → Mi espacio, Explorar, Buscar, Propuestas
 // Configuración modal → Perfil, Notificaciones, Configuración
@@ -73,14 +76,14 @@ function BottomModal({
         onClick={onClose}
       />
 
-      {/* Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-surface rounded-t-2xl shadow-xl md:hidden animate-slide-up">
+      {/* Sheet — uses sidebar colors like the nav bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-sidebar-bg rounded-t-2xl shadow-xl md:hidden animate-slide-up">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-2 border-b border-border-subtle">
-          <h3 className="text-base font-semibold text-text">{title}</h3>
+        <div className="flex items-center justify-between px-5 pt-4 pb-2 border-b border-sidebar-text/20">
+          <h3 className="text-base font-semibold text-sidebar-text">{title}</h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-bg text-text-muted hover:text-text transition-colors"
+            className="p-1.5 rounded-xl hover:bg-sidebar-text/10 text-sidebar-text/70 hover:text-sidebar-text transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -112,9 +115,9 @@ function ModalLink({
     <Link
       href={href}
       onClick={onClose}
-      className="flex items-center gap-3.5 px-4 py-3 rounded-xl text-base font-medium text-text hover:bg-bg transition-colors"
+      className="flex items-center gap-3.5 px-4 py-3 rounded-xl text-base font-medium text-sidebar-text/80 hover:bg-sidebar-text/10 hover:text-sidebar-text transition-colors"
     >
-      <Icon className="w-5 h-5 shrink-0 text-text-muted" />
+      <Icon className="w-5 h-5 shrink-0 text-sidebar-text/60" />
       <span className="flex-1">{label}</span>
       {badge != null && badge > 0 && (
         <span className="min-w-[1.25rem] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1.5 leading-none">
@@ -124,6 +127,10 @@ function ModalLink({
     </Link>
   );
 }
+
+// ── Sidebar-style color helpers ─────────────────────────────────────────────
+const ACTIVE   = "text-sidebar-text bg-sidebar-text/15";
+const INACTIVE = "text-sidebar-text/60 hover:text-sidebar-text hover:bg-sidebar-text/10";
 
 // ── Main component ──────────────────────────────────────────────────────────
 export function BottomNav() {
@@ -142,36 +149,34 @@ export function BottomNav() {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
   }
 
-  const mainActive   = isActive("/");
-  const activeColor  = "text-primary";
-  const defaultColor = "text-text-subtle hover:text-text-muted";
+  const mainActive    = isActive("/");
+  const espacioActive = isActive("/dashboard") || isActive("/explorar") || isActive("/buscar") || isActive("/propuestas");
+  const configActive  = isActive("/configuracion") || isActive("/notificaciones");
 
   return (
     <>
-      {/* ── Bottom tab bar ──────────────────────────────────────────────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-border md:hidden safe-area-bottom">
+      {/* ── Bottom tab bar — sidebar-colored ─────────────────────────────── */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-sidebar-bg md:hidden safe-area-bottom">
         <div className="flex items-stretch h-14">
           {/* Inicio */}
           <Link
             href="/"
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors ${
-              mainActive ? activeColor : defaultColor
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors rounded-none ${
+              mainActive ? ACTIVE : INACTIVE
             }`}
           >
-            <Home className={`w-5 h-5 ${mainActive ? "fill-primary/15" : ""}`} />
+            <Home className={`w-5 h-5 ${mainActive ? "fill-sidebar-text/15" : ""}`} />
             Inicio
           </Link>
 
           {/* Mi espacio — opens modal */}
           <button
             onClick={() => setMiEspacioOpen(true)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors relative ${
-              isActive("/dashboard") || isActive("/explorar") || isActive("/buscar") || isActive("/propuestas")
-                ? activeColor
-                : defaultColor
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors relative rounded-none ${
+              espacioActive ? ACTIVE : INACTIVE
             }`}
           >
-            <LayoutDashboard className={`w-5 h-5 ${isActive("/dashboard") || isActive("/explorar") || isActive("/buscar") || isActive("/propuestas") ? "fill-primary/15" : ""}`} />
+            <LayoutDashboard className={`w-5 h-5 ${espacioActive ? "fill-sidebar-text/15" : ""}`} />
             Mi espacio
             {propuestas > 0 && <Badge count={propuestas} />}
           </button>
@@ -179,13 +184,11 @@ export function BottomNav() {
           {/* Configuración — opens modal */}
           <button
             onClick={() => setConfigOpen(true)}
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors relative ${
-              isActive("/configuracion") || isActive("/notificaciones")
-                ? activeColor
-                : defaultColor
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors relative rounded-none ${
+              configActive ? ACTIVE : INACTIVE
             }`}
           >
-            <Settings className={`w-5 h-5 ${isActive("/configuracion") || isActive("/notificaciones") ? "fill-primary/15" : ""}`} />
+            <Settings className={`w-5 h-5 ${configActive ? "fill-sidebar-text/15" : ""}`} />
             Config.
             {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
           </button>

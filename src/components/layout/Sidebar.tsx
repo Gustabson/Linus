@@ -95,10 +95,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   return (
     <aside
       className={
-        "fixed left-0 top-0 h-screen w-64 bg-sidebar-bg flex flex-col z-50 transition-transform duration-300 ease-in-out " +
+        "fixed left-0 top-0 h-screen w-64 bg-sidebar-bg flex-col z-50 transition-transform duration-300 ease-in-out " +
+        // Mobile (<768px): completely hidden (display:none)
+        "hidden md:flex " +
         // Desktop (≥1024px): always visible
         "lg:translate-x-0 " +
-        // Tablet/Mobile (<1024px): controlled by open prop
+        // Tablet (768–1023px): controlled by open prop
         (open ? "translate-x-0" : "-translate-x-full")
       }
     >
