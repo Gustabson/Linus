@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu }        from "lucide-react";
 import { Navbar }      from "@/components/layout/Navbar";
 import { Sidebar }     from "@/components/layout/Sidebar";
@@ -13,6 +14,7 @@ interface Props {
 
 export function LayoutShell({ children, isLoggedIn }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
 
   if (!isLoggedIn) {
     return (
@@ -24,6 +26,10 @@ export function LayoutShell({ children, isLoggedIn }: Props) {
       </>
     );
   }
+
+  // Home page gets no top padding on mobile; all others get a tiny bit
+  const isHome = pathname === "/";
+  const mobilePt = isHome ? "pt-0" : "pt-3";
 
   return (
     <div className="min-h-screen bg-bg">
@@ -49,7 +55,7 @@ export function LayoutShell({ children, isLoggedIn }: Props) {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* ── Main content ────────────────────────────────────────────────── */}
-      <main className="lg:ml-64 min-h-screen pb-16 md:pb-0 pt-0 md:pt-16 lg:pt-6 px-4 sm:px-6">
+      <main className={`lg:ml-64 min-h-screen pb-16 md:pb-0 ${mobilePt} md:pt-16 lg:pt-6 px-4 sm:px-6`}>
         {children}
       </main>
 
