@@ -2,7 +2,8 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
-import Nodemailer from "next-auth/providers/nodemailer";
+import ResendProvider from "next-auth/providers/resend";
+import { Resend } from "resend";
 import { prisma } from "./prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -25,25 +26,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })]
       : []),
 
-    // Magic link via Gmail SMTP — no custom domain required
-    ...(process.env.EMAIL_USER && process.env.EMAIL_PASS
-      ? [Nodemailer({
-          server: {
-            host:   "smtp.gmail.com",
-            port:   587,
-            secure: false,
-            auth: {
-              user: process.env.EMAIL_USER,
-              pass: process.env.EMAIL_PASS,  // Gmail App Password (16 chars)
-            },
-          },
-          from: process.env.EMAIL_FROM ?? `EduHub <${process.env.EMAIL_USER}>`,
-          async sendVerificationRequest({ identifier: email, url, provider }) {
-            const nodemailer = await import("nodemailer");
-            const transport  = nodemailer.createTransport(provider.server as object);
-            await transport.sendMail({
+    // Magic link via Resend — no custom domain required (uses onboarding@resend.dev)
+    ...(process.env.RESEND_API_KEY
+      ? [ResendProvider({
+          apiKey: process.env.RESEND_API_KEY,
+          from:   "EduHub <onboarding@resend.dev>",
+          async sendVerificationRequest({ identifier: email, url }) {
+            const resend = new Resend(process.env.RESEND_API_KEY);
+            await resend.emails.send({
+              from:    "EduHub <onboarding@resend.dev>",
               to:      email,
-              from:    provider.from,
               subject: "Tu link de acceso a EduHub",
               html:    buildMagicLinkEmail(url),
             });

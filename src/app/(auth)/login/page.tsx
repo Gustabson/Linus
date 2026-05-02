@@ -23,7 +23,7 @@ export default async function LoginPage({
 }) {
   const { verify, error } = await searchParams;
 
-  const showResend = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+  const showResend = !!process.env.RESEND_API_KEY;
   const showGoogle = !!(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET);
   const showGitHub = !!(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET);
 
