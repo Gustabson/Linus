@@ -64,7 +64,13 @@ export async function createNotification({
     const [recipient, actor] = await Promise.all([
       prisma.user.findUnique({
         where:  { id: recipientId },
-        select: { email: true, [prefField]: true },
+        select: {
+          email:            true,
+          notifSeguidores:  true,
+          notifLikes:       true,
+          notifComentarios: true,
+          notifPropuestas:  true,
+        },
       }),
       prisma.user.findUnique({
         where:  { id: actorId },
@@ -73,7 +79,8 @@ export async function createNotification({
     ]);
 
     if (!recipient?.email) return;
-    if (!(recipient as Record<string, unknown>)[prefField]) return;
+    // Check the specific preference for this notification type
+    if (!recipient[prefField as keyof typeof recipient]) return;
 
     const actorName = actor?.name ?? actor?.username ?? "Alguien";
     const subject   = TYPE_SUBJECT[type]?.(actorName);
