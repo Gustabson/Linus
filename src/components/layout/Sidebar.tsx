@@ -33,7 +33,6 @@ function useSidebarCounts() {
     fetchCounts();
     const id = setInterval(fetchCounts, POLL_MS);
     function onVisible() { if (document.visibilityState === "visible") fetchCounts(); }
-    // Instant update when a correo is opened/read
     function onCorreoRead() { fetchCounts(); }
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("correos:read", onCorreoRead);
@@ -57,7 +56,12 @@ function NavBadge({ count }: { count: number }) {
   );
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname           = usePathname();
   const { data: session }  = useSession();
   const { correos, propuestas } = useSidebarCounts();
@@ -89,11 +93,19 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar-bg flex flex-col z-40">
+    <aside
+      className={
+        "fixed left-0 top-0 h-screen w-64 bg-sidebar-bg flex flex-col z-50 transition-transform duration-300 ease-in-out " +
+        // Desktop (≥1024px): always visible
+        "lg:translate-x-0 " +
+        // Tablet/Mobile (<1024px): controlled by open prop
+        (open ? "translate-x-0" : "-translate-x-full")
+      }
+    >
 
       {/* ── Logo ─────────────────────────────────────────────── */}
       <div className="px-5 py-5 border-b border-sidebar-text/20">
-        <Link href="/" className="flex items-center gap-2.5 text-sidebar-text font-bold text-xl">
+        <Link href="/" className="flex items-center gap-2.5 text-sidebar-text font-bold text-xl" onClick={onClose}>
           <BookOpen className="w-7 h-7" />
           EduHub
         </Link>
@@ -106,7 +118,7 @@ export function Sidebar() {
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             Elegí tu nombre de usuario
           </p>
-          <Link href="/bienvenida" className="text-xs font-semibold text-sidebar-text underline hover:no-underline">
+          <Link href="/bienvenida" className="text-xs font-semibold text-sidebar-text underline hover:no-underline" onClick={onClose}>
             Configurar ahora →
           </Link>
         </div>
@@ -115,7 +127,7 @@ export function Sidebar() {
       {/* ── Navigation ───────────────────────────────────────── */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map(({ href, icon: Icon, label, badge }) => (
-          <Link key={href} href={href} className={itemCls(href)}>
+          <Link key={href} href={href} className={itemCls(href)} onClick={onClose}>
             <Icon className="w-5 h-5 shrink-0" />
             {label}
             <NavBadge count={badge ?? 0} />
@@ -141,6 +153,7 @@ export function Sidebar() {
         <Link
           href="/configuracion"
           className={itemCls("/configuracion").replace("py-3 text-base", "py-2.5 text-sm")}
+          onClick={onClose}
         >
           <Settings className="w-5 h-5 shrink-0" />
           Configuración
@@ -154,6 +167,7 @@ export function Sidebar() {
               ? "bg-sidebar-text/15 text-sidebar-text"
               : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
           }`}
+          onClick={onClose}
         >
           {session.user?.image ? (
             <Image src={session.user.image} alt="" width={28} height={28} className="rounded-full shrink-0" />
