@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
-import Resend from "next-auth/providers/resend";
+import Nodemailer from "next-auth/providers/nodemailer";
 import { prisma } from "./prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -25,19 +25,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })]
       : []),
 
-    // Magic link via Resend (email login — no password required)
-    ...(process.env.RESEND_API_KEY
-      ? [Resend({
-          apiKey: process.env.RESEND_API_KEY,
-          from:   process.env.EMAIL_FROM ?? "EduHub <noreply@resend.dev>",
-          // Custom email template
+    // Magic link via Gmail SMTP — no custom domain required
+    ...(process.env.EMAIL_USER && process.env.EMAIL_PASS
+      ? [Nodemailer({
+          server: {
+            host:   "smtp.gmail.com",
+            port:   587,
+            secure: false,
+            auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,  // Gmail App Password (16 chars)
+            },
+          },
+          from: process.env.EMAIL_FROM ?? `EduHub <${process.env.EMAIL_USER}>`,
           async sendVerificationRequest({ identifier: email, url, provider }) {
-            const { Resend: ResendClient } = await import("resend");
-            const resend = new ResendClient(provider.apiKey as string);
-
-            await resend.emails.send({
-              from:    provider.from as string,
+            const nodemailer = await import("nodemailer");
+            const transport  = nodemailer.createTransport(provider.server as object);
+            await transport.sendMail({
               to:      email,
+              from:    provider.from,
               subject: "Tu link de acceso a EduHub",
               html:    buildMagicLinkEmail(url),
             });
@@ -72,7 +78,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn:        "/login",
     error:         "/login",
-    verifyRequest: "/login?verify=1",  // shown after magic link is sent
+    verifyRequest: "/login?verify=1",
   },
 });
 
@@ -117,7 +123,7 @@ function buildMagicLinkEmail(url: string): string {
                 <tr>
                   <td align="center" style="padding:8px 0 32px;">
                     <a href="${url}"
-                      style="display:inline-block;background:#15803d;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 36px;border-radius:10px;letter-spacing:0.1px;">
+                      style="display:inline-block;background:#15803d;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 36px;border-radius:10px;">
                       Entrar a EduHub
                     </a>
                   </td>

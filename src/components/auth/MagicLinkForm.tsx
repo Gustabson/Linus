@@ -16,7 +16,7 @@ export function MagicLinkForm() {
     setError("");
 
     startTransition(async () => {
-      const result = await signIn("resend", {
+      const result = await signIn("nodemailer", {
         email:      email.trim().toLowerCase(),
         redirect:   false,
         callbackUrl: "/dashboard",

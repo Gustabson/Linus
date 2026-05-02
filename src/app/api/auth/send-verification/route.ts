@@ -10,11 +10,11 @@ export async function POST(req: NextRequest) {
   if (!email || typeof email !== "string")
     return NextResponse.json({ error: "Email requerido" }, { status: 400 });
 
-  if (!process.env.RESEND_API_KEY)
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)
     return NextResponse.json({ error: "Magic link no configurado" }, { status: 503 });
 
   try {
-    await signIn("resend", { email: email.trim().toLowerCase(), redirect: false });
+    await signIn("nodemailer", { email: email.trim().toLowerCase(), redirect: false });
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[send-verification]", err);
