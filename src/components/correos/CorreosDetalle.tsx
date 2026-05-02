@@ -284,6 +284,13 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
   const [sending,  startSend]       = useTransition();
   const [error, setError]           = useState("");
 
+  // Notify sidebar immediately when a received message is opened (already marked read server-side)
+  useEffect(() => {
+    if (isRecipient) {
+      window.dispatchEvent(new CustomEvent("correos:read"));
+    }
+  }, [isRecipient]);
+
   function handleDelete() {
     startDelete(async () => {
       const res = await fetch(`/api/correos/${message.id}`, { method: "DELETE" });

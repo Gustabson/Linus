@@ -33,8 +33,15 @@ function useSidebarCounts() {
     fetchCounts();
     const id = setInterval(fetchCounts, POLL_MS);
     function onVisible() { if (document.visibilityState === "visible") fetchCounts(); }
+    // Instant update when a correo is opened/read
+    function onCorreoRead() { fetchCounts(); }
     document.addEventListener("visibilitychange", onVisible);
-    return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVisible); };
+    window.addEventListener("correos:read", onCorreoRead);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("correos:read", onCorreoRead);
+    };
   }, [fetchCounts]);
 
   return { correos, propuestas };

@@ -8,16 +8,11 @@ import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import TiptapLink from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
-import Highlight from "@tiptap/extension-highlight";
-import Superscript from "@tiptap/extension-superscript";
-import Subscript from "@tiptap/extension-subscript";
 import {
   Send, Save, Loader2, Trash2,
   Bold, Italic, Underline as UnderlineIcon,
   List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
-  Link as LinkIcon, Heading2, Heading3,
-  Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
-  Highlighter, Smile,
+  Link as LinkIcon, Heading2, Heading3, Smile,
 } from "lucide-react";
 import { UserSearchInput } from "./UserSearchInput";
 
@@ -58,9 +53,6 @@ export function CorreosRedactar({
     extensions: [
       StarterKit,
       Underline,
-      Highlight.configure({ multicolor: false }),
-      Superscript,
-      Subscript,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TiptapLink.configure({
         openOnClick:    false,
@@ -220,40 +212,28 @@ export function CorreosRedactar({
       {/* ── Toolbar ─────────────────────────────────────────────── */}
       {editor && (
         <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-border-subtle flex-wrap bg-bg">
-          {/* Text style */}
           <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Negrita"><Bold className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} title="Cursiva"><Italic className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} title="Subrayado"><UnderlineIcon className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleHighlight().run()} active={editor.isActive("highlight")} title="Resaltado"><Highlighter className="w-3.5 h-3.5" /></ToolBtn>
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          {/* Headings */}
           <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} title="Título H2"><Heading2 className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Título H3"><Heading3 className="w-3.5 h-3.5" /></ToolBtn>
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          {/* Lists */}
           <ToolBtn onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} title="Lista con viñetas"><List className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} title="Lista numerada"><ListOrdered className="w-3.5 h-3.5" /></ToolBtn>
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          {/* Alignment */}
           <ToolBtn onClick={() => editor.chain().focus().setTextAlign("left").run()} active={editor.isActive({ textAlign: "left" })} title="Izquierda"><AlignLeft className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().setTextAlign("center").run()} active={editor.isActive({ textAlign: "center" })} title="Centrar"><AlignCenter className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().setTextAlign("right").run()} active={editor.isActive({ textAlign: "right" })} title="Derecha"><AlignRight className="w-3.5 h-3.5" /></ToolBtn>
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          {/* Academic: superscript + subscript */}
-          <ToolBtn onClick={() => editor.chain().focus().toggleSuperscript().run()} active={editor.isActive("superscript")} title="Superíndice (ej: x²)"><SuperscriptIcon className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleSubscript().run()} active={editor.isActive("subscript")} title="Subíndice (ej: H₂O)"><SubscriptIcon className="w-3.5 h-3.5" /></ToolBtn>
-
-          <div className="w-px h-4 bg-border mx-1" />
-
-          {/* Link */}
           <ToolBtn onClick={setLink} active={editor.isActive("link")} title="Enlace"><LinkIcon className="w-3.5 h-3.5" /></ToolBtn>
 
           {/* Emoji picker */}
@@ -268,12 +248,8 @@ export function CorreosRedactar({
                     <p className="text-[10px] font-semibold text-text-subtle uppercase tracking-wide mb-1">{group.label}</p>
                     <div className="flex flex-wrap gap-0.5">
                       {group.emojis.map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          onClick={() => insertEmoji(emoji)}
-                          className="w-8 h-8 flex items-center justify-center text-lg hover:bg-bg rounded-lg transition-colors"
-                        >
+                        <button key={emoji} type="button" onClick={() => insertEmoji(emoji)}
+                          className="w-8 h-8 flex items-center justify-center text-lg hover:bg-bg rounded-lg transition-colors">
                           {emoji}
                         </button>
                       ))}
