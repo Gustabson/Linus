@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { sanitizeHtml } from "@/lib/sanitize";
+import { sendCorreoEmail } from "@/lib/notifications";
 
 const SUBJECT_MAX = 200;
 const BODY_MAX    = 5000;
@@ -95,6 +96,17 @@ export async function POST(req: NextRequest) {
       recipient: { select: SENDER_SELECT },
     },
   });
+
+  // Send email notification if recipient has it enabled (fire-and-forget)
+  if (!isDraft && recipientId) {
+    const sender = await prisma.user.findUnique({
+      where:  { id: session.user.id },
+      select: { name: true, username: true },
+    });
+    const senderName  = sender?.name ?? sender?.username ?? "Alguien";
+    const previewText = cleanBody.replace(/<[^>]*>/g, "").slice(0, 120);
+    sendCorreoEmail({ recipientId, senderName, subject: trimmedSubject, previewText });
+  }
 
   return NextResponse.json(message, { status: 201 });
 }
