@@ -42,6 +42,9 @@ export function ProfileFeed({
     initialPosts.length > 0 ? initialPosts[0].createdAt : null
   );
 
+  // Track all known post IDs to avoid false-positive "new posts" banners
+  const knownPostIdsRef = useRef<Set<string>>(new Set(initialPosts.map((p) => p.id)));
+
   // ── Polling ────────────────────────────────────────────────────────────────
   const pollNew = useCallback(async () => {
     if (!newestDateRef.current) return;
@@ -51,11 +54,11 @@ export function ProfileFeed({
       if (!res.ok) return;
       const data = await res.json();
       if (data.posts?.length > 0) {
-        setNewQueue((prev) => {
-          const existingIds = new Set(prev.map((p: PostData) => p.id));
-          const fresh = (data.posts as PostData[]).filter((p) => !existingIds.has(p.id));
-          return fresh.length > 0 ? [...fresh, ...prev] : prev;
-        });
+        const fresh = (data.posts as PostData[]).filter((p) => !knownPostIdsRef.current.has(p.id));
+        if (fresh.length > 0) {
+          fresh.forEach((p) => knownPostIdsRef.current.add(p.id));
+          setNewQueue((prev) => [...fresh, ...prev]);
+        }
       }
     } catch {
       // ignore
@@ -86,6 +89,7 @@ export function ProfileFeed({
   // ── Composer callback ──────────────────────────────────────────────────────
   function handlePostCreated(post: PostData) {
     const withLikes = { ...post, likes: [] };
+    knownPostIdsRef.current.add(post.id);
     setPosts((prev) => {
       const merged = [withLikes, ...prev];
       newestDateRef.current = merged[0].createdAt;

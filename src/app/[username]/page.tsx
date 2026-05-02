@@ -136,6 +136,7 @@ export default async function UserProfilePage({
                   <EditProfileButton user={{
                     id: user.id, name: user.name, username: user.username,
                     bio: user.bio, website: user.website, location: user.location,
+                    image: user.image,
                   }} />
                 )}
                 {!isOwn && (
