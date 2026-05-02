@@ -57,7 +57,8 @@
       "Bash(rm src/app/kernel/page.tsx)",
       "Bash(rmdir src/app/kernel)",
       "Bash(perl -i -pe ' *)",
-      "Bash(perl -i -pe 's/badge\\\\.cls\\\\b/badge.badgeCls/g; s/\\\\btb\\\\.cls\\\\b/tb.badgeCls/g; s/\\\\bts\\\\.cls\\\\b/ts.badgeCls/g;' src/components/social/PostComposer.tsx src/components/social/PostCard.tsx 'src/app/[username]/page.tsx' 'src/app/v/[publicId]/page.tsx' src/app/explorar/page.tsx)"
+      "Bash(perl -i -pe 's/badge\\\\.cls\\\\b/badge.badgeCls/g; s/\\\\btb\\\\.cls\\\\b/tb.badgeCls/g; s/\\\\bts\\\\.cls\\\\b/ts.badgeCls/g;' src/components/social/PostComposer.tsx src/components/social/PostCard.tsx 'src/app/[username]/page.tsx' 'src/app/v/[publicId]/page.tsx' src/app/explorar/page.tsx)",
+      "Bash(perl -i -pe 's/CONTENT_TYPE_STYLE, CONTENT_TYPE_STYLE/CONTENT_TYPE_STYLE/g' src/app/explorar/page.tsx \"src/app/[username]/page.tsx\")"
     ]
   }
 }

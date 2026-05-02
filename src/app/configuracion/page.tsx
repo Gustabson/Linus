@@ -1,7 +1,6 @@
 import { auth }         from "@/lib/auth";
 import { prisma }       from "@/lib/prisma";
 import { redirect }     from "next/navigation";
-import { ConfigPerfil }         from "@/components/configuracion/ConfigPerfil";
 import { ConfigCuenta }         from "@/components/configuracion/ConfigCuenta";
 import { ConfigApariencia }     from "@/components/configuracion/ConfigApariencia";
 import { ConfigNotificaciones } from "@/components/configuracion/ConfigNotificaciones";
@@ -18,14 +17,8 @@ export default async function ConfiguracionPage() {
   const user = await prisma.user.findUnique({
     where:  { id: session.user.id },
     select: {
-      name:          true,
-      username:      true,
       email:         true,
       emailVerified: true,
-      image:         true,
-      bio:           true,
-      website:       true,
-      location:      true,
       createdAt:     true,
       themeMode:     true,
       themeBg:       true,
@@ -65,18 +58,8 @@ export default async function ConfiguracionPage() {
 
       <div className="pb-2">
         <h1 className="text-2xl font-bold text-text">Configuración</h1>
-        <p className="text-sm text-text-muted mt-1">Gestioná tu perfil, cuenta y preferencias.</p>
+        <p className="text-sm text-text-muted mt-1">Gestioná tu cuenta y preferencias.</p>
       </div>
-
-      <ConfigPerfil
-        initial={{
-          name:     user.name,
-          username: user.username,
-          bio:      user.bio,
-          website:  user.website,
-          location: user.location,
-        }}
-      />
 
       <ConfigCuenta
         email={user.email}
