@@ -76,7 +76,7 @@ export function ConfigCuenta({ email, emailVerified, providers, createdAt }: Pro
     >
       {/* Email + verification status */}
       <div className="space-y-3">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
           <div>
             <p className="text-xs font-medium text-text-subtle uppercase tracking-wide mb-0.5">
               Correo electrónico
@@ -85,7 +85,7 @@ export function ConfigCuenta({ email, emailVerified, providers, createdAt }: Pro
           </div>
 
           {emailVerified ? (
-            <div className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-lg shrink-0">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-green-600 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-lg self-start sm:shrink-0">
               <ShieldCheck className="w-3.5 h-3.5" />
               Verificado
               {verifiedViaOAuth && (
@@ -95,7 +95,7 @@ export function ConfigCuenta({ email, emailVerified, providers, createdAt }: Pro
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-lg shrink-0">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-amber-600 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-lg self-start sm:shrink-0">
               <ShieldAlert className="w-3.5 h-3.5" />
               Sin verificar
             </div>

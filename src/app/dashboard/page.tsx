@@ -50,7 +50,7 @@ export default async function DashboardPage({
   const activeTrees = byType[activeTab];
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-5xl w-full min-w-0">
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
@@ -102,25 +102,27 @@ export default async function DashboardPage({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-border pb-0">
-        {CONTENT_TABS.map((t) => {
-          const ts       = CONTENT_TYPE_STYLE[t.key];
-          const isActive = activeTab === t.key;
-          return (
-            <Link key={t.key} href={`/dashboard?tab=${t.key}`}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
-                isActive
-                  ? `${ts.accentBorderCls} ${ts.textCls}`
-                  : "border-transparent text-text-muted hover:text-text"
-              }`}>
-              {t.icon}
-              {t.label}
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? ts.badgeCls : "bg-border-subtle text-text-muted"}`}>
-                {byType[t.key].length}
-              </span>
-            </Link>
-          );
-        })}
+      <div className="overflow-x-auto">
+        <div className="flex border-b border-border pb-0 min-w-max">
+          {CONTENT_TABS.map((t) => {
+            const ts       = CONTENT_TYPE_STYLE[t.key];
+            const isActive = activeTab === t.key;
+            return (
+              <Link key={t.key} href={`/dashboard?tab=${t.key}`}
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 whitespace-nowrap transition-colors -mb-px ${
+                  isActive
+                    ? `${ts.accentBorderCls} ${ts.textCls}`
+                    : "border-transparent text-text-muted hover:text-text"
+                }`}>
+                {t.icon}
+                {t.label}
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${isActive ? ts.badgeCls : "bg-border-subtle text-text-muted"}`}>
+                  {byType[t.key].length}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
 
       {/* Content */}
