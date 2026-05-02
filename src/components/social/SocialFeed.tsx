@@ -78,7 +78,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
 
       {/* ── Sticky tab bar ──────────────────────────────────────── */}
       <div className="sticky top-0 z-20 bg-bg -mx-4 sm:-mx-6 px-4 sm:px-6 mb-6">
-        <div className="flex border-b border-border">
+        <div className="flex border-b border-border justify-center">
           <TabLink href="/?tab=tendencias" active={isTendencias}   icon={<Flame className="w-4 h-4" />} label="Tendencias" />
           <TabLink href="/?tab=siguiendo"  active={!isTendencias}  icon={<Rss   className="w-4 h-4" />} label="Siguiendo"  />
         </div>
