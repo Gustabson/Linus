@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Trash2, Upload, Loader2, X,
-  FileText, AlertTriangle, ChevronRight,
+  FileText, AlertTriangle, ChevronRight, Pencil, Check,
 } from "lucide-react";
 import { DocExportButton, type ExportSection } from "./DocExportButton";
 
@@ -27,6 +27,38 @@ type ImportState =
 export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUsername, exportSections }: Props) {
   const router = useRouter();
 
+  // ── Doc title inline edit ─────────────────────────────────────────────────
+  const [titleValue,    setTitleValue]    = useState(docTitle);
+  const [editingTitle,  setEditingTitle]  = useState(false);
+  const [savingTitle,   setSavingTitle]   = useState(false);
+  const titleInputRef                     = useRef<HTMLInputElement>(null);
+
+  async function commitTitle() {
+    const trimmed = titleValue.trim();
+    if (!trimmed) { setTitleValue(docTitle); setEditingTitle(false); return; }
+    if (trimmed === titleValue && !editingTitle) return;
+    setSavingTitle(true);
+    const res = await fetch(`/api/trees/${treeSlug}/${docSlug}`, {
+      method:  "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ title: trimmed }),
+    });
+    setSavingTitle(false);
+    if (res.ok) setTitleValue(trimmed);
+    else setTitleValue(docTitle); // revert on error
+    setEditingTitle(false);
+  }
+
+  function startEditTitle() {
+    setEditingTitle(true);
+    setTimeout(() => { titleInputRef.current?.select(); }, 0);
+  }
+
+  function handleTitleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter")  { e.preventDefault(); commitTitle(); }
+    if (e.key === "Escape") { setTitleValue(titleValue); setEditingTitle(false); }
+  }
+
   // ── Delete state ──────────────────────────────────────────────────────────
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting]                   = useState(false);
@@ -39,7 +71,6 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   function handleBack() {
-    // Invalidate router cache before navigating so the kernel page re-fetches
     router.refresh();
     router.push(`/${ownerUsername}/${treeSlug}`);
   }
@@ -67,27 +98,15 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
     const formData = new FormData();
     formData.append("file", file);
 
-    const res  = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, {
-      method: "POST",
-      body:   formData,
-    });
+    const res  = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, { method: "POST", body: formData });
     const data = await res.json();
 
-    if (!res.ok) {
-      setImportState({ step: "error", message: data.error ?? "Error al importar." });
-      return;
-    }
+    if (!res.ok) { setImportState({ step: "error", message: data.error ?? "Error al importar." }); return; }
 
-    if (data.needsTitle) {
-      setImportState({ step: "needsTitle", blobUrl: data.blobUrl });
-      return;
-    }
+    if (data.needsTitle) { setImportState({ step: "needsTitle", blobUrl: data.blobUrl }); return; }
 
     setImportState({ step: "done", count: data.count });
-    setTimeout(() => {
-      router.refresh();
-      setImportState({ step: "idle" });
-    }, 1500);
+    setTimeout(() => { router.refresh(); setImportState({ step: "idle" }); }, 1500);
   }
 
   async function handleEmbedSubmit(e: React.FormEvent) {
@@ -101,23 +120,14 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
     formData.append("blobUrl",      importState.blobUrl);
     formData.append("sectionTitle", embedTitle.trim());
 
-    const res  = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, {
-      method: "POST",
-      body:   formData,
-    });
+    const res  = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, { method: "POST", body: formData });
     const data = await res.json();
 
-    if (!res.ok) {
-      setImportState({ step: "error", message: data.error ?? "Error al guardar." });
-      return;
-    }
+    if (!res.ok) { setImportState({ step: "error", message: data.error ?? "Error al guardar." }); return; }
 
     setImportState({ step: "done", count: 1 });
     setEmbedTitle("");
-    setTimeout(() => {
-      router.refresh();
-      setImportState({ step: "idle" });
-    }, 1500);
+    setTimeout(() => { router.refresh(); setImportState({ step: "idle" }); }, 1500);
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -132,37 +142,66 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
         <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
         <span>{treeTitle}</span>
         <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
-        <span className="text-text-muted">{docTitle}</span>
+        <span className="text-text-muted">{titleValue}</span>
       </button>
 
       {/* ── Row 2: title + actions ── */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold text-text leading-tight">{docTitle}</h1>
 
-        <div className="flex items-center gap-2">
+        {/* Editable title */}
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {editingTitle ? (
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <input
+                ref={titleInputRef}
+                value={titleValue}
+                onChange={(e) => setTitleValue(e.target.value)}
+                onBlur={commitTitle}
+                onKeyDown={handleTitleKeyDown}
+                className="text-2xl font-bold text-text bg-transparent border-b-2 border-gray-900 focus:outline-none flex-1 min-w-0 pb-0.5 leading-tight"
+              />
+              <button
+                onMouseDown={(e) => { e.preventDefault(); commitTitle(); }}
+                disabled={savingTitle}
+                className="shrink-0 p-1 rounded-lg text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+              >
+                {savingTitle ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 group cursor-default">
+              <h1 className="text-2xl font-bold text-text leading-tight">{titleValue}</h1>
+              <button
+                onClick={startEditTitle}
+                title="Renombrar"
+                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg transition-all"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
           {/* Export */}
-          {exportSections && exportSections.length > 0 && (
-            <DocExportButton title={docTitle} sections={exportSections} />
+          {exportSections !== undefined && (
+            <DocExportButton
+              title={titleValue}
+              sections={exportSections}
+              treeSlug={treeSlug}
+              docSlug={docSlug}
+            />
           )}
 
           {/* Upload Word/PDF */}
           <div className="relative">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.docx"
-              className="hidden"
-              onChange={handleFileChange}
-            />
+            <input ref={fileInputRef} type="file" accept=".pdf,.docx" className="hidden" onChange={handleFileChange} />
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={importState.step === "uploading"}
               className="flex items-center gap-2 text-sm text-text-muted border border-border px-3 py-2 rounded-xl hover:bg-bg hover:border-gray-300 disabled:opacity-50 transition-colors"
             >
-              {importState.step === "uploading"
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <Upload  className="w-4 h-4" />
-              }
+              {importState.step === "uploading" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
               <span className="hidden sm:inline">
                 {importState.step === "uploading" ? "Importando…" : "Subir Word / PDF"}
               </span>
@@ -214,18 +253,10 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
               placeholder="Ej: Material de lectura"
               className="flex-1 border border-amber-200 bg-surface rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-400"
             />
-            <button
-              type="submit"
-              disabled={!embedTitle.trim()}
-              className="bg-amber-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-amber-700 disabled:opacity-50 transition-colors"
-            >
+            <button type="submit" disabled={!embedTitle.trim()} className="bg-amber-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-amber-700 disabled:opacity-50 transition-colors">
               Agregar
             </button>
-            <button
-              type="button"
-              onClick={() => setImportState({ step: "idle" })}
-              className="text-text-muted px-3 py-2 rounded-xl hover:bg-amber-100 transition-colors"
-            >
+            <button type="button" onClick={() => setImportState({ step: "idle" })} className="text-text-muted px-3 py-2 rounded-xl hover:bg-amber-100 transition-colors">
               <X className="w-4 h-4" />
             </button>
           </form>
@@ -243,18 +274,13 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
               <div>
                 <h2 className="font-bold text-text text-lg">Eliminar documento</h2>
                 <p className="text-sm text-text-muted mt-1 leading-relaxed">
-                  ¿Eliminar{" "}
-                  <span className="font-semibold text-text">"{docTitle}"</span>?{" "}
+                  ¿Eliminar <span className="font-semibold text-text">"{titleValue}"</span>?{" "}
                   Se perderán todas las secciones y el historial. Esta acción no se puede deshacer.
                 </p>
               </div>
             </div>
             <div className="flex justify-end gap-2 pt-1">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleting}
-                className="text-sm text-text-muted px-4 py-2.5 rounded-xl hover:bg-bg transition-colors"
-              >
+              <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="text-sm text-text-muted px-4 py-2.5 rounded-xl hover:bg-bg transition-colors">
                 Cancelar
               </button>
               <button

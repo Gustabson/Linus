@@ -71,6 +71,36 @@ async function forkToDraft(
   return { draft, sectionIdMap };
 }
 
+// ── GET — fetch current sections (used by DocExportButton for fresh data) ─────
+export async function GET(_req: NextRequest, { params }: Params) {
+  const { slug, docSlug } = await params;
+
+  const tree = await prisma.documentTree.findUnique({
+    where:  { slug },
+    select: { id: true, visibility: true },
+  });
+  if (!tree) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  if (tree.visibility === "PRIVATE") {
+    const session = await getSession();
+    if (!session) return unauthorized();
+  }
+
+  const doc = await prisma.document.findUnique({
+    where: { treeId_slug: { treeId: tree.id, slug: docSlug } },
+    include: {
+      versions: {
+        orderBy: { createdAt: "desc" },
+        take:    1,
+        include: { sections: { orderBy: { sectionOrder: "asc" } } },
+      },
+    },
+  });
+  if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  return NextResponse.json({ sections: doc.versions[0]?.sections ?? [] });
+}
+
 // ── POST — add a new section ──────────────────────────────────────────────────
 export async function POST(req: NextRequest, { params }: Params) {
   const session = await getSession();

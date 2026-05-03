@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Printer, FileDown, ChevronDown, X } from "lucide-react";
+import { Printer, FileDown, ChevronDown, X, Loader2 } from "lucide-react";
 import { generateHTML } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -26,14 +26,16 @@ export interface ExportSection {
 
 interface Props {
   title:    string;
-  sections: ExportSection[];
+  sections: ExportSection[];   // initial sections (may be stale — fresh fetch on export)
+  treeSlug: string;
+  docSlug:  string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function isPdfEmbed(content: unknown): boolean {
   return (
-    content !== null &&
+    !!content &&
     typeof content === "object" &&
     (content as Record<string, unknown>).__type === "pdf_embed"
   );
@@ -41,10 +43,14 @@ function isPdfEmbed(content: unknown): boolean {
 
 function isTipTapDoc(content: unknown): boolean {
   return (
-    content !== null &&
+    !!content &&
     typeof content === "object" &&
     (content as Record<string, unknown>).type === "doc"
   );
+}
+
+function isExportable(s: ExportSection): boolean {
+  return !isPdfEmbed(s.richTextContent) && isTipTapDoc(s.richTextContent);
 }
 
 function sectionToHTML(s: ExportSection): string {
@@ -64,7 +70,7 @@ function buildBodyHTML(sections: ExportSection[]): string {
     .map((s) => {
       const body = sectionToHTML(s);
       if (!body) return "";
-      return `<h2 class="section-title">${s.sectionType}</h2><div class="section-body tiptap">${body}</div>`;
+      return `<h2 class="section-title">${s.sectionType}</h2><div class="section-body">${body}</div>`;
     })
     .filter(Boolean)
     .join('<hr class="section-sep" />');
@@ -77,10 +83,11 @@ function wrapInDocument(title: string, body: string): string {
   <meta charset="utf-8" />
   <title>${title}</title>
   <style>
-    body          { font-family: Georgia, "Times New Roman", serif; max-width: 800px; margin: 40px auto; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
-    h1            { font-size: 2rem; font-weight: 700; margin: 0 0 0.25em; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.4em; }
-    .section-title{ font-size: 1.35rem; font-weight: 700; margin: 2.5rem 0 0.6rem; color: #111; }
-    .section-body h1 { font-size: 1.875rem; font-weight: 700; margin: 0.75em 0 0.4em; border-bottom: none; }
+    @page { margin: 2.5cm; }
+    body          { font-family: Georgia, "Times New Roman", serif; max-width: 100%; margin: 0; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
+    h1.doc-title  { font-size: 2.4rem; font-weight: 700; text-align: center; margin: 3em 0 0.3em; border-bottom: 2px solid #d1d5db; padding-bottom: 0.5em; }
+    .section-title{ font-size: 1.4rem; font-weight: 700; text-align: center; margin: 3rem 0 1rem; color: #111; }
+    .section-body h1 { font-size: 1.875rem; font-weight: 700; margin: 0.75em 0 0.4em; }
     .section-body h2 { font-size: 1.5rem;   font-weight: 600; margin: 0.75em 0 0.4em; }
     .section-body h3 { font-size: 1.25rem;  font-weight: 600; margin: 0.75em 0 0.4em; }
     p             { margin: 0 0 0.75rem; }
@@ -98,11 +105,10 @@ function wrapInDocument(title: string, body: string): string {
     mark          { background-color: #fef08a; padding: 0.05em 0.1em; }
     a             { color: #6366f1; text-decoration: underline; }
     .section-sep  { border: none; border-top: 1px solid #d1d5db; margin: 2rem 0; }
-    @media print  { body { margin: 20px; max-width: 100%; } }
   </style>
 </head>
 <body>
-  <h1>${title}</h1>
+  <h1 class="doc-title">${title}</h1>
   ${body}
 </body>
 </html>`;
@@ -110,18 +116,32 @@ function wrapInDocument(title: string, body: string): string {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function DocExportButton({ title, sections }: Props) {
-  const [open,      setOpen]      = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [action,    setAction]    = useState<"print" | "word" | null>(null);
-
-  const exportable = sections.filter((s) => !isPdfEmbed(s.richTextContent) && isTipTapDoc(s.richTextContent));
-
-  const [selected, setSelected] = useState<Set<string>>(
-    () => new Set(exportable.map((s) => s.id)),
+export function DocExportButton({ title, sections: initialSections, treeSlug, docSlug }: Props) {
+  const [open,             setOpen]             = useState(false);
+  const [loading,          setLoading]          = useState(false);
+  const [showModal,        setShowModal]        = useState(false);
+  const [action,           setAction]           = useState<"print" | "word" | null>(null);
+  const [exportableSects,  setExportableSects]  = useState<ExportSection[]>(
+    () => initialSections.filter(isExportable),
+  );
+  const [selected,         setSelected]         = useState<Set<string>>(
+    () => new Set(initialSections.filter(isExportable).map((s) => s.id)),
   );
 
-  // ── Actions ──────────────────────────────────────────────────────────────
+  // ── Fetch fresh sections from the server ──────────────────────────────────
+
+  async function fetchFreshSections(): Promise<ExportSection[]> {
+    try {
+      const res = await fetch(`/api/trees/${treeSlug}/${docSlug}/sections`);
+      if (!res.ok) return initialSections;
+      const data = await res.json();
+      return (data.sections ?? []) as ExportSection[];
+    } catch {
+      return initialSections;
+    }
+  }
+
+  // ── Actions ───────────────────────────────────────────────────────────────
 
   function doPrint(sects: ExportSection[]) {
     const html = wrapInDocument(title, buildBodyHTML(sects));
@@ -144,23 +164,29 @@ export function DocExportButton({ title, sections }: Props) {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
   }
 
-  function triggerAction(act: "print" | "word") {
+  async function triggerAction(act: "print" | "word") {
     setOpen(false);
-    if (exportable.length === 0) return;
+    setLoading(true);
 
-    if (exportable.length === 1) {
-      // Single section — act immediately
-      act === "print" ? doPrint(exportable) : doWord(exportable);
+    const fresh     = await fetchFreshSections();
+    const freshExp  = fresh.filter(isExportable);
+
+    setLoading(false);
+
+    if (freshExp.length === 0) return;
+
+    if (freshExp.length === 1) {
+      act === "print" ? doPrint(freshExp) : doWord(freshExp);
     } else {
-      // Multiple sections — show selection modal
-      setSelected(new Set(exportable.map((s) => s.id)));
+      setExportableSects(freshExp);
+      setSelected(new Set(freshExp.map((s) => s.id)));
       setAction(act);
       setShowModal(true);
     }
   }
 
   function confirmModal() {
-    const sects = exportable.filter((s) => selected.has(s.id));
+    const sects = exportableSects.filter((s) => selected.has(s.id));
     if (sects.length === 0) return;
     action === "print" ? doPrint(sects) : doWord(sects);
     setShowModal(false);
@@ -168,7 +194,7 @@ export function DocExportButton({ title, sections }: Props) {
   }
 
   function toggleAll(checked: boolean) {
-    setSelected(checked ? new Set(exportable.map((s) => s.id)) : new Set());
+    setSelected(checked ? new Set(exportableSects.map((s) => s.id)) : new Set());
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -178,18 +204,20 @@ export function DocExportButton({ title, sections }: Props) {
       {/* ── Dropdown trigger ── */}
       <div className="relative">
         <button
-          onClick={() => setOpen((v) => !v)}
-          disabled={exportable.length === 0}
-          className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-xl hover:bg-bg hover:border-gray-300 disabled:opacity-40 transition-colors"
+          onClick={() => !loading && setOpen((v) => !v)}
+          disabled={loading}
+          className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-xl hover:bg-bg hover:border-gray-300 disabled:opacity-60 transition-colors"
         >
-          <FileDown className="w-4 h-4" />
-          <span className="hidden sm:inline">Exportar</span>
-          <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+          {loading
+            ? <Loader2    className="w-4 h-4 animate-spin" />
+            : <FileDown   className="w-4 h-4" />
+          }
+          <span className="hidden sm:inline">{loading ? "Cargando…" : "Exportar"}</span>
+          {!loading && <ChevronDown className="w-3.5 h-3.5 opacity-70" />}
         </button>
 
         {open && (
           <>
-            {/* Click-away backdrop */}
             <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
             <div className="absolute right-0 top-full mt-1.5 z-40 bg-surface border border-border rounded-xl shadow-lg w-44 overflow-hidden">
               <button
@@ -211,46 +239,36 @@ export function DocExportButton({ title, sections }: Props) {
         )}
       </div>
 
-      {/* ── Section-selection modal (only for multi-section docs) ── */}
+      {/* ── Section-selection modal (multi-section docs) ── */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
 
-            {/* Header */}
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-bold text-text text-lg leading-tight">
                 {action === "print" ? "Imprimir secciones" : "Exportar a Word"}
               </h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-text-muted hover:text-text transition-colors shrink-0"
-              >
+              <button onClick={() => setShowModal(false)} className="text-text-muted hover:text-text transition-colors shrink-0">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-sm text-text-muted">
-              Elegí qué secciones incluir:
-            </p>
+            <p className="text-sm text-text-muted">Elegí qué secciones incluir:</p>
 
-            {/* Select-all row */}
+            {/* Select-all */}
             <label className="flex items-center gap-3 cursor-pointer px-2 py-1.5 rounded-xl hover:bg-bg border-b border-border-subtle pb-3">
               <input
                 type="checkbox"
-                checked={selected.size === exportable.length}
+                checked={selected.size === exportableSects.length}
                 onChange={(e) => toggleAll(e.target.checked)}
                 className="w-4 h-4 accent-primary rounded"
               />
               <span className="text-sm font-medium text-text">Todas</span>
             </label>
 
-            {/* Section list */}
             <div className="space-y-1 max-h-56 overflow-y-auto">
-              {exportable.map((s) => (
-                <label
-                  key={s.id}
-                  className="flex items-center gap-3 cursor-pointer px-2 py-2 rounded-xl hover:bg-bg"
-                >
+              {exportableSects.map((s) => (
+                <label key={s.id} className="flex items-center gap-3 cursor-pointer px-2 py-2 rounded-xl hover:bg-bg">
                   <input
                     type="checkbox"
                     checked={selected.has(s.id)}
@@ -266,12 +284,8 @@ export function DocExportButton({ title, sections }: Props) {
               ))}
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end gap-2 pt-2">
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-sm text-text-muted px-4 py-2.5 rounded-xl hover:bg-bg transition-colors"
-              >
+              <button onClick={() => setShowModal(false)} className="text-sm text-text-muted px-4 py-2.5 rounded-xl hover:bg-bg transition-colors">
                 Cancelar
               </button>
               <button

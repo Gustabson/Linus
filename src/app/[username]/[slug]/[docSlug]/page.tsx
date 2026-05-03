@@ -9,6 +9,7 @@ import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import { TreePublishButton } from "@/components/trees/TreePublishButton";
 import { DocActionBar } from "@/components/documents/DocActionBar";
 import { DocExportButton } from "@/components/documents/DocExportButton";
+import { TreeTitleEditor } from "@/components/documents/TreeTitleEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -112,7 +113,13 @@ export default async function DocumentPage({
                 {style.icon}
                 {style.label}
               </span>
-              <h1 className="text-2xl font-bold text-text">{tree.title}</h1>
+              <TreeTitleEditor
+                treeSlug={tree.slug}
+                ownerUsername={username}
+                docSlug={docSlug}
+                initialTitle={tree.title}
+                isOwner={isOwner}
+              />
               {latestVersion && (
                 <div className="flex items-center gap-4 mt-2 text-sm text-text-muted flex-wrap">
                   <span className="flex items-center gap-1">
@@ -128,7 +135,7 @@ export default async function DocumentPage({
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <DocExportButton title={tree.title} sections={sections} />
+              <DocExportButton title={tree.title} sections={sections} treeSlug={tree.slug} docSlug={docSlug} />
               {isOwner && (
                 <TreePublishButton
                   treeSlug={tree.slug}
