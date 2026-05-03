@@ -55,7 +55,10 @@ export async function GET(req: NextRequest) {
           : false,
       },
     });
-    return NextResponse.json({ posts: newPosts, nextCursor: null });
+    return NextResponse.json(
+      { posts: newPosts, nextCursor: null },
+      { headers: { "Cache-Control": "no-store" } }, // polling — must be fresh
+    );
   }
 
   const posts = await prisma.post.findMany({
@@ -84,7 +87,10 @@ export async function GET(req: NextRequest) {
 
   const nextCursor = hasMore ? posts[posts.length - 1].createdAt.toISOString() : null;
 
-  return NextResponse.json({ posts, nextCursor });
+  return NextResponse.json(
+    { posts, nextCursor },
+    { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" } },
+  );
 }
 
 // ── POST /api/posts  (create) ─────────────────────────────────────────────────

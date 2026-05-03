@@ -150,31 +150,45 @@ export default async function TreePage({
         : Promise.resolve(false),
   ]);
 
-  // Build ancestor chain (walk up to find root; cap at 10 to guard against cycles)
+  // Build ancestor chain — collect all ancestor IDs first, then batch query.
+  // (was sequential N+1 — each ancestor blocked on the previous)
   const MAX_ANCESTOR_DEPTH = 10;
+  const ancestorIds: string[] = [];
+  let currentId: string | null = tree.parentTree?.id ?? null;
+  let depth = 0;
+  while (currentId && depth < MAX_ANCESTOR_DEPTH) {
+    ancestorIds.push(currentId);
+    // Walk up: fetch only parentTreeId to find the next ancestor
+    const node = await prisma.documentTree.findUnique({
+      where: { id: currentId },
+      select: { parentTreeId: true },
+    });
+    currentId = node?.parentTreeId ?? null;
+    depth++;
+  }
+
+  // Batch fetch all ancestor data at once
+  const ancestorNodes = ancestorIds.length > 0
+    ? await prisma.documentTree.findMany({
+        where: { id: { in: ancestorIds } },
+        select: { id: true, slug: true, title: true, contentType: true, owner: { select: { username: true } } },
+      })
+    : [];
+
+  // Build ordered chain (from root to immediate parent)
+  const ancestorMap = new Map(ancestorNodes.map((a) => [a.id, a]));
   const ancestors: { id: string; slug: string; title: string; contentType: string; ownerUsername: string | null }[] = [];
-  let current = tree.parentTree as typeof tree.parentTree & { parentTreeId?: string | null } | null;
-  let ancestorDepth = 0;
-  while (current && ancestorDepth < MAX_ANCESTOR_DEPTH) {
-    // Fetch owner username for each ancestor
-    const ancestorWithOwner = await prisma.documentTree.findUnique({
-      where: { id: current.id },
-      select: { id: true, slug: true, title: true, contentType: true, parentTreeId: true, owner: { select: { username: true } } },
-    });
-    if (!ancestorWithOwner) break;
-    ancestors.unshift({
-      id: ancestorWithOwner.id,
-      slug: ancestorWithOwner.slug,
-      title: ancestorWithOwner.title,
-      contentType: ancestorWithOwner.contentType ?? "KERNEL",
-      ownerUsername: ancestorWithOwner.owner.username,
-    });
-    if (!ancestorWithOwner.parentTreeId) break;
-    current = await prisma.documentTree.findUnique({
-      where: { id: ancestorWithOwner.parentTreeId },
-      select: { id: true, slug: true, title: true, contentType: true, parentTreeId: true },
-    }) as typeof current;
-    ancestorDepth++;
+  for (const id of ancestorIds) {
+    const a = ancestorMap.get(id);
+    if (a) {
+      ancestors.push({
+        id: a.id,
+        slug: a.slug,
+        title: a.title,
+        contentType: a.contentType ?? "KERNEL",
+        ownerUsername: a.owner.username,
+      });
+    }
   }
 
   // Build fork tree from current tree (3 levels deep)
@@ -185,9 +199,6 @@ export default async function TreePage({
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      {/* Back button */}
-      <BackButton />
-
       {/* Breadcrumb */}
       {ancestors.length > 0 && (
         <nav className="flex items-center gap-2 text-sm text-text-muted flex-wrap">
@@ -206,6 +217,9 @@ export default async function TreePage({
 
       {/* Header */}
       <div className="bg-surface rounded-2xl border border-border p-6 space-y-5">
+        {/* Back button */}
+        <BackButton />
+
         {/* Author row */}
         <Link href={`/${authorSlug}`} className="flex items-center gap-3 group w-fit">
           {tree.owner.image ? (

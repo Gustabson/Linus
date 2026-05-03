@@ -10,6 +10,7 @@ import { TreePublishButton } from "@/components/trees/TreePublishButton";
 import { DocActionBar } from "@/components/documents/DocActionBar";
 import { DocExportButton } from "@/components/documents/DocExportButton";
 import { TreeTitleEditor } from "@/components/documents/TreeTitleEditor";
+import { BackButton } from "@/components/shared/BackButton";
 
 export const dynamic = "force-dynamic";
 
@@ -107,7 +108,9 @@ export default async function DocumentPage({
           />
         ) : (
           /* Module / resource: keep the full header with title + actions */
-          <div className="flex items-start justify-between gap-4 flex-wrap">
+          <>
+            <BackButton />
+            <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium mb-2 ${style.badgeCls}`}>
                 {style.icon}
@@ -161,6 +164,7 @@ export default async function DocumentPage({
               </Link>
             </div>
           </div>
+          </>
         )}
       </div>
 
