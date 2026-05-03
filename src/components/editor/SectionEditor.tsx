@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useState } from "react";
+import { useEditor, EditorContent, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import CharacterCount from "@tiptap/extension-character-count";
@@ -33,7 +33,6 @@ export function SectionEditor({
   editable = true,
 }: SectionEditorProps) {
   const [showHighlightColors, setShowHighlightColors] = useState(false);
-  const [, setSelTick] = useState(0);
 
   const editor = useEditor({
     extensions: [
@@ -52,13 +51,28 @@ export function SectionEditor({
     },
   });
 
-  // Re-render toolbar when cursor moves (TipTap v3 doesn't do this automatically)
-  useEffect(() => {
-    if (!editor) return;
-    const refresh = () => setSelTick(t => t + 1);
-    editor.on("selectionUpdate", refresh);
-    return () => { editor.off("selectionUpdate", refresh); };
-  }, [editor]);
+  const is = useEditorState({
+    editor,
+    selector: (ctx) => ({
+      bold:        ctx.editor?.isActive("bold")                  ?? false,
+      italic:      ctx.editor?.isActive("italic")                ?? false,
+      underline:   ctx.editor?.isActive("underline")             ?? false,
+      strike:      ctx.editor?.isActive("strike")                ?? false,
+      highlight:   ctx.editor?.isActive("highlight")             ?? false,
+      paragraph:   ctx.editor?.isActive("paragraph")             ?? false,
+      h1:          ctx.editor?.isActive("heading", { level: 1 }) ?? false,
+      h2:          ctx.editor?.isActive("heading", { level: 2 }) ?? false,
+      h3:          ctx.editor?.isActive("heading", { level: 3 }) ?? false,
+      bulletList:  ctx.editor?.isActive("bulletList")            ?? false,
+      orderedList: ctx.editor?.isActive("orderedList")           ?? false,
+      blockquote:  ctx.editor?.isActive("blockquote")            ?? false,
+      code:        ctx.editor?.isActive("code")                  ?? false,
+      codeBlock:   ctx.editor?.isActive("codeBlock")             ?? false,
+      link:        ctx.editor?.isActive("link")                  ?? false,
+      alignLeft:   ctx.editor?.isActive({ textAlign: "left"   }) ?? false,
+      alignCenter: ctx.editor?.isActive({ textAlign: "center" }) ?? false,
+    }),
+  });
 
   if (!editor) return null;
 
@@ -84,10 +98,10 @@ export function SectionEditor({
     <div className="border border-border rounded-xl bg-surface">
       {editable && (
         <div className="flex flex-wrap items-center gap-0.5 p-2 border-b border-border-subtle bg-bg rounded-t-xl">
-          {btn(editor.isActive("bold"),      () => editor.chain().focus().toggleBold().run(),      "Negrita",        <Bold           className="w-4 h-4" />)}
-          {btn(editor.isActive("italic"),    () => editor.chain().focus().toggleItalic().run(),    "Cursiva",        <Italic         className="w-4 h-4" />)}
-          {btn(editor.isActive("underline"), () => editor.chain().focus().toggleUnderline().run(), "Subrayado",      <UnderlineIcon  className="w-4 h-4" />)}
-          {btn(editor.isActive("strike"),    () => editor.chain().focus().toggleStrike().run(),    "Tachado",        <Strikethrough  className="w-4 h-4" />)}
+          {btn(is.bold,      () => editor.chain().focus().toggleBold().run(),      "Negrita",        <Bold           className="w-4 h-4" />)}
+          {btn(is.italic,    () => editor.chain().focus().toggleItalic().run(),    "Cursiva",        <Italic         className="w-4 h-4" />)}
+          {btn(is.underline, () => editor.chain().focus().toggleUnderline().run(), "Subrayado",      <UnderlineIcon  className="w-4 h-4" />)}
+          {btn(is.strike,    () => editor.chain().focus().toggleStrike().run(),    "Tachado",        <Strikethrough  className="w-4 h-4" />)}
 
           {/* Highlight con colores inline */}
           <button
@@ -96,7 +110,7 @@ export function SectionEditor({
             onMouseDown={(e) => { e.preventDefault(); setShowHighlightColors(v => !v); }}
             className={cn(
               "p-1.5 rounded-md transition-colors",
-              editor.isActive("highlight") || showHighlightColors
+              is.highlight || showHighlightColors
                 ? "bg-primary/10 text-primary"
                 : "text-text-muted hover:bg-border-subtle hover:text-text"
             )}
@@ -121,28 +135,28 @@ export function SectionEditor({
           {sep}
 
           {/* Párrafo y headings: P → H3 → H2 → H1 */}
-          {btn(editor.isActive("paragraph"), () => editor.chain().focus().setParagraph().run(), "Párrafo normal",
+          {btn(is.paragraph, () => editor.chain().focus().setParagraph().run(), "Párrafo normal",
             <span className="text-[11px] font-bold leading-none w-4 h-4 flex items-center justify-center">P</span>)}
-          {btn(editor.isActive("heading", { level: 3 }), () => editor.chain().focus().toggleHeading({ level: 3 }).run(), "Título pequeño (H3)", <Heading3 className="w-4 h-4" />)}
-          {btn(editor.isActive("heading", { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), "Título mediano (H2)", <Heading2 className="w-4 h-4" />)}
-          {btn(editor.isActive("heading", { level: 1 }), () => editor.chain().focus().toggleHeading({ level: 1 }).run(), "Título grande (H1)",  <Heading1 className="w-4 h-4" />)}
+          {btn(is.h3, () => editor.chain().focus().toggleHeading({ level: 3 }).run(), "Título pequeño (H3)", <Heading3 className="w-4 h-4" />)}
+          {btn(is.h2, () => editor.chain().focus().toggleHeading({ level: 2 }).run(), "Título mediano (H2)", <Heading2 className="w-4 h-4" />)}
+          {btn(is.h1, () => editor.chain().focus().toggleHeading({ level: 1 }).run(), "Título grande (H1)",  <Heading1 className="w-4 h-4" />)}
 
           {sep}
 
-          {btn(editor.isActive("bulletList"),  () => editor.chain().focus().toggleBulletList().run(),  "Lista",          <List         className="w-4 h-4" />)}
-          {btn(editor.isActive("orderedList"), () => editor.chain().focus().toggleOrderedList().run(), "Lista numerada", <ListOrdered  className="w-4 h-4" />)}
-          {btn(editor.isActive("blockquote"),  () => editor.chain().focus().toggleBlockquote().run(),  "Cita",           <Quote        className="w-4 h-4" />)}
+          {btn(is.bulletList,  () => editor.chain().focus().toggleBulletList().run(),  "Lista",          <List         className="w-4 h-4" />)}
+          {btn(is.orderedList, () => editor.chain().focus().toggleOrderedList().run(), "Lista numerada", <ListOrdered  className="w-4 h-4" />)}
+          {btn(is.blockquote,  () => editor.chain().focus().toggleBlockquote().run(),  "Cita",           <Quote        className="w-4 h-4" />)}
 
           {sep}
 
-          {btn(editor.isActive("code"),      () => editor.chain().focus().toggleCode().run(),      "Código inline",  <Code    className="w-4 h-4" />)}
-          {btn(editor.isActive("codeBlock"), () => editor.chain().focus().toggleCodeBlock().run(), "Bloque código",  <CodeXml className="w-4 h-4" />)}
+          {btn(is.code,      () => editor.chain().focus().toggleCode().run(),      "Código inline",  <Code    className="w-4 h-4" />)}
+          {btn(is.codeBlock, () => editor.chain().focus().toggleCodeBlock().run(), "Bloque código",  <CodeXml className="w-4 h-4" />)}
           {btn(false, () => editor.chain().focus().setHorizontalRule().run(), "Separador", <Minus className="w-4 h-4" />)}
 
           {sep}
 
-          {btn(editor.isActive({ textAlign: "left" }),   () => editor.chain().focus().setTextAlign("left").run(),   "Izquierda", <AlignLeft   className="w-4 h-4" />)}
-          {btn(editor.isActive({ textAlign: "center" }), () => editor.chain().focus().setTextAlign("center").run(), "Centro",    <AlignCenter className="w-4 h-4" />)}
+          {btn(is.alignLeft,   () => editor.chain().focus().setTextAlign("left").run(),   "Izquierda", <AlignLeft   className="w-4 h-4" />)}
+          {btn(is.alignCenter, () => editor.chain().focus().setTextAlign("center").run(), "Centro",    <AlignCenter className="w-4 h-4" />)}
 
           {sep}
 

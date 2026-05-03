@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useTransition, useEffect, useRef, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
@@ -131,14 +131,28 @@ export function CorreosRedactar({
     autoSaveTimer.current = setTimeout(() => doAutoSave(subj, html), 5 * 60 * 1000); // 5 min
   }, [editor, doAutoSave]);
 
-  // Re-render toolbar when cursor moves (TipTap v3 doesn't do this automatically)
-  const [, setSelTick] = useState(0);
-  useEffect(() => {
-    if (!editor) return;
-    const refresh = () => setSelTick(t => t + 1);
-    editor.on("selectionUpdate", refresh);
-    return () => { editor.off("selectionUpdate", refresh); };
-  }, [editor]);
+  // Reactive toolbar state — useEditorState is TipTap v3's proper way to track
+  // isActive() so buttons update whenever the cursor moves or content changes
+  const is = useEditorState({
+    editor,
+    selector: (ctx) => ({
+      bold:        ctx.editor?.isActive("bold")               ?? false,
+      italic:      ctx.editor?.isActive("italic")             ?? false,
+      underline:   ctx.editor?.isActive("underline")          ?? false,
+      highlight:   ctx.editor?.isActive("highlight")          ?? false,
+      paragraph:   ctx.editor?.isActive("paragraph")          ?? false,
+      h1:          ctx.editor?.isActive("heading", { level: 1 }) ?? false,
+      h2:          ctx.editor?.isActive("heading", { level: 2 }) ?? false,
+      h3:          ctx.editor?.isActive("heading", { level: 3 }) ?? false,
+      bulletList:  ctx.editor?.isActive("bulletList")         ?? false,
+      orderedList: ctx.editor?.isActive("orderedList")        ?? false,
+      blockquote:  ctx.editor?.isActive("blockquote")         ?? false,
+      link:        ctx.editor?.isActive("link")               ?? false,
+      alignLeft:   ctx.editor?.isActive({ textAlign: "left"   }) ?? false,
+      alignCenter: ctx.editor?.isActive({ textAlign: "center" }) ?? false,
+      alignRight:  ctx.editor?.isActive({ textAlign: "right"  }) ?? false,
+    }),
+  });
 
   // Listen for editor content changes
   useEffect(() => {
@@ -169,7 +183,7 @@ export function CorreosRedactar({
   function toggleEmoji() {
     if (!showEmoji && emojiBtnRef.current) {
       const r    = emojiBtnRef.current.getBoundingClientRect();
-      const left = Math.max(8, Math.min(r.left, window.innerWidth - 288 - 16));
+      const left = Math.max(8, Math.round((window.innerWidth - 288) / 2));
       setEmojiStyle({ position: "fixed", top: r.bottom + 4, left, zIndex: 200 });
     }
     setShowEmoji(v => !v);
@@ -351,11 +365,11 @@ export function CorreosRedactar({
       {/* ── Toolbar ─────────────────────────────────────────────────── */}
       {editor && (
         <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-border-subtle flex-wrap bg-bg">
-          <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Negrita"><Bold className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} title="Cursiva"><Italic className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} title="Subrayado"><UnderlineIcon className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()} active={is.bold} title="Negrita"><Bold className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={is.italic} title="Cursiva"><Italic className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={is.underline} title="Subrayado"><UnderlineIcon className="w-3.5 h-3.5" /></ToolBtn>
           {/* Highlight con colores inline */}
-          <ToolBtn onClick={() => setShowHighlightColors(v => !v)} active={editor.isActive("highlight") || showHighlightColors} title="Resaltado">
+          <ToolBtn onClick={() => setShowHighlightColors(v => !v)} active={is.highlight || showHighlightColors} title="Resaltado">
             <Highlighter className="w-3.5 h-3.5" />
           </ToolBtn>
           {showHighlightColors && (
@@ -375,28 +389,28 @@ export function CorreosRedactar({
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          <ToolBtn onClick={() => editor.chain().focus().setParagraph().run()} active={editor.isActive("paragraph")} title="Párrafo normal">
+          <ToolBtn onClick={() => editor.chain().focus().setParagraph().run()} active={is.paragraph} title="Párrafo normal">
             <span className="text-[11px] font-bold leading-none">P</span>
           </ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Título pequeño (H3)"><Heading3 className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} title="Título mediano (H2)"><Heading2 className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive("heading", { level: 1 })} title="Título grande (H1)"><Heading1 className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={is.h3} title="Título pequeño (H3)"><Heading3 className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={is.h2} title="Título mediano (H2)"><Heading2 className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={is.h1} title="Título grande (H1)"><Heading1 className="w-3.5 h-3.5" /></ToolBtn>
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          <ToolBtn onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} title="Lista con viñetas"><List className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} title="Lista numerada"><ListOrdered className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")} title="Cita"><Quote className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleBulletList().run()} active={is.bulletList} title="Lista con viñetas"><List className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={is.orderedList} title="Lista numerada"><ListOrdered className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleBlockquote().run()} active={is.blockquote} title="Cita"><Quote className="w-3.5 h-3.5" /></ToolBtn>
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("left").run()} active={editor.isActive({ textAlign: "left" })} title="Izquierda"><AlignLeft className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("center").run()} active={editor.isActive({ textAlign: "center" })} title="Centrar"><AlignCenter className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("right").run()} active={editor.isActive({ textAlign: "right" })} title="Derecha"><AlignRight className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("left").run()} active={is.alignLeft} title="Izquierda"><AlignLeft className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("center").run()} active={is.alignCenter} title="Centrar"><AlignCenter className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("right").run()} active={is.alignRight} title="Derecha"><AlignRight className="w-3.5 h-3.5" /></ToolBtn>
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          <ToolBtn onClick={setLink} active={editor.isActive("link")} title="Enlace"><LinkIcon className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={setLink} active={is.link} title="Enlace"><LinkIcon className="w-3.5 h-3.5" /></ToolBtn>
 
           {/* Emoji — fixed so overflow-hidden del container no lo corta */}
           <button
