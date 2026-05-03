@@ -1,30 +1,10 @@
 "use client";
 
-import { useState, useCallback, useTransition, useEffect, useRef, type CSSProperties } from "react";
+import { useState, useCallback, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useEditor, EditorContent, useEditorState } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
-import Highlight from "@tiptap/extension-highlight";
-import TextAlign from "@tiptap/extension-text-align";
-import TiptapLink from "@tiptap/extension-link";
-import Placeholder from "@tiptap/extension-placeholder";
-import {
-  Send, Save, Loader2, Trash2,
-  Bold, Italic, Underline as UnderlineIcon,
-  List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
-  Link as LinkIcon, Heading1, Heading2, Heading3, Highlighter, Quote, Smile,
-  Check,
-} from "lucide-react";
+import { Send, Save, Loader2, Trash2, Check } from "lucide-react";
+import { RichEditor } from "@/components/editor/RichEditor";
 import { UserSearchInput } from "./UserSearchInput";
-
-// ── Emoji data ─────────────────────────────────────────────────────────────────
-const EMOJI_GROUPS: { label: string; emojis: string[] }[] = [
-  { label: "Frecuentes",  emojis: ["😊","👍","❤️","🎉","🙏","😂","🔥","✅","⭐","💡","📚","✏️","🧠","🎓","💪"] },
-  { label: "Académico",   emojis: ["📖","📝","📌","📎","🔍","📊","📈","🧪","🔬","⚗️","🧮","📐","📏","💻","🖊️"] },
-  { label: "Expresiones", emojis: ["😀","😎","🤔","🤩","😍","🥳","😅","🤗","👏","🙌","💯","🚀","⚡","🌟","✨"] },
-  { label: "Naturaleza",  emojis: ["🌱","🌿","🍃","🌸","🌍","🌊","🦋","🐦","🌞","🌈","❄️","🍀","🌻","🌺","🍁"] },
-];
 
 interface Props {
   draftId?:          string;
@@ -48,52 +28,20 @@ export function CorreosRedactar({
   const [saving,    startSave]    = useTransition();
   const [error,     setError]     = useState("");
   const [sent,      setSent]      = useState(false);
-  const [showEmoji,           setShowEmoji]           = useState(false);
-  const [emojiStyle,          setEmojiStyle]          = useState<CSSProperties>({});
-  const [showHighlightColors, setShowHighlightColors] = useState(false);
-  const [linkModalOpen,       setLinkModalOpen]       = useState(false);
-  const [linkUrl,             setLinkUrl]             = useState("");
-  const emojiDropRef = useRef<HTMLDivElement>(null);
-  const emojiBtnRef  = useRef<HTMLButtonElement>(null);
 
-  // ── Auto-save state ───────────────────────────────────────────────────────
-  const savedDraftId    = useRef<string | null>(draftId ?? null);
-  const autoSaveTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const subjectRef      = useRef(subject);
-  const sentRef         = useRef(false);
+  // Latest HTML body — updated on every editor change via onChange prop
+  const bodyRef = useRef(initialBody);
+
+  // ── Auto-save ─────────────────────────────────────────────────────────────
+  const savedDraftId  = useRef<string | null>(draftId ?? null);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const subjectRef    = useRef(subject);
+  const sentRef       = useRef(false);
   const [autoSaveState, setAutoSaveState] = useState<"idle" | "saving" | "saved">("idle");
 
-  useEffect(() => { subjectRef.current  = subject; }, [subject]);
-  useEffect(() => { sentRef.current     = sent;    }, [sent]);
+  useEffect(() => { subjectRef.current = subject; }, [subject]);
+  useEffect(() => { sentRef.current    = sent;    }, [sent]);
 
-  // ── Editor ────────────────────────────────────────────────────────────────
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Underline,
-      Highlight.configure({ multicolor: true }),
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-      TiptapLink.configure({
-        openOnClick:    false,
-        HTMLAttributes: { target: "_blank", rel: "noopener noreferrer" },
-      }),
-      Placeholder.configure({ placeholder: "Escribí tu mensaje acá..." }),
-    ],
-    editorProps: {
-      attributes: {
-        class: "prose prose-base max-w-none focus:outline-none min-h-[280px] px-1 py-2 text-text",
-      },
-    },
-    content: initialBody || "",
-  });
-
-  useEffect(() => {
-    if (editor && initialBody && editor.isEmpty) {
-      editor.commands.setContent(initialBody);
-    }
-  }, [editor, initialBody]);
-
-  // ── Auto-save logic ───────────────────────────────────────────────────────
   const doAutoSave = useCallback(async (subj: string, html: string) => {
     const hasContent = subj.trim() || (html && html !== "<p></p>");
     if (!hasContent || sentRef.current) return;
@@ -103,15 +51,13 @@ export function CorreosRedactar({
       let res: Response;
       if (savedDraftId.current) {
         res = await fetch(`/api/correos/${savedDraftId.current}`, {
-          method:  "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ subject: subj || "Borrador sin título", htmlBody: html, isDraft: true }),
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject: subj || "Borrador sin título", htmlBody: html, isDraft: true }),
         });
       } else {
         res = await fetch("/api/correos", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({ subject: subj || "Borrador sin título", htmlBody: html, isDraft: true }),
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subject: subj || "Borrador sin título", htmlBody: html, isDraft: true }),
         });
         if (res.ok) {
           const data = await res.json();
@@ -125,78 +71,25 @@ export function CorreosRedactar({
   }, []);
 
   const triggerAutoSave = useCallback(() => {
-    if (sentRef.current || !editor) return;
+    if (sentRef.current) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     setAutoSaveState("idle");
     const subj = subjectRef.current;
-    const html = editor.getHTML();
-    autoSaveTimer.current = setTimeout(() => doAutoSave(subj, html), 5 * 60 * 1000); // 5 min
-  }, [editor, doAutoSave]);
+    const html = bodyRef.current;
+    autoSaveTimer.current = setTimeout(() => doAutoSave(subj, html), 5 * 60 * 1000);
+  }, [doAutoSave]);
 
-  // Reactive toolbar state — useEditorState is TipTap v3's proper way to track
-  // isActive() so buttons update whenever the cursor moves or content changes
-  const is = useEditorState({
-    editor,
-    selector: (ctx) => ({
-      bold:        ctx.editor?.isActive("bold")               ?? false,
-      italic:      ctx.editor?.isActive("italic")             ?? false,
-      underline:   ctx.editor?.isActive("underline")          ?? false,
-      highlight:   ctx.editor?.isActive("highlight")          ?? false,
-      paragraph:   ctx.editor?.isActive("paragraph")          ?? false,
-      h1:          ctx.editor?.isActive("heading", { level: 1 }) ?? false,
-      h2:          ctx.editor?.isActive("heading", { level: 2 }) ?? false,
-      h3:          ctx.editor?.isActive("heading", { level: 3 }) ?? false,
-      bulletList:  ctx.editor?.isActive("bulletList")         ?? false,
-      orderedList: ctx.editor?.isActive("orderedList")        ?? false,
-      blockquote:  ctx.editor?.isActive("blockquote")         ?? false,
-      link:        ctx.editor?.isActive("link")               ?? false,
-      alignLeft:   ctx.editor?.isActive({ textAlign: "left"   }) ?? false,
-      alignCenter: ctx.editor?.isActive({ textAlign: "center" }) ?? false,
-      alignRight:  ctx.editor?.isActive({ textAlign: "right"  }) ?? false,
-    }),
-  });
-
-  // Listen for editor content changes
-  useEffect(() => {
-    if (!editor) return;
-    editor.on("update", triggerAutoSave);
-    return () => { editor.off("update", triggerAutoSave); };
-  }, [editor, triggerAutoSave]);
-
-  // Listen for subject changes
+  // Also trigger on subject change
   useEffect(() => {
     triggerAutoSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subject]);
 
-  // ── Close emoji on outside click ─────────────────────────────────────────
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      const target = e.target as Node;
-      if (
-        !emojiDropRef.current?.contains(target) &&
-        !emojiBtnRef.current?.contains(target)
-      ) setShowEmoji(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  function toggleEmoji() {
-    if (!showEmoji && emojiBtnRef.current) {
-      const r    = emojiBtnRef.current.getBoundingClientRect();
-      const left = Math.max(8, Math.round((window.innerWidth - 288) / 2));
-      setEmojiStyle({ position: "fixed", top: r.bottom + 4, left, zIndex: 200 });
-    }
-    setShowEmoji(v => !v);
-  }
-
   // ── Send ──────────────────────────────────────────────────────────────────
   const handleSend = useCallback(() => {
-    if (!editor) return;
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); // cancel pending auto-save
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     setError("");
-    const htmlBody = editor.getHTML();
+    const htmlBody = bodyRef.current;
     const idToUse  = savedDraftId.current;
 
     startSend(async () => {
@@ -217,14 +110,13 @@ export function CorreosRedactar({
       setSent(true);
       setTimeout(() => router.push("/correos/enviados"), 1200);
     });
-  }, [editor, subject, recipient, router]);
+  }, [subject, recipient, router]);
 
-  // ── Save draft (desktop explicit button) ─────────────────────────────────
+  // ── Save draft ────────────────────────────────────────────────────────────
   const handleSaveDraft = useCallback(() => {
-    if (!editor) return;
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     setError("");
-    const htmlBody = editor.getHTML();
+    const htmlBody = bodyRef.current;
     const idToUse  = savedDraftId.current;
 
     startSave(async () => {
@@ -243,57 +135,15 @@ export function CorreosRedactar({
       if (res.ok) router.push("/correos/borradores");
       else { const data = await res.json().catch(() => ({})); setError(data.error ?? "Error al guardar el borrador."); }
     });
-  }, [editor, subject, recipient, router]);
+  }, [subject, recipient, router]);
 
   function handleDiscard() {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     router.push(isEditingDraft ? "/correos/borradores" : "/correos");
   }
 
-  function openLinkModal() {
-    if (!editor) return;
-    const prev = editor.getAttributes("link").href as string | undefined;
-    setLinkUrl(prev ?? "");
-    setLinkModalOpen(true);
-  }
-
-  function applyLink() {
-    if (!editor) return;
-    const raw = linkUrl.trim();
-    if (!raw) {
-      editor.chain().focus().unsetLink().run();
-    } else {
-      const href = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-      editor.chain().focus().setLink({ href }).run();
-    }
-    setLinkModalOpen(false);
-  }
-
-  function insertEmoji(emoji: string) {
-    editor?.chain().focus().insertContent(emoji).run();
-    setShowEmoji(false);
-  }
-
-  // ── Toolbar button ────────────────────────────────────────────────────────
-  const ToolBtn = ({
-    onClick, active = false, title, children,
-  }: { onClick: () => void; active?: boolean; title: string; children: React.ReactNode }) => (
-    <button
-      type="button"
-      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
-      title={title}
-      className={`p-1.5 rounded-lg transition-colors ${
-        active
-          ? "bg-primary/10 text-primary"
-          : "text-text-muted hover:bg-border-subtle hover:text-text"
-      }`}
-    >
-      {children}
-    </button>
-  );
-
-  // ── Auto-save status label ────────────────────────────────────────────────
-  const AutoSaveLabel = () => {
+  // ── Auto-save label ───────────────────────────────────────────────────────
+  function AutoSaveLabel() {
     if (autoSaveState === "saving") return (
       <span className="flex items-center gap-1 text-xs text-text-subtle">
         <Loader2 className="w-3 h-3 animate-spin" /> Guardando...
@@ -305,8 +155,9 @@ export function CorreosRedactar({
       </span>
     );
     return null;
-  };
+  }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-full">
 
@@ -360,7 +211,7 @@ export function CorreosRedactar({
         </div>
       </div>
 
-      {/* ── Fields ──────────────────────────────────────────────────── */}
+      {/* ── Para / Asunto ────────────────────────────────────────────── */}
       <div className="border-b border-border-subtle divide-y divide-border-subtle">
         <div className="flex items-center gap-3 px-4 sm:px-6 py-3">
           <span className="text-sm text-text-subtle w-12 sm:w-16 shrink-0">Para</span>
@@ -374,128 +225,17 @@ export function CorreosRedactar({
         </div>
       </div>
 
-      {/* ── Toolbar ─────────────────────────────────────────────────── */}
-      {editor && (
-        <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-border-subtle flex-wrap bg-bg">
-          <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()} active={is.bold} title="Negrita"><Bold className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={is.italic} title="Cursiva"><Italic className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={is.underline} title="Subrayado"><UnderlineIcon className="w-3.5 h-3.5" /></ToolBtn>
-          {/* Highlight con colores inline */}
-          <ToolBtn onClick={() => setShowHighlightColors(v => !v)} active={is.highlight || showHighlightColors} title="Resaltado">
-            <Highlighter className="w-3.5 h-3.5" />
-          </ToolBtn>
-          {showHighlightColors && (
-            <>
-              {["#fef08a","#bbf7d0","#bfdbfe","#fecdd3","#fed7aa"].map(color => (
-                <button key={color} type="button"
-                  onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().setHighlight({ color }).run(); setShowHighlightColors(false); }}
-                  className="w-5 h-5 rounded border border-border/60 hover:scale-110 transition-transform shrink-0"
-                  style={{ backgroundColor: color }} title="Aplicar color" />
-              ))}
-              <button type="button"
-                onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().unsetHighlight().run(); setShowHighlightColors(false); }}
-                className="w-5 h-5 rounded border border-border flex items-center justify-center text-[10px] text-text-muted hover:text-text hover:bg-bg transition-colors shrink-0"
-                title="Quitar resaltado">✕</button>
-            </>
-          )}
-
-          <div className="w-px h-4 bg-border mx-1" />
-
-          <ToolBtn onClick={() => editor.chain().focus().setParagraph().run()} active={is.paragraph} title="Párrafo normal">
-            <span className="text-[11px] font-bold leading-none">P</span>
-          </ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={is.h3} title="Título pequeño (H3)"><Heading3 className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={is.h2} title="Título mediano (H2)"><Heading2 className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={is.h1} title="Título grande (H1)"><Heading1 className="w-3.5 h-3.5" /></ToolBtn>
-
-          <div className="w-px h-4 bg-border mx-1" />
-
-          <ToolBtn onClick={() => editor.chain().focus().toggleBulletList().run()} active={is.bulletList} title="Lista con viñetas"><List className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={is.orderedList} title="Lista numerada"><ListOrdered className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleBlockquote().run()} active={is.blockquote} title="Cita"><Quote className="w-3.5 h-3.5" /></ToolBtn>
-
-          <div className="w-px h-4 bg-border mx-1" />
-
-          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("left").run()} active={is.alignLeft} title="Izquierda"><AlignLeft className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("center").run()} active={is.alignCenter} title="Centrar"><AlignCenter className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("right").run()} active={is.alignRight} title="Derecha"><AlignRight className="w-3.5 h-3.5" /></ToolBtn>
-
-          <div className="w-px h-4 bg-border mx-1" />
-
-          <ToolBtn onClick={openLinkModal} active={is.link} title="Enlace"><LinkIcon className="w-3.5 h-3.5" /></ToolBtn>
-
-          {/* Emoji — fixed so overflow-hidden del container no lo corta */}
-          <button
-            ref={emojiBtnRef}
-            type="button"
-            onMouseDown={(e) => { e.preventDefault(); toggleEmoji(); }}
-            title="Emojis"
-            className={`p-1.5 rounded-lg transition-colors ${showEmoji ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-border-subtle hover:text-text"}`}
-          >
-            <Smile className="w-3.5 h-3.5" />
-          </button>
-          {showEmoji && (
-            <div ref={emojiDropRef} style={emojiStyle} className="w-72 bg-surface border border-border rounded-2xl shadow-xl p-3 space-y-2">
-              {EMOJI_GROUPS.map((group) => (
-                <div key={group.label}>
-                  <p className="text-[10px] font-semibold text-text-subtle uppercase tracking-wide mb-1">{group.label}</p>
-                  <div className="flex flex-wrap gap-0.5">
-                    {group.emojis.map((emoji) => (
-                      <button key={emoji} type="button" onClick={() => insertEmoji(emoji)}
-                        className="w-8 h-8 flex items-center justify-center text-lg hover:bg-bg rounded-lg transition-colors">
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* ── Editor ──────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
-        <EditorContent editor={editor} />
-      </div>
-
-      {/* ── Modal de enlace ─────────────────────────────────────────── */}
-      {linkModalOpen && (
-        <>
-          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setLinkModalOpen(false)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5 w-full max-w-sm space-y-3 pointer-events-auto">
-              <p className="text-sm font-semibold text-text">Insertar enlace</p>
-              <input
-                type="url"
-                value={linkUrl}
-                onChange={e => setLinkUrl(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") applyLink(); if (e.key === "Escape") setLinkModalOpen(false); }}
-                placeholder="https://ejemplo.com"
-                autoFocus
-                className="w-full text-sm border border-border rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-bg text-text placeholder:text-text-subtle"
-              />
-              <div className="flex items-center gap-2 justify-end">
-                {is.link && (
-                  <button type="button"
-                    onClick={() => { editor?.chain().focus().unsetLink().run(); setLinkModalOpen(false); }}
-                    className="text-sm text-red-500 hover:text-red-600 px-3 py-1.5 rounded-xl hover:bg-red-50 transition-colors mr-auto">
-                    Quitar enlace
-                  </button>
-                )}
-                <button type="button" onClick={() => setLinkModalOpen(false)}
-                  className="text-sm text-text-muted border border-border px-3 py-1.5 rounded-xl hover:bg-bg transition-colors">
-                  Cancelar
-                </button>
-                <button type="button" onClick={applyLink}
-                  className="text-sm font-semibold bg-primary text-primary-fg px-4 py-1.5 rounded-xl hover:bg-primary-h transition-colors">
-                  Aplicar
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <RichEditor
+        compact
+        showEmoji
+        scrollable
+        contentClassName="px-4 sm:px-6 py-4"
+        minHeight="280px"
+        initialContent={initialBody}
+        placeholder="Escribí tu mensaje acá..."
+        onChange={(html) => { bodyRef.current = html; triggerAutoSave(); }}
+      />
 
       {/* ── Feedback ────────────────────────────────────────────────── */}
       {(error || sent) && (
