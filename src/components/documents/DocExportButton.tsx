@@ -100,8 +100,11 @@ const SHARED_CSS = `
 `;
 
 /**
- * Print version — body padding drives all margins (no @page conflicts).
- * Title stays in the document body.
+ * Print version.
+ * @page handles all four margins on every page (page 2, 3…).
+ * Body padding only provides side margins in the browser popup preview
+ * (where @page doesn't apply). In actual print @media strips body padding
+ * so @page is the sole source of spacing.
  */
 function wrapForPrint(title: string, body: string): string {
   return `<!DOCTYPE html>
@@ -110,13 +113,9 @@ function wrapForPrint(title: string, body: string): string {
   <meta charset="utf-8" />
   <title>${title}</title>
   <style>
-    /* @page handles top + bottom for EVERY page (including page 2, 3…).
-       Left/right are 0 so body padding owns the side margins.        */
-    @page   { margin: 2.54cm 0; }
-    /* Body padding = side margins (works in browser popup AND print).
-       Small top padding only for the browser preview window.         */
-    body    { font-family: Georgia, "Times New Roman", serif; margin: 0; padding: 0.6cm 2.54cm 0; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
-    @media print { body { padding-top: 0; } }
+    @page   { margin: 2.54cm; }
+    body    { font-family: Georgia, "Times New Roman", serif; margin: 0; padding: 0 2.54cm; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
+    @media print { body { padding: 0; } }
     h1.doc-title { font-size: 2.4rem; font-weight: 700; text-align: center; margin: 0 0 0.4em; border-bottom: 2px solid #d1d5db; padding-bottom: 0.4em; }
     ${SHARED_CSS}
   </style>
@@ -129,9 +128,10 @@ function wrapForPrint(title: string, body: string): string {
 }
 
 /**
- * Word version — uses @page with mso margins so Word/LibreOffice
- * places the document title in the page header (running header),
- * which is the desired behaviour.
+ * Word version.
+ * Uses <p> (not <h1>) for the document title so Word/LibreOffice does NOT
+ * place it in the repeating page header — it appears once at the top of
+ * the body. mso-header-margin/footer-margin: 0 prevents any header area.
  */
 function wrapForWord(title: string, body: string): string {
   return `<html xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -144,11 +144,11 @@ function wrapForWord(title: string, body: string): string {
   <style>
     @page {
       margin: 2.54cm;
-      mso-header-margin: 1.25cm;
-      mso-footer-margin: 1.25cm;
+      mso-header-margin: 0;
+      mso-footer-margin: 0;
     }
     body    { font-family: Georgia, "Times New Roman", serif; font-size: 12pt; color: #1a1a1a; line-height: 1.5; }
-    h1.doc-title { font-size: 18pt; font-weight: 700; text-align: center; margin: 0 0 6pt; border-bottom: 1pt solid #d1d5db; padding-bottom: 4pt; }
+    p.doc-title { font-size: 18pt; font-weight: 700; text-align: center; margin: 0 0 6pt; border-bottom: 1pt solid #d1d5db; padding-bottom: 4pt; }
     .section-title   { font-size: 14pt; font-weight: 700; text-align: center; margin: 18pt 0 8pt; }
     .section-body h1 { font-size: 16pt; font-weight: 700; margin: 12pt 0 4pt; }
     .section-body h2 { font-size: 14pt; font-weight: 600; margin: 10pt 0 4pt; }
@@ -168,7 +168,7 @@ function wrapForWord(title: string, body: string): string {
   </style>
 </head>
 <body>
-  <h1 class="doc-title">${title}</h1>
+  <p class="doc-title">${title}</p>
   ${body}
 </body>
 </html>`;
