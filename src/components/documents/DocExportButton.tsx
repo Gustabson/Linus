@@ -76,18 +76,9 @@ function buildBodyHTML(sections: ExportSection[]): string {
     .join('<hr class="section-sep" />');
 }
 
-function wrapInDocument(title: string, body: string): string {
-  return `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <title>${title}</title>
-  <style>
-    @page { margin: 2.54cm; }
-    body          { font-family: Georgia, "Times New Roman", serif; max-width: 800px; margin: 0 auto; padding: 0.6cm 2.54cm; box-sizing: border-box; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
-    @media print  { body { max-width: 100%; padding: 0; margin: 0; } }
-    h1.doc-title  { font-size: 2.4rem; font-weight: 700; text-align: center; margin: 0 0 0.4em; border-bottom: 2px solid #d1d5db; padding-bottom: 0.4em; }
-    .section-title{ font-size: 1.4rem; font-weight: 700; text-align: center; margin: 3rem 0 1rem; color: #111; }
+// Shared typography styles used in both print and Word
+const SHARED_CSS = `
+    .section-title   { font-size: 1.4rem; font-weight: 700; text-align: center; margin: 2.5rem 0 1rem; color: #111; }
     .section-body h1 { font-size: 1.875rem; font-weight: 700; margin: 0.75em 0 0.4em; }
     .section-body h2 { font-size: 1.5rem;   font-weight: 600; margin: 0.75em 0 0.4em; }
     .section-body h3 { font-size: 1.25rem;  font-weight: 600; margin: 0.75em 0 0.4em; }
@@ -106,6 +97,69 @@ function wrapInDocument(title: string, body: string): string {
     mark          { background-color: #fef08a; padding: 0.05em 0.1em; }
     a             { color: #6366f1; text-decoration: underline; }
     .section-sep  { border: none; border-top: 1px solid #d1d5db; margin: 2rem 0; }
+`;
+
+/**
+ * Print version — body padding drives all margins (no @page conflicts).
+ * Title stays in the document body.
+ */
+function wrapForPrint(title: string, body: string): string {
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>${title}</title>
+  <style>
+    @page   { margin: 0; }
+    body    { font-family: Georgia, "Times New Roman", serif; margin: 0; padding: 2.54cm; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
+    h1.doc-title { font-size: 2.4rem; font-weight: 700; text-align: center; margin: 0 0 0.4em; border-bottom: 2px solid #d1d5db; padding-bottom: 0.4em; }
+    ${SHARED_CSS}
+  </style>
+</head>
+<body>
+  <h1 class="doc-title">${title}</h1>
+  ${body}
+</body>
+</html>`;
+}
+
+/**
+ * Word version — uses @page with mso margins so Word/LibreOffice
+ * places the document title in the page header (running header),
+ * which is the desired behaviour.
+ */
+function wrapForWord(title: string, body: string): string {
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns:w="urn:schemas-microsoft-com:office:word"
+  xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+  <meta charset="utf-8"/>
+  <meta name=ProgId content=Word.Document>
+  <title>${title}</title>
+  <style>
+    @page {
+      margin: 2.54cm;
+      mso-header-margin: 1.25cm;
+      mso-footer-margin: 1.25cm;
+    }
+    body    { font-family: Georgia, "Times New Roman", serif; font-size: 12pt; color: #1a1a1a; line-height: 1.5; }
+    h1.doc-title { font-size: 18pt; font-weight: 700; text-align: center; margin: 0 0 6pt; border-bottom: 1pt solid #d1d5db; padding-bottom: 4pt; }
+    .section-title   { font-size: 14pt; font-weight: 700; text-align: center; margin: 18pt 0 8pt; }
+    .section-body h1 { font-size: 16pt; font-weight: 700; margin: 12pt 0 4pt; }
+    .section-body h2 { font-size: 14pt; font-weight: 600; margin: 10pt 0 4pt; }
+    .section-body h3 { font-size: 12pt; font-weight: 600; margin: 8pt 0 4pt; }
+    p             { margin: 0 0 6pt; }
+    ul            { list-style: disc;    padding-left: 1.5cm; margin-bottom: 6pt; }
+    ol            { list-style: decimal; padding-left: 1.5cm; margin-bottom: 6pt; }
+    li            { margin-bottom: 2pt; }
+    blockquote    { border-left: 3pt solid #6366f1; padding-left: 12pt; color: #555; margin: 8pt 0; font-style: italic; }
+    code          { background: #f3f4f6; font-family: "Courier New", monospace; font-size: 10pt; }
+    strong        { font-weight: 700; }
+    em            { font-style: italic; }
+    u             { text-decoration: underline; }
+    s             { text-decoration: line-through; }
+    mark          { background-color: #fef08a; }
+    .section-sep  { border-top: 1pt solid #d1d5db; margin: 12pt 0; }
   </style>
 </head>
 <body>
@@ -145,7 +199,7 @@ export function DocExportButton({ title, sections: initialSections, treeSlug, do
   // ── Actions ───────────────────────────────────────────────────────────────
 
   function doPrint(sects: ExportSection[]) {
-    const html = wrapInDocument(title, buildBodyHTML(sects));
+    const html = wrapForPrint(title, buildBodyHTML(sects));
     const win  = window.open("", "_blank", "width=900,height=700");
     if (!win) return;
     win.document.write(html);
@@ -155,7 +209,7 @@ export function DocExportButton({ title, sections: initialSections, treeSlug, do
   }
 
   function doWord(sects: ExportSection[]) {
-    const html = wrapInDocument(title, buildBodyHTML(sects));
+    const html = wrapForWord(title, buildBodyHTML(sects));
     const blob = new Blob(["\ufeff", html], { type: "application/msword;charset=utf-8" });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
