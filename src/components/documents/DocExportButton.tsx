@@ -113,9 +113,16 @@ function wrapForPrint(title: string, body: string): string {
   <meta charset="utf-8" />
   <title>${title}</title>
   <style>
-    @page   { margin: 2.54cm; }
-    body    { font-family: Georgia, "Times New Roman", serif; margin: 0; padding: 0 2.54cm; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
-    @media print { body { padding: 0; } }
+    /* Two-layer margin strategy for cross-browser/OS reliability:
+       @page  → native print margins, applies to EVERY page in print
+               (Chrome, Edge, Firefox desktop — all support this).
+       body   → visual margins in the browser popup preview (where @page
+               doesn't apply) AND fallback for any print engine that
+               ignores @page.
+       @media print removes body margin so both layers don't stack.    */
+    @page        { margin: 2.54cm; }
+    body         { font-family: Georgia, "Times New Roman", serif; margin: 2.54cm; padding: 0; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
+    @media print { body { margin: 0; } }
     h1.doc-title { font-size: 2.4rem; font-weight: 700; text-align: center; margin: 0 0 0.4em; border-bottom: 2px solid #d1d5db; padding-bottom: 0.4em; }
     ${SHARED_CSS}
   </style>
