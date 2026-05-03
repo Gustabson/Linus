@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -33,6 +33,7 @@ export function SectionEditor({
   editable = true,
 }: SectionEditorProps) {
   const [showHighlightColors, setShowHighlightColors] = useState(false);
+  const [, setSelTick] = useState(0);
 
   const editor = useEditor({
     extensions: [
@@ -50,6 +51,14 @@ export function SectionEditor({
       onChange?.(editor.getJSON());
     },
   });
+
+  // Re-render toolbar when cursor moves (TipTap v3 doesn't do this automatically)
+  useEffect(() => {
+    if (!editor) return;
+    const refresh = () => setSelTick(t => t + 1);
+    editor.on("selectionUpdate", refresh);
+    return () => { editor.off("selectionUpdate", refresh); };
+  }, [editor]);
 
   if (!editor) return null;
 
@@ -112,7 +121,7 @@ export function SectionEditor({
           {sep}
 
           {/* Párrafo y headings: P → H3 → H2 → H1 */}
-          {btn(!editor.isActive("heading"), () => editor.chain().focus().setParagraph().run(), "Párrafo normal",
+          {btn(editor.isActive("paragraph"), () => editor.chain().focus().setParagraph().run(), "Párrafo normal",
             <span className="text-[11px] font-bold leading-none w-4 h-4 flex items-center justify-center">P</span>)}
           {btn(editor.isActive("heading", { level: 3 }), () => editor.chain().focus().toggleHeading({ level: 3 }).run(), "Título pequeño (H3)", <Heading3 className="w-4 h-4" />)}
           {btn(editor.isActive("heading", { level: 2 }), () => editor.chain().focus().toggleHeading({ level: 2 }).run(), "Título mediano (H2)", <Heading2 className="w-4 h-4" />)}

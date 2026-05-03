@@ -131,6 +131,15 @@ export function CorreosRedactar({
     autoSaveTimer.current = setTimeout(() => doAutoSave(subj, html), 5 * 60 * 1000); // 5 min
   }, [editor, doAutoSave]);
 
+  // Re-render toolbar when cursor moves (TipTap v3 doesn't do this automatically)
+  const [, setSelTick] = useState(0);
+  useEffect(() => {
+    if (!editor) return;
+    const refresh = () => setSelTick(t => t + 1);
+    editor.on("selectionUpdate", refresh);
+    return () => { editor.off("selectionUpdate", refresh); };
+  }, [editor]);
+
   // Listen for editor content changes
   useEffect(() => {
     if (!editor) return;
@@ -159,9 +168,9 @@ export function CorreosRedactar({
 
   function toggleEmoji() {
     if (!showEmoji && emojiBtnRef.current) {
-      const r     = emojiBtnRef.current.getBoundingClientRect();
-      const right = Math.max(16, window.innerWidth - r.right);
-      setEmojiStyle({ position: "fixed", top: r.bottom + 4, right, zIndex: 200 });
+      const r    = emojiBtnRef.current.getBoundingClientRect();
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - 288 - 16));
+      setEmojiStyle({ position: "fixed", top: r.bottom + 4, left, zIndex: 200 });
     }
     setShowEmoji(v => !v);
   }
@@ -366,7 +375,7 @@ export function CorreosRedactar({
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          <ToolBtn onClick={() => editor.chain().focus().setParagraph().run()} active={!editor.isActive("heading")} title="Párrafo normal">
+          <ToolBtn onClick={() => editor.chain().focus().setParagraph().run()} active={editor.isActive("paragraph")} title="Párrafo normal">
             <span className="text-[11px] font-bold leading-none">P</span>
           </ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Título pequeño (H3)"><Heading3 className="w-3.5 h-3.5" /></ToolBtn>
