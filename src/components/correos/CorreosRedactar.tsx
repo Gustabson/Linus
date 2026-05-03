@@ -160,7 +160,7 @@ export function CorreosRedactar({
     if (!showEmoji && emojiBtnRef.current) {
       const r         = emojiBtnRef.current.getBoundingClientRect();
       const dropW     = 288; // w-72
-      const margin    = 8;
+      const margin    = 20;
       const rawLeft   = r.left;
       const maxLeft   = window.innerWidth - dropW - margin;
       const left      = Math.max(margin, Math.min(rawLeft, maxLeft));
@@ -352,9 +352,12 @@ export function CorreosRedactar({
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive("heading", { level: 1 })} title="Título H1"><Heading1 className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} title="Título H2"><Heading2 className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Título H3"><Heading3 className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().setParagraph().run()} active={editor.isActive("paragraph")} title="Párrafo normal">
+            <span className="text-[11px] font-bold leading-none">P</span>
+          </ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Título pequeño (H3)"><Heading3 className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} title="Título mediano (H2)"><Heading2 className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive("heading", { level: 1 })} title="Título grande (H1)"><Heading1 className="w-3.5 h-3.5" /></ToolBtn>
 
           <div className="w-px h-4 bg-border mx-1" />
 
