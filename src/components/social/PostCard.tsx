@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, MessageCircle, GitFork, BookOpen, Send, Loader2, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, GitFork, Send, Loader2, Trash2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
@@ -307,14 +307,15 @@ export function PostCard({
           className="block border border-border rounded-xl p-4 hover:border-primary/20 hover:bg-primary/5/40 transition-colors group"
         >
           <div className="flex items-start gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-              <BookOpen className="w-4 h-4 text-primary" />
-            </div>
+            {badge && (
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${badge.iconBgCls}`}>
+                {badge.iconLg}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                 {badge && (
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${badge.badgeCls}`}>
-                    {badge.icon}
                     {badge.label}
                   </span>
                 )}

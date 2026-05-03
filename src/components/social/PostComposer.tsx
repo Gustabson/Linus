@@ -161,7 +161,10 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
           {/* Attached tree preview */}
           {attachedTree && (
             <div className="mt-2 border border-border rounded-xl p-3 flex items-start gap-2.5 bg-bg">
-              <BookOpen className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              {(() => {
+                const badge = CONTENT_TYPE_STYLE[attachedTree.contentType];
+                return <span className={`shrink-0 mt-0.5 ${badge.textCls}`}>{badge.icon}</span>;
+              })()}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   {(() => {
