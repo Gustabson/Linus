@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 import { useState, useEffect, useCallback } from "react";
 import {
   Home, LayoutDashboard, Mail, Search, Compass, GitPullRequest,
-  Settings, User, Bell, X,
+  Settings, User, Bell, X, Inbox, Send, FileText, Pencil,
 } from "lucide-react";
 
 // ── BottomNav: visible only on mobile (<768px) ────────────────────────────
@@ -136,6 +136,7 @@ export function BottomNav() {
   const { correos, propuestas, unreadNotifications } = useBottomBadges();
 
   const [miEspacioOpen, setMiEspacioOpen] = useState(false);
+  const [correosOpen,   setCorreosOpen]   = useState(false);
   const [configOpen, setConfigOpen]       = useState(false);
 
   const profileHref = session?.user?.username
@@ -182,9 +183,9 @@ export function BottomNav() {
             {propuestas > 0 && <Badge count={propuestas} />}
           </button>
 
-          {/* Correos */}
-          <Link
-            href="/correos"
+          {/* Correos — opens modal */}
+          <button
+            onClick={() => setCorreosOpen(true)}
             className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors relative ${
               correosActive ? ACTIVE : INACTIVE
             }`}
@@ -192,7 +193,7 @@ export function BottomNav() {
             <Mail className={`w-5 h-5 ${correosActive ? "fill-sidebar-text/15" : ""}`} />
             Correos
             {correos > 0 && <Badge count={correos} />}
-          </Link>
+          </button>
 
           {/* Configuración — opens modal */}
           <button
@@ -218,6 +219,14 @@ export function BottomNav() {
         <ModalLink href="/explorar"   icon={Compass}         label="Explorar"    onClose={() => setMiEspacioOpen(false)} />
         <ModalLink href="/buscar"     icon={Search}          label="Buscar"      onClose={() => setMiEspacioOpen(false)} />
         <ModalLink href="/propuestas" icon={GitPullRequest}  label="Propuestas"  badge={propuestas} onClose={() => setMiEspacioOpen(false)} />
+      </BottomModal>
+
+      {/* ── Correos modal ────────────────────────────────────────────────── */}
+      <BottomModal open={correosOpen} onClose={() => setCorreosOpen(false)} title="Correos">
+        <ModalLink href="/correos/redactar" icon={Pencil}   label="Redactar"    onClose={() => setCorreosOpen(false)} />
+        <ModalLink href="/correos"          icon={Inbox}    label="Bandeja"     badge={correos} onClose={() => setCorreosOpen(false)} />
+        <ModalLink href="/correos/enviados" icon={Send}     label="Enviados"    onClose={() => setCorreosOpen(false)} />
+        <ModalLink href="/correos/borradores" icon={FileText} label="Borradores" onClose={() => setCorreosOpen(false)} />
       </BottomModal>
 
       {/* ── Configuración modal ──────────────────────────────────────────── */}

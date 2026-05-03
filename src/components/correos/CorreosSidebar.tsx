@@ -65,45 +65,7 @@ export function CorreosSidebar({ unreadCount }: Props) {
         </nav>
       </aside>
 
-      {/* ── Mobile: horizontal compact bar ───────────────────────────────── */}
-      <div className="flex md:hidden items-center gap-1 px-2 py-2 bg-surface border-b border-border overflow-x-auto shrink-0">
-        {/* Redactar button */}
-        <Link
-          href="/correos/redactar"
-          className={`shrink-0 flex items-center gap-1.5 font-semibold text-xs px-3 py-1.5 rounded-xl transition-colors ${
-            pathname === "/correos/redactar"
-              ? "bg-primary-h text-white"
-              : "bg-primary hover:bg-primary-h text-white"
-          }`}
-        >
-          <Pencil className="w-3.5 h-3.5" />
-          Redactar
-        </Link>
-
-        {/* Separator */}
-        <div className="w-px h-5 bg-border shrink-0" />
-
-        {/* Folder links */}
-        {FOLDERS.map(({ href, icon: Icon, short }) => (
-          <Link
-            key={href}
-            href={href}
-            className={`shrink-0 flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-xl transition-colors relative ${
-              isActive(href)
-                ? "bg-primary/10 text-primary"
-                : "text-text-muted hover:bg-border-subtle hover:text-text"
-            }`}
-          >
-            <Icon className="w-3.5 h-3.5" />
-            {short}
-            {href === "/correos" && unreadCount > 0 && (
-              <span className="bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
-            )}
-          </Link>
-        ))}
-      </div>
+      {/* Mobile: no bar — navigation handled by BottomNav modal */}
     </>
   );
 }

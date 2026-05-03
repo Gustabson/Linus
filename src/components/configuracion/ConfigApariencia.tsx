@@ -117,23 +117,25 @@ export function ConfigApariencia({
     <SectionCard title="Apariencia" description="Elegí el tema de la interfaz o personalizalo a tu gusto.">
 
       {/* Selector de modo */}
-      <div className="flex items-center gap-1 p-1 bg-bg rounded-xl border border-border w-full sm:w-fit">
-        {([
-          { value: "light",  icon: Sun,     label: "Claro"         },
-          { value: "dark",   icon: Moon,    label: "Oscuro"        },
-          { value: "custom", icon: Palette, label: "Personalizado" },
-        ] as { value: Mode; icon: React.ElementType; label: string }[]).map(({ value, icon: Icon, label }) => (
-          <button key={value} onClick={() => setMode(value)}
-            className={`flex flex-1 sm:flex-none items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              mode === value
-                ? "bg-surface shadow-sm text-text"
-                : "text-text-muted hover:text-text"
-            }`}
-          >
-            <Icon className="w-4 h-4 shrink-0" />
-            <span className="truncate">{label}</span>
-          </button>
-        ))}
+      <div className="p-1 bg-bg rounded-xl border border-border w-full sm:w-fit">
+        <div className="grid grid-cols-2 sm:flex gap-1">
+          {([
+            { value: "light",  icon: Sun,     label: "Claro",         cls: "" },
+            { value: "dark",   icon: Moon,    label: "Oscuro",        cls: "" },
+            { value: "custom", icon: Palette, label: "Personalizado", cls: "col-span-2 sm:flex-none" },
+          ] as { value: Mode; icon: React.ElementType; label: string; cls: string }[]).map(({ value, icon: Icon, label, cls }) => (
+            <button key={value} onClick={() => setMode(value)}
+              className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all ${cls} ${
+                mode === value
+                  ? "bg-surface shadow-sm text-text"
+                  : "text-text-muted hover:text-text"
+              }`}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className="truncate">{label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Color pickers — UI general (solo en modo personalizado) */}
