@@ -83,9 +83,10 @@ function wrapInDocument(title: string, body: string): string {
   <meta charset="utf-8" />
   <title>${title}</title>
   <style>
-    @page { margin: 2.5cm; }
-    body          { font-family: Georgia, "Times New Roman", serif; max-width: 100%; margin: 0; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
-    h1.doc-title  { font-size: 2.4rem; font-weight: 700; text-align: center; margin: 3em 0 0.3em; border-bottom: 2px solid #d1d5db; padding-bottom: 0.5em; }
+    @page { margin: 2.54cm; }
+    body          { font-family: Georgia, "Times New Roman", serif; max-width: 800px; margin: 0 auto; padding: 0.6cm 2.54cm; box-sizing: border-box; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
+    @media print  { body { max-width: 100%; padding: 0; margin: 0; } }
+    h1.doc-title  { font-size: 2.4rem; font-weight: 700; text-align: center; margin: 0 0 0.4em; border-bottom: 2px solid #d1d5db; padding-bottom: 0.4em; }
     .section-title{ font-size: 1.4rem; font-weight: 700; text-align: center; margin: 3rem 0 1rem; color: #111; }
     .section-body h1 { font-size: 1.875rem; font-weight: 700; margin: 0.75em 0 0.4em; }
     .section-body h2 { font-size: 1.5rem;   font-weight: 600; margin: 0.75em 0 0.4em; }
