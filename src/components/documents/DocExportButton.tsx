@@ -110,8 +110,13 @@ function wrapForPrint(title: string, body: string): string {
   <meta charset="utf-8" />
   <title>${title}</title>
   <style>
-    @page   { margin: 0; }
-    body    { font-family: Georgia, "Times New Roman", serif; margin: 0; padding: 2.54cm; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
+    /* @page handles top + bottom for EVERY page (including page 2, 3…).
+       Left/right are 0 so body padding owns the side margins.        */
+    @page   { margin: 2.54cm 0; }
+    /* Body padding = side margins (works in browser popup AND print).
+       Small top padding only for the browser preview window.         */
+    body    { font-family: Georgia, "Times New Roman", serif; margin: 0; padding: 0.6cm 2.54cm 0; color: #1a1a1a; line-height: 1.65; font-size: 16px; }
+    @media print { body { padding-top: 0; } }
     h1.doc-title { font-size: 2.4rem; font-weight: 700; text-align: center; margin: 0 0 0.4em; border-bottom: 2px solid #d1d5db; padding-bottom: 0.4em; }
     ${SHARED_CSS}
   </style>
