@@ -6,13 +6,15 @@ import {
   ArrowLeft, Trash2, Upload, Loader2, X,
   FileText, AlertTriangle, ChevronRight,
 } from "lucide-react";
+import { DocExportButton, type ExportSection } from "./DocExportButton";
 
 interface Props {
-  treeSlug:      string;
-  treeTitle:     string;
-  docSlug:       string;
-  docTitle:      string;
-  ownerUsername: string;
+  treeSlug:       string;
+  treeTitle:      string;
+  docSlug:        string;
+  docTitle:       string;
+  ownerUsername:  string;
+  exportSections?: ExportSection[];
 }
 
 type ImportState =
@@ -22,7 +24,7 @@ type ImportState =
   | { step: "done"; count: number }
   | { step: "error"; message: string };
 
-export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUsername }: Props) {
+export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUsername, exportSections }: Props) {
   const router = useRouter();
 
   // ── Delete state ──────────────────────────────────────────────────────────
@@ -138,6 +140,11 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
         <h1 className="text-2xl font-bold text-text leading-tight">{docTitle}</h1>
 
         <div className="flex items-center gap-2">
+          {/* Export */}
+          {exportSections && exportSections.length > 0 && (
+            <DocExportButton title={docTitle} sections={exportSections} />
+          )}
+
           {/* Upload Word/PDF */}
           <div className="relative">
             <input

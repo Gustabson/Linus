@@ -1,14 +1,29 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   ChevronDown, ChevronUp, CheckCircle2, Circle,
-  Save, Quote, Trash2, Pencil, Loader2,
+  Save, Quote, Trash2, Pencil, Loader2, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SectionEditor } from "./SectionEditor";
 import { SectionMetaFields } from "./SectionMetaFields";
 import type { DocumentSection } from "@prisma/client";
+
+// ── Word counter (works on TipTap JSON tree) ─────────────────────────────────
+function countWords(json: object): number {
+  let n = 0;
+  function walk(node: Record<string, unknown>) {
+    if (node.type === "text" && typeof node.text === "string") {
+      n += node.text.trim().split(/\s+/).filter(Boolean).length;
+    }
+    if (Array.isArray(node.content)) {
+      (node.content as Record<string, unknown>[]).forEach(walk);
+    }
+  }
+  walk(json as Record<string, unknown>);
+  return n;
+}
 
 interface SectionCardProps {
   section:         DocumentSection;
@@ -45,20 +60,68 @@ export function SectionCard({
   const [titleValue, setTitleValue]         = useState(section.sectionType);
   const titleInputRef                       = useRef<HTMLInputElement>(null);
 
+  // ── Auto-save refs ────────────────────────────────────────────────────────
+  const latestContentRef  = useRef<object | null>(null);
+  const latestMetaRef     = useRef<Record<string, string | number | null>>({});
+  const autoSaveTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedWordsRef = useRef(0);
+  const [autoSaveState, setAutoSaveState] =
+    useState<"idle" | "saving" | "saved">("idle");
+
   const isDirty   = content !== null;
   const isPdfEmbed = (section.richTextContent as Record<string, unknown>)?.__type === "pdf_embed";
 
   function handleMetaChange(field: string, value: string | number | null) {
-    setMeta((prev) => ({ ...prev, [field]: value }));
+    const next = { ...latestMetaRef.current, [field]: value };
+    latestMetaRef.current = next;
+    setMeta(next);
+  }
+
+  // ── Auto-save (silent background save) ───────────────────────────────────
+  const doAutoSave = useCallback(async () => {
+    const c = latestContentRef.current;
+    const m = latestMetaRef.current;
+    if (!c) return;
+    setAutoSaveState("saving");
+    try {
+      await onSave(section.id, c, m);
+      lastSavedWordsRef.current = countWords(c);
+      setAutoSaveState("saved");
+      setTimeout(() => setAutoSaveState("idle"), 2500);
+    } catch {
+      setAutoSaveState("idle");
+    }
+  }, [onSave, section.id]);
+
+  // Called by SectionEditor on every change
+  function handleEditorChange(json: object) {
+    setContent(json);
+    latestContentRef.current = json;
+
+    const words = countWords(json);
+
+    // Immediate trigger: 30 new words since last save
+    if (words - lastSavedWordsRef.current >= 30) {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+      doAutoSave();
+      return;
+    }
+
+    // Debounced 5-minute fallback
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(doAutoSave, 5 * 60 * 1000);
   }
 
   async function handleSave() {
     if (!content) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     setSaving(true);
     await onSave(section.id, content, meta);
+    lastSavedWordsRef.current = countWords(content);
     setSaving(false);
     setSaved(true);
     setContent(null);
+    latestContentRef.current = null;
     setTimeout(() => setSaved(false), 2500);
   }
 
@@ -229,7 +292,7 @@ export function SectionCard({
               content={section.richTextContent as object ?? null}
               placeholder={`Escribí el contenido de "${titleValue}"…`}
               editable={isOwner}
-              onChange={setContent}
+              onChange={handleEditorChange}
             />
           )}
 
@@ -262,6 +325,16 @@ export function SectionCard({
                 <a href="/login" className="text-primary hover:underline font-medium">Iniciá sesión</a>{" "}
                 para forkear y editar este currículo.
               </p>
+            )}
+
+            {/* Auto-save indicator */}
+            {isOwner && !isPdfEmbed && autoSaveState !== "idle" && (
+              <span className="flex items-center gap-1 text-xs text-text-subtle ml-auto mr-2">
+                {autoSaveState === "saving"
+                  ? <><Loader2 className="w-3 h-3 animate-spin" /> Auto-guardando…</>
+                  : <><Check   className="w-3 h-3 text-green-500" /> Auto-guardado</>
+                }
+              </span>
             )}
 
             {/* Save button — owner, not pdf embed, dirty or just saved */}

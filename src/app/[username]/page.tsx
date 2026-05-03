@@ -100,7 +100,8 @@ export default async function UserProfilePage({
         id:       session.user.id,
         name:     session.user.name     ?? null,
         username: session.user.username ?? null,
-        image:    session.user.image    ?? null,
+        // Use fresh DB image when viewing own profile — session can be stale
+        image:    isOwn ? (user.image ?? null) : (session.user.image ?? null),
       }
     : null;
 

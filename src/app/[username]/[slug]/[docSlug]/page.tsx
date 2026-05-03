@@ -8,6 +8,7 @@ import { DocumentCommentsWrapper } from "@/components/documents/DocumentComments
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import { TreePublishButton } from "@/components/trees/TreePublishButton";
 import { DocActionBar } from "@/components/documents/DocActionBar";
+import { DocExportButton } from "@/components/documents/DocExportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +102,7 @@ export default async function DocumentPage({
             docSlug={docSlug}
             docTitle={doc.title}
             ownerUsername={username}
+            exportSections={sections}
           />
         ) : (
           /* Module / resource: keep the full header with title + actions */
@@ -126,6 +128,7 @@ export default async function DocumentPage({
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              <DocExportButton title={tree.title} sections={sections} />
               {isOwner && (
                 <TreePublishButton
                   treeSlug={tree.slug}
