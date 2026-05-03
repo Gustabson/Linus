@@ -13,7 +13,7 @@ import {
   Bold, Italic, Underline as UnderlineIcon,
   List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
   Link as LinkIcon, Heading2, Heading3, Smile,
-  ArrowLeft, Check,
+  Check,
 } from "lucide-react";
 import { UserSearchInput } from "./UserSearchInput";
 
@@ -123,7 +123,7 @@ export function CorreosRedactar({
     setAutoSaveState("idle");
     const subj = subjectRef.current;
     const html = editor.getHTML();
-    autoSaveTimer.current = setTimeout(() => doAutoSave(subj, html), 3000);
+    autoSaveTimer.current = setTimeout(() => doAutoSave(subj, html), 5 * 60 * 1000); // 5 min
   }, [editor, doAutoSave]);
 
   // Listen for editor content changes
@@ -289,18 +289,20 @@ export function CorreosRedactar({
 
       {/* ── Header — mobile ─────────────────────────────────────────── */}
       <div className="flex sm:hidden items-center gap-2 px-3 py-2.5 border-b border-border-subtle">
+        <div className="flex-1"><AutoSaveLabel /></div>
         <button onClick={handleDiscard} disabled={sending || saving}
-          className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-bg transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+          className="flex items-center gap-1.5 text-sm text-text-muted hover:text-red-500 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors">
+          <Trash2 className="w-4 h-4" /> Descartar
         </button>
-        <div className="flex-1 flex items-center justify-center">
-          <AutoSaveLabel />
-        </div>
+        <button onClick={handleSaveDraft} disabled={saving || sending}
+          className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-xl hover:bg-bg disabled:opacity-50 transition-colors">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Guardar
+        </button>
         <button onClick={handleSend} disabled={sending || saving}
-          className="flex items-center gap-1.5 text-sm font-semibold bg-primary text-primary-fg px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors shadow-sm">
-          {sending
-            ? <Loader2 className="w-4 h-4 animate-spin" />
-            : <><Send className="w-4 h-4" /> Enviar</>}
+          className="flex items-center gap-1.5 text-sm font-semibold bg-primary text-primary-fg px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors">
+          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          Enviar
         </button>
       </div>
 
