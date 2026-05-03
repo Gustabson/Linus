@@ -85,10 +85,12 @@ export function SectionEditor({
   }
 
   function applyLink() {
-    if (!linkUrl.trim()) {
+    const raw = linkUrl.trim();
+    if (!raw) {
       editor!.chain().focus().unsetLink().run();
     } else {
-      editor!.chain().focus().setLink({ href: linkUrl.trim() }).run();
+      const href = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+      editor!.chain().focus().setLink({ href }).run();
     }
     setLinkModalOpen(false);
   }
