@@ -158,8 +158,13 @@ export function CorreosRedactar({
 
   function toggleEmoji() {
     if (!showEmoji && emojiBtnRef.current) {
-      const r = emojiBtnRef.current.getBoundingClientRect();
-      setEmojiStyle({ position: "fixed", top: r.bottom + 4, left: r.left, zIndex: 200 });
+      const r         = emojiBtnRef.current.getBoundingClientRect();
+      const dropW     = 288; // w-72
+      const margin    = 8;
+      const rawLeft   = r.left;
+      const maxLeft   = window.innerWidth - dropW - margin;
+      const left      = Math.max(margin, Math.min(rawLeft, maxLeft));
+      setEmojiStyle({ position: "fixed", top: r.bottom + 4, left, zIndex: 200 });
     }
     setShowEmoji(v => !v);
   }
