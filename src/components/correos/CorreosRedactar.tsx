@@ -48,8 +48,9 @@ export function CorreosRedactar({
   const [saving,    startSave]    = useTransition();
   const [error,     setError]     = useState("");
   const [sent,      setSent]      = useState(false);
-  const [showEmoji,  setShowEmoji]  = useState(false);
-  const [emojiStyle, setEmojiStyle] = useState<CSSProperties>({});
+  const [showEmoji,          setShowEmoji]          = useState(false);
+  const [emojiStyle,         setEmojiStyle]         = useState<CSSProperties>({});
+  const [showHighlightColors, setShowHighlightColors] = useState(false);
   const emojiDropRef = useRef<HTMLDivElement>(null);
   const emojiBtnRef  = useRef<HTMLButtonElement>(null);
 
@@ -68,7 +69,7 @@ export function CorreosRedactar({
     extensions: [
       StarterKit,
       Underline,
-      Highlight.configure({ multicolor: false }),
+      Highlight.configure({ multicolor: true }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TiptapLink.configure({
         openOnClick:    false,
@@ -158,13 +159,9 @@ export function CorreosRedactar({
 
   function toggleEmoji() {
     if (!showEmoji && emojiBtnRef.current) {
-      const r         = emojiBtnRef.current.getBoundingClientRect();
-      const dropW     = 288; // w-72
-      const margin    = 20;
-      const rawLeft   = r.left;
-      const maxLeft   = window.innerWidth - dropW - margin;
-      const left      = Math.max(margin, Math.min(rawLeft, maxLeft));
-      setEmojiStyle({ position: "fixed", top: r.bottom + 4, left, zIndex: 200 });
+      const r     = emojiBtnRef.current.getBoundingClientRect();
+      const right = Math.max(16, window.innerWidth - r.right);
+      setEmojiStyle({ position: "fixed", top: r.bottom + 4, right, zIndex: 200 });
     }
     setShowEmoji(v => !v);
   }
@@ -348,11 +345,28 @@ export function CorreosRedactar({
           <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Negrita"><Bold className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} title="Cursiva"><Italic className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} title="Subrayado"><UnderlineIcon className="w-3.5 h-3.5" /></ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleHighlight().run()} active={editor.isActive("highlight")} title="Resaltado"><Highlighter className="w-3.5 h-3.5" /></ToolBtn>
+          {/* Highlight con colores inline */}
+          <ToolBtn onClick={() => setShowHighlightColors(v => !v)} active={editor.isActive("highlight") || showHighlightColors} title="Resaltado">
+            <Highlighter className="w-3.5 h-3.5" />
+          </ToolBtn>
+          {showHighlightColors && (
+            <>
+              {["#fef08a","#bbf7d0","#bfdbfe","#fecdd3","#fed7aa"].map(color => (
+                <button key={color} type="button"
+                  onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().setHighlight({ color }).run(); setShowHighlightColors(false); }}
+                  className="w-5 h-5 rounded border border-border/60 hover:scale-110 transition-transform shrink-0"
+                  style={{ backgroundColor: color }} title="Aplicar color" />
+              ))}
+              <button type="button"
+                onMouseDown={(e) => { e.preventDefault(); editor.chain().focus().unsetHighlight().run(); setShowHighlightColors(false); }}
+                className="w-5 h-5 rounded border border-border flex items-center justify-center text-[10px] text-text-muted hover:text-text hover:bg-bg transition-colors shrink-0"
+                title="Quitar resaltado">✕</button>
+            </>
+          )}
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          <ToolBtn onClick={() => editor.chain().focus().setParagraph().run()} active={editor.isActive("paragraph")} title="Párrafo normal">
+          <ToolBtn onClick={() => editor.chain().focus().setParagraph().run()} active={!editor.isActive("heading")} title="Párrafo normal">
             <span className="text-[11px] font-bold leading-none">P</span>
           </ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Título pequeño (H3)"><Heading3 className="w-3.5 h-3.5" /></ToolBtn>
