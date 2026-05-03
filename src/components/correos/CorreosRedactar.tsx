@@ -288,22 +288,24 @@ export function CorreosRedactar({
       </div>
 
       {/* ── Header — mobile ─────────────────────────────────────────── */}
-      <div className="flex sm:hidden items-center gap-2 px-3 py-2.5 border-b border-border-subtle">
-        <div className="flex-1"><AutoSaveLabel /></div>
-        <button onClick={handleDiscard} disabled={sending || saving}
-          className="flex items-center gap-1.5 text-sm text-text-muted hover:text-red-500 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors">
-          <Trash2 className="w-4 h-4" /> Descartar
-        </button>
-        <button onClick={handleSaveDraft} disabled={saving || sending}
-          className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-xl hover:bg-bg disabled:opacity-50 transition-colors">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Guardar
-        </button>
-        <button onClick={handleSend} disabled={sending || saving}
-          className="flex items-center gap-1.5 text-sm font-semibold bg-primary text-primary-fg px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors">
-          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          Enviar
-        </button>
+      <div className="flex sm:hidden items-center gap-1 px-2 py-2.5 border-b border-border-subtle">
+        <AutoSaveLabel />
+        <div className="flex items-center gap-1 ml-auto">
+          <button onClick={handleDiscard} disabled={sending || saving}
+            className="flex items-center gap-1 text-sm text-text-muted hover:text-red-500 px-2.5 py-2 rounded-xl hover:bg-red-50 transition-colors">
+            <Trash2 className="w-4 h-4" /> Descartar
+          </button>
+          <button onClick={handleSaveDraft} disabled={saving || sending}
+            className="flex items-center gap-1 text-sm text-text-muted border border-border px-2.5 py-2 rounded-xl hover:bg-bg disabled:opacity-50 transition-colors">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Guardar
+          </button>
+          <button onClick={handleSend} disabled={sending || saving}
+            className="flex items-center gap-1 text-sm font-semibold bg-primary text-primary-fg px-3 py-2 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors">
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            Enviar
+          </button>
+        </div>
       </div>
 
       {/* ── Fields ──────────────────────────────────────────────────── */}
