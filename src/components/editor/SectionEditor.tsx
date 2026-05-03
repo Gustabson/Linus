@@ -33,6 +33,8 @@ export function SectionEditor({
   editable = true,
 }: SectionEditorProps) {
   const [showHighlightColors, setShowHighlightColors] = useState(false);
+  const [linkModalOpen,       setLinkModalOpen]       = useState(false);
+  const [linkUrl,             setLinkUrl]             = useState("");
 
   const editor = useEditor({
     extensions: [
@@ -75,6 +77,21 @@ export function SectionEditor({
   });
 
   if (!editor) return null;
+
+  function openLinkModal() {
+    const prev = editor!.getAttributes("link").href as string | undefined;
+    setLinkUrl(prev ?? "");
+    setLinkModalOpen(true);
+  }
+
+  function applyLink() {
+    if (!linkUrl.trim()) {
+      editor!.chain().focus().unsetLink().run();
+    } else {
+      editor!.chain().focus().setLink({ href: linkUrl.trim() }).run();
+    }
+    setLinkModalOpen(false);
+  }
 
   function btn(active: boolean, onClick: () => void, label: string, icon: React.ReactNode) {
     return (
@@ -160,10 +177,7 @@ export function SectionEditor({
 
           {sep}
 
-          {btn(false, () => {
-            const url = prompt("URL del enlace:");
-            if (url) editor.chain().focus().setLink({ href: url }).run();
-          }, "Enlace", <LinkIcon className="w-4 h-4" />)}
+          {btn(is.link, openLinkModal, "Enlace", <LinkIcon className="w-4 h-4" />)}
 
           {sep}
 
@@ -178,6 +192,44 @@ export function SectionEditor({
       <div className="p-4">
         <EditorContent editor={editor} className="tiptap" />
       </div>
+
+      {/* ── Modal de enlace ─────────────────────────────────────────── */}
+      {linkModalOpen && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setLinkModalOpen(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5 w-full max-w-sm space-y-3 pointer-events-auto">
+              <p className="text-sm font-semibold text-text">Insertar enlace</p>
+              <input
+                type="url"
+                value={linkUrl}
+                onChange={e => setLinkUrl(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") applyLink(); if (e.key === "Escape") setLinkModalOpen(false); }}
+                placeholder="https://ejemplo.com"
+                autoFocus
+                className="w-full text-sm border border-border rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-bg text-text placeholder:text-text-subtle"
+              />
+              <div className="flex items-center gap-2 justify-end">
+                {is.link && (
+                  <button type="button"
+                    onClick={() => { editor.chain().focus().unsetLink().run(); setLinkModalOpen(false); }}
+                    className="text-sm text-red-500 hover:text-red-600 px-3 py-1.5 rounded-xl hover:bg-red-50 transition-colors mr-auto">
+                    Quitar enlace
+                  </button>
+                )}
+                <button type="button" onClick={() => setLinkModalOpen(false)}
+                  className="text-sm text-text-muted border border-border px-3 py-1.5 rounded-xl hover:bg-bg transition-colors">
+                  Cancelar
+                </button>
+                <button type="button" onClick={applyLink}
+                  className="text-sm font-semibold bg-primary text-primary-fg px-4 py-1.5 rounded-xl hover:bg-primary-h transition-colors">
+                  Aplicar
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

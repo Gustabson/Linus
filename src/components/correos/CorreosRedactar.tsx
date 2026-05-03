@@ -48,9 +48,11 @@ export function CorreosRedactar({
   const [saving,    startSave]    = useTransition();
   const [error,     setError]     = useState("");
   const [sent,      setSent]      = useState(false);
-  const [showEmoji,          setShowEmoji]          = useState(false);
-  const [emojiStyle,         setEmojiStyle]         = useState<CSSProperties>({});
+  const [showEmoji,           setShowEmoji]           = useState(false);
+  const [emojiStyle,          setEmojiStyle]          = useState<CSSProperties>({});
   const [showHighlightColors, setShowHighlightColors] = useState(false);
+  const [linkModalOpen,       setLinkModalOpen]       = useState(false);
+  const [linkUrl,             setLinkUrl]             = useState("");
   const emojiDropRef = useRef<HTMLDivElement>(null);
   const emojiBtnRef  = useRef<HTMLButtonElement>(null);
 
@@ -248,13 +250,21 @@ export function CorreosRedactar({
     router.push(isEditingDraft ? "/correos/borradores" : "/correos");
   }
 
-  function setLink() {
+  function openLinkModal() {
     if (!editor) return;
     const prev = editor.getAttributes("link").href as string | undefined;
-    const url  = window.prompt("URL del enlace:", prev ?? "https://");
-    if (url === null) return;
-    if (!url) { editor.chain().focus().unsetLink().run(); return; }
-    editor.chain().focus().setLink({ href: url }).run();
+    setLinkUrl(prev ?? "");
+    setLinkModalOpen(true);
+  }
+
+  function applyLink() {
+    if (!editor) return;
+    if (!linkUrl.trim()) {
+      editor.chain().focus().unsetLink().run();
+    } else {
+      editor.chain().focus().setLink({ href: linkUrl.trim() }).run();
+    }
+    setLinkModalOpen(false);
   }
 
   function insertEmoji(emoji: string) {
@@ -410,7 +420,7 @@ export function CorreosRedactar({
 
           <div className="w-px h-4 bg-border mx-1" />
 
-          <ToolBtn onClick={setLink} active={is.link} title="Enlace"><LinkIcon className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={openLinkModal} active={is.link} title="Enlace"><LinkIcon className="w-3.5 h-3.5" /></ToolBtn>
 
           {/* Emoji — fixed so overflow-hidden del container no lo corta */}
           <button
@@ -446,6 +456,44 @@ export function CorreosRedactar({
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
         <EditorContent editor={editor} />
       </div>
+
+      {/* ── Modal de enlace ─────────────────────────────────────────── */}
+      {linkModalOpen && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setLinkModalOpen(false)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-surface rounded-2xl border border-border shadow-xl p-5 w-full max-w-sm space-y-3 pointer-events-auto">
+              <p className="text-sm font-semibold text-text">Insertar enlace</p>
+              <input
+                type="url"
+                value={linkUrl}
+                onChange={e => setLinkUrl(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") applyLink(); if (e.key === "Escape") setLinkModalOpen(false); }}
+                placeholder="https://ejemplo.com"
+                autoFocus
+                className="w-full text-sm border border-border rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-bg text-text placeholder:text-text-subtle"
+              />
+              <div className="flex items-center gap-2 justify-end">
+                {is.link && (
+                  <button type="button"
+                    onClick={() => { editor?.chain().focus().unsetLink().run(); setLinkModalOpen(false); }}
+                    className="text-sm text-red-500 hover:text-red-600 px-3 py-1.5 rounded-xl hover:bg-red-50 transition-colors mr-auto">
+                    Quitar enlace
+                  </button>
+                )}
+                <button type="button" onClick={() => setLinkModalOpen(false)}
+                  className="text-sm text-text-muted border border-border px-3 py-1.5 rounded-xl hover:bg-bg transition-colors">
+                  Cancelar
+                </button>
+                <button type="button" onClick={applyLink}
+                  className="text-sm font-semibold bg-primary text-primary-fg px-4 py-1.5 rounded-xl hover:bg-primary-h transition-colors">
+                  Aplicar
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ── Feedback ────────────────────────────────────────────────── */}
       {(error || sent) && (
