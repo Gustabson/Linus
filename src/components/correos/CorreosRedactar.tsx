@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useTransition, useEffect, useRef } from "react";
+import { useState, useCallback, useTransition, useEffect, useRef, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
+import Highlight from "@tiptap/extension-highlight";
 import TextAlign from "@tiptap/extension-text-align";
 import TiptapLink from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -12,7 +13,7 @@ import {
   Send, Save, Loader2, Trash2,
   Bold, Italic, Underline as UnderlineIcon,
   List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
-  Link as LinkIcon, Heading2, Heading3, Smile,
+  Link as LinkIcon, Heading1, Heading2, Heading3, Highlighter, Quote, Smile,
   Check,
 } from "lucide-react";
 import { UserSearchInput } from "./UserSearchInput";
@@ -47,8 +48,10 @@ export function CorreosRedactar({
   const [saving,    startSave]    = useTransition();
   const [error,     setError]     = useState("");
   const [sent,      setSent]      = useState(false);
-  const [showEmoji, setShowEmoji] = useState(false);
-  const emojiRef = useRef<HTMLDivElement>(null);
+  const [showEmoji,  setShowEmoji]  = useState(false);
+  const [emojiStyle, setEmojiStyle] = useState<CSSProperties>({});
+  const emojiDropRef = useRef<HTMLDivElement>(null);
+  const emojiBtnRef  = useRef<HTMLButtonElement>(null);
 
   // ── Auto-save state ───────────────────────────────────────────────────────
   const savedDraftId    = useRef<string | null>(draftId ?? null);
@@ -65,6 +68,7 @@ export function CorreosRedactar({
     extensions: [
       StarterKit,
       Underline,
+      Highlight.configure({ multicolor: false }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TiptapLink.configure({
         openOnClick:    false,
@@ -142,12 +146,23 @@ export function CorreosRedactar({
   // ── Close emoji on outside click ─────────────────────────────────────────
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (emojiRef.current && !emojiRef.current.contains(e.target as Node))
-        setShowEmoji(false);
+      const target = e.target as Node;
+      if (
+        !emojiDropRef.current?.contains(target) &&
+        !emojiBtnRef.current?.contains(target)
+      ) setShowEmoji(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  function toggleEmoji() {
+    if (!showEmoji && emojiBtnRef.current) {
+      const r = emojiBtnRef.current.getBoundingClientRect();
+      setEmojiStyle({ position: "fixed", top: r.bottom + 4, left: r.left, zIndex: 200 });
+    }
+    setShowEmoji(v => !v);
+  }
 
   // ── Send ──────────────────────────────────────────────────────────────────
   const handleSend = useCallback(() => {
@@ -328,9 +343,11 @@ export function CorreosRedactar({
           <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} title="Negrita"><Bold className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} title="Cursiva"><Italic className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} title="Subrayado"><UnderlineIcon className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleHighlight().run()} active={editor.isActive("highlight")} title="Resaltado"><Highlighter className="w-3.5 h-3.5" /></ToolBtn>
 
           <div className="w-px h-4 bg-border mx-1" />
 
+          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive("heading", { level: 1 })} title="Título H1"><Heading1 className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive("heading", { level: 2 })} title="Título H2"><Heading2 className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} active={editor.isActive("heading", { level: 3 })} title="Título H3"><Heading3 className="w-3.5 h-3.5" /></ToolBtn>
 
@@ -338,6 +355,7 @@ export function CorreosRedactar({
 
           <ToolBtn onClick={() => editor.chain().focus().toggleBulletList().run()} active={editor.isActive("bulletList")} title="Lista con viñetas"><List className="w-3.5 h-3.5" /></ToolBtn>
           <ToolBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive("orderedList")} title="Lista numerada"><ListOrdered className="w-3.5 h-3.5" /></ToolBtn>
+          <ToolBtn onClick={() => editor.chain().focus().toggleBlockquote().run()} active={editor.isActive("blockquote")} title="Cita"><Quote className="w-3.5 h-3.5" /></ToolBtn>
 
           <div className="w-px h-4 bg-border mx-1" />
 
@@ -349,29 +367,33 @@ export function CorreosRedactar({
 
           <ToolBtn onClick={setLink} active={editor.isActive("link")} title="Enlace"><LinkIcon className="w-3.5 h-3.5" /></ToolBtn>
 
-          {/* Emoji picker */}
-          <div className="relative" ref={emojiRef}>
-            <ToolBtn onClick={() => setShowEmoji((v) => !v)} active={showEmoji} title="Emojis">
-              <Smile className="w-3.5 h-3.5" />
-            </ToolBtn>
-            {showEmoji && (
-              <div className="absolute top-full left-0 mt-1 w-72 bg-surface border border-border rounded-2xl shadow-xl z-50 p-3 space-y-2">
-                {EMOJI_GROUPS.map((group) => (
-                  <div key={group.label}>
-                    <p className="text-[10px] font-semibold text-text-subtle uppercase tracking-wide mb-1">{group.label}</p>
-                    <div className="flex flex-wrap gap-0.5">
-                      {group.emojis.map((emoji) => (
-                        <button key={emoji} type="button" onClick={() => insertEmoji(emoji)}
-                          className="w-8 h-8 flex items-center justify-center text-lg hover:bg-bg rounded-lg transition-colors">
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
+          {/* Emoji — fixed so overflow-hidden del container no lo corta */}
+          <button
+            ref={emojiBtnRef}
+            type="button"
+            onMouseDown={(e) => { e.preventDefault(); toggleEmoji(); }}
+            title="Emojis"
+            className={`p-1.5 rounded-lg transition-colors ${showEmoji ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-border-subtle hover:text-text"}`}
+          >
+            <Smile className="w-3.5 h-3.5" />
+          </button>
+          {showEmoji && (
+            <div ref={emojiDropRef} style={emojiStyle} className="w-72 bg-surface border border-border rounded-2xl shadow-xl p-3 space-y-2">
+              {EMOJI_GROUPS.map((group) => (
+                <div key={group.label}>
+                  <p className="text-[10px] font-semibold text-text-subtle uppercase tracking-wide mb-1">{group.label}</p>
+                  <div className="flex flex-wrap gap-0.5">
+                    {group.emojis.map((emoji) => (
+                      <button key={emoji} type="button" onClick={() => insertEmoji(emoji)}
+                        className="w-8 h-8 flex items-center justify-center text-lg hover:bg-bg rounded-lg transition-colors">
+                        {emoji}
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
