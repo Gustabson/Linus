@@ -15,6 +15,8 @@ import { AttachmentsPanel } from "@/components/trees/AttachmentsPanel";
 import { CreateProposalButton } from "@/components/proposals/CreateProposalButton";
 import { QuickAddDocument } from "@/components/trees/QuickAddDocument";
 
+import { BackButton } from "@/components/shared/BackButton";
+
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string; slug: string }> }) {
@@ -183,6 +185,9 @@ export default async function TreePage({
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Back button */}
+      <BackButton />
+
       {/* Breadcrumb */}
       {ancestors.length > 0 && (
         <nav className="flex items-center gap-2 text-sm text-text-muted flex-wrap">

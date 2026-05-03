@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, Trash2, Upload, Loader2, X,
-  FileText, AlertTriangle, ChevronRight, Pencil, Check,
+  FileText, AlertTriangle, Pencil, Check,
 } from "lucide-react";
 import { DocExportButton, type ExportSection } from "./DocExportButton";
 
@@ -137,16 +137,16 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
       {/* ── Row 1: breadcrumb ── */}
       <button
         onClick={handleBack}
-        className="inline-flex items-center gap-1.5 text-sm text-text-subtle hover:text-text transition-colors group"
+        className="inline-flex items-center gap-1.5 text-sm text-text-muted hover:text-text transition-colors group"
       >
-        <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-        <span>{treeTitle}</span>
-        <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
-        <span className="text-text-muted">{titleValue}</span>
+        <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+        <span>Volver</span>
       </button>
 
       {/* ── Row 2: title + actions ── */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex flex-col gap-3">
+        {/* ── Title row ── */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
 
         {/* Editable title */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -169,29 +169,22 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 group cursor-default">
-              <h1 className="text-2xl font-bold text-text leading-tight">{titleValue}</h1>
+            <div className="flex items-center gap-2 min-w-0">
+              <h1 className="text-2xl font-bold text-text leading-tight truncate">{titleValue}</h1>
               <button
                 onClick={startEditTitle}
                 title="Renombrar"
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg transition-all"
+                className="shrink-0 p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-bg transition-colors"
               >
-                <Pencil className="w-3.5 h-3.5" />
+                <Pencil className="w-4 h-4" />
               </button>
             </div>
           )}
         </div>
+        </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Export */}
-          {exportSections !== undefined && (
-            <DocExportButton
-              title={titleValue}
-              sections={exportSections}
-              treeSlug={treeSlug}
-              docSlug={docSlug}
-            />
-          )}
+        {/* ── Actions row (below title on mobile) ── */}
+        <div className="flex items-center gap-2 flex-wrap">
 
           {/* Upload Word/PDF */}
           <div className="relative">
@@ -202,7 +195,7 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
               className="flex items-center gap-2 text-sm text-text-muted border border-border px-3 py-2 rounded-xl hover:bg-bg hover:border-gray-300 disabled:opacity-50 transition-colors"
             >
               {importState.step === "uploading" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              <span className="hidden sm:inline">
+              <span>
                 {importState.step === "uploading" ? "Importando…" : "Subir Word / PDF"}
               </span>
             </button>
@@ -214,8 +207,18 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
             className="flex items-center gap-2 text-sm text-red-500 border border-red-100 px-3 py-2 rounded-xl hover:bg-red-50 hover:border-red-200 transition-colors"
           >
             <Trash2 className="w-4 h-4" />
-            <span className="hidden sm:inline">Eliminar</span>
+            <span>Eliminar</span>
           </button>
+
+          {/* Export */}
+          {exportSections !== undefined && (
+            <DocExportButton
+              title={titleValue}
+              sections={exportSections}
+              treeSlug={treeSlug}
+              docSlug={docSlug}
+            />
+          )}
         </div>
       </div>
 
