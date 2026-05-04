@@ -119,11 +119,8 @@ export function ConfigApariencia({
       const root = document.documentElement;
       for (const [key, value] of Object.entries(themeCookie)) {
         if (key === "mode") continue;
-        // Map cookieKey → CSS var using THEME_PROPERTIES from theme-config
-        // We import cookieToStyle on the server; here we inline the mapping
         const cssVar = "--" + key.replace(/([A-Z])/g, "-$1").toLowerCase();
         root.style.setProperty(cssVar, value);
-        // Derivatives
         if (key === "border")     root.style.setProperty("--border-subtle", value);
         if (key === "text")       { root.style.setProperty("--text-muted", value + "cc"); root.style.setProperty("--text-subtle", value + "88"); }
         if (key === "primary")    root.style.setProperty("--primary-h", value);
@@ -131,6 +128,14 @@ export function ConfigApariencia({
         if (key === "module")     root.style.setProperty("--module-h", value);
         if (key === "resource")   root.style.setProperty("--resource-h", value);
       }
+
+      // Belt-and-suspenders: also apply content type colors directly from state
+      root.style.setProperty("--kernel",     ctColors.themeKernel);
+      root.style.setProperty("--kernel-h",   ctColors.themeKernel);
+      root.style.setProperty("--module",     ctColors.themeModule);
+      root.style.setProperty("--module-h",   ctColors.themeModule);
+      root.style.setProperty("--resource",   ctColors.themeResource);
+      root.style.setProperty("--resource-h", ctColors.themeResource);
 
       setSaved(true);
       router.refresh();
