@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { isValidHex } from "@/lib/theme";
@@ -120,6 +121,9 @@ export async function PATCH(req: NextRequest) {
     data,
     select: { id: true, name: true, username: true, themeMode: true },
   });
+
+  // Purgar caché ISR de la página de configuración
+  revalidatePath("/configuracion");
 
   return NextResponse.json(updated);
 }

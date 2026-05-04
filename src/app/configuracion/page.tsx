@@ -8,7 +8,7 @@ import { SignOutButton } from "@/components/configuracion/SignOutButton";
 import { PRESET_LIGHT }         from "@/lib/theme";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 86400; // 24h — se regenera al guardar cambios
 export const metadata: Metadata = { title: "Configuración" };
 
 export default async function ConfiguracionPage() {
