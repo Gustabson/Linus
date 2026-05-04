@@ -1,20 +1,15 @@
 # Informe de Auditoría — EduHub
-**Fecha:** Mayo 2026  
+**Fecha:** Mayo 2026 · **Actualizado:** Mayo 2026 (fixes aplicados)
 **Alcance:** Seguridad, bugs, limpieza, optimización, mantenibilidad
 
 ---
 
 ## 🔴 SEGURIDAD (2 issues)
 
-### S1 — SVG en whitelist de upload permite XSS
+### S1 — SVG en whitelist de upload permite XSS ✅ FIXED
 **Archivo:** `src/app/api/upload/route.ts:9`  
 **Riesgo:** Medio  
-SVGs pueden contener `<script>`, event handlers y CSS malicioso. Aunque el CSP actual tiene `script-src 'unsafe-inline'`, un SVG inline podría ejecutar JS.
-```diff
--  "svg",
-+  // "svg",   ← eliminar o sanitizar con DOMPurify antes de servir
-```
-**Fix:** Quitar `svg` de `ALLOWED_EXTENSIONS` o sanitizar SVGs server-side.
+**Fix aplicado:** SVG eliminado de `ALLOWED_EXTENSIONS` y `EXT_TO_MIME`.
 
 ### S2 — La mayoría de API routes no tienen try/catch
 **Archivos:** ~28 de 37 routes sin manejo de errores  
@@ -124,11 +119,16 @@ Siempre se fetchean 5 suggested users aunque el sidebar solo se muestra en deskt
 | Limpieza | 3 | Baja |
 
 **Recomendación de orden de trabajo:**
-1. S1 (SVG XSS) — 1 línea, alto impacto
-2. O1 + O2 (índices DB) — mejora velocidad real
-3. M1 (withAuth wrapper) — reduce 37 repeticiones, previene bugs futuros
-4. M2 (USER_BASIC_SELECT en todas partes) — consistencia
-5. L1 (gitignore tsbuildinfo) — 1 línea
-6. B1 (uniqueSlug race condition) — verificar callers
-7. M5 (ScrollToTop compartido) — DRY
-8. L2 (custom hooks) — opcional, solo si los componentes crecen más
+1. ~~S1 (SVG XSS)~~ ✅
+2. ~~O1 + O2 (índices DB)~~ ✅
+3. ~~M1 (withAuth wrapper)~~ ✅ (creado, disponible para usar)
+4. ~~M2 (USER_BASIC_SELECT)~~ ✅ (aplicado en SocialFeed + posts API)
+5. ~~L1 (gitignore tsbuildinfo)~~ ✅
+6. ~~B4 (visibility check en helpers)~~ ✅
+7. ~~M5 (ScrollToTop compartido)~~ ✅
+8. B1 (uniqueSlug race condition) — documentado, aceptable a escala actual
+9. S2 (try/catch en routes) — withAuth wrapper listo, aplicar progresivamente
+10. L2 (custom hooks) — opcional
+11. O3 (lazy attachments) — arquitectónico, evaluar si crece
+12. M3 (dangerouslySetInnerHTML) — seguro, ya sanitizado
+13. M4 (CSS -h duplicadas) — nice to have
