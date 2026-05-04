@@ -122,8 +122,9 @@ export async function PATCH(req: NextRequest) {
     select: { id: true, name: true, username: true, themeMode: true },
   });
 
-  // Purgar caché ISR de la página de configuración
+  // Purgar caché ISR de la página de configuración y layout raíz
   revalidatePath("/configuracion");
+  revalidatePath("/", "layout");
 
   return NextResponse.json(updated);
 }

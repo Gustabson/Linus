@@ -117,6 +117,8 @@ export function ConfigApariencia({
 
       setSaved(true);
       router.refresh();
+      // Force layout re-render so theme cookie is picked up
+      setTimeout(() => { window.location.reload(); }, 500);
       setTimeout(() => setSaved(false), 3000);
     });
   }
