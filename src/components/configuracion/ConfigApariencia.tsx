@@ -139,6 +139,30 @@ export function ConfigApariencia({
 
       setSaved(true);
       router.refresh();
+      // router.refresh() re-applies layout's <html style> which overwrites
+      // our DOM vars. Re-apply after React reconciles.
+      setTimeout(() => {
+        const r = document.documentElement;
+        r.style.setProperty("--kernel",     ctColors.themeKernel);
+        r.style.setProperty("--kernel-h",   ctColors.themeKernel);
+        r.style.setProperty("--module",     ctColors.themeModule);
+        r.style.setProperty("--module-h",   ctColors.themeModule);
+        r.style.setProperty("--resource",   ctColors.themeResource);
+        r.style.setProperty("--resource-h", ctColors.themeResource);
+        if (mode === "custom") {
+          r.style.setProperty("--bg",       colors.themeBg);
+          r.style.setProperty("--surface",  colors.themeSurface);
+          r.style.setProperty("--border",   colors.themeBorder);
+          r.style.setProperty("--text",     colors.themeText);
+          r.style.setProperty("--primary",  colors.themePrimary);
+          r.style.setProperty("--primary-h", colors.themePrimary);
+          r.style.setProperty("--border-subtle", colors.themeBorder);
+          r.style.setProperty("--text-muted", colors.themeText + "cc");
+          r.style.setProperty("--text-subtle", colors.themeText + "88");
+        }
+        r.style.setProperty("--sidebar-bg",   sidebarColors.themeSidebarBg);
+        r.style.setProperty("--sidebar-text", sidebarColors.themeSidebarText);
+      }, 100);
       setTimeout(() => setSaved(false), 3000);
     });
   }
