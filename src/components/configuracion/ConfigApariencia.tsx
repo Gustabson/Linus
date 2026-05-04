@@ -106,9 +106,9 @@ export function ConfigApariencia({
       if (mode === "dark")  setTheme("dark");
 
       // Save theme to cookie so layout can apply CSS vars before paint
+      // Core colors ONLY in custom mode (otherwise they override .dark class)
       const themeCookie = buildThemeCookie({
-        themeMode: mode,
-        ...colors,
+        ...(mode === "custom" ? colors : {}),
         ...sidebarColors,
         ...ctColors,
       });
