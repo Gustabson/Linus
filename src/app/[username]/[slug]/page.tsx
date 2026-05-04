@@ -218,7 +218,7 @@ export default async function TreePage({
       {/* Header */}
       <div className="bg-surface rounded-2xl border border-border p-6 space-y-5">
         {/* Back button */}
-        <BackButton />
+        <BackButton href="/dashboard" />
 
         {/* Author row */}
         <Link href={`/${authorSlug}`} className="flex items-center gap-3 group w-fit">
