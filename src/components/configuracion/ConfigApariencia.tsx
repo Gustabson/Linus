@@ -105,12 +105,20 @@ export function ConfigApariencia({
       if (mode === "light") setTheme("light");
       if (mode === "dark")  setTheme("dark");
 
-      // Save theme to cookie so ThemeLoader can apply it before paint
+      // Save theme to cookie so layout can apply CSS vars before paint
       const themeCookie: Record<string, string> = { mode };
       if (mode === "custom") {
-        for (const [k, v] of Object.entries(colors)) { if (v) themeCookie[k] = v as string; }
+        if (colors.themeBg)      themeCookie["bg"]      = colors.themeBg;
+        if (colors.themeSurface) themeCookie["surface"] = colors.themeSurface;
+        if (colors.themeBorder)  themeCookie["border"]  = colors.themeBorder;
+        if (colors.themeText)    themeCookie["text"]    = colors.themeText;
+        if (colors.themePrimary) themeCookie["primary"] = colors.themePrimary;
       }
-      for (const [k, v] of Object.entries({ ...sidebarColors, ...ctColors })) { if (v) themeCookie[k] = v as string; }
+      if (sidebarColors.themeSidebarBg)   themeCookie["sidebarBg"]   = sidebarColors.themeSidebarBg;
+      if (sidebarColors.themeSidebarText) themeCookie["sidebarText"] = sidebarColors.themeSidebarText;
+      if (ctColors.themeKernel)   themeCookie["kernel"]   = ctColors.themeKernel;
+      if (ctColors.themeModule)   themeCookie["module"]   = ctColors.themeModule;
+      if (ctColors.themeResource) themeCookie["resource"] = ctColors.themeResource;
       document.cookie = `eduhub_theme=${encodeURIComponent(JSON.stringify(themeCookie))};path=/;max-age=31536000;SameSite=Lax`;
 
       setSaved(true);
