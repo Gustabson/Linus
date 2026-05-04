@@ -129,7 +129,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* ── Navigation ───────────────────────────────────────── */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV_ITEMS.map(({ href, icon: Icon, label, badge }) => (
-          <Link key={href} href={href} className={itemCls(href)} onClick={onClose}>
+          <Link key={href} href={href} prefetch={true} className={itemCls(href)} onClick={onClose}>
             <Icon className="w-5 h-5 shrink-0" />
             {label}
             <NavBadge count={badge ?? 0} />

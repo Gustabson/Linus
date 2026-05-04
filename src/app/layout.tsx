@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { auth }            from "@/lib/auth";
-import { prisma }          from "@/lib/prisma";
 import { SessionProvider } from "@/components/layout/SessionProvider";
 import { LayoutShell }     from "@/components/layout/LayoutShell";
 import { Toaster }         from "@/components/ui/Toaster";
 import { ThemeProvider }   from "@/components/layout/ThemeProvider";
+import { getSession, getUserTheme } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +27,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session    = await auth();
+  const session    = await getSession();
   const isLoggedIn = !!session?.user?.id;
 
   // Load user theme server-side → apply before paint, no flash
@@ -37,15 +36,7 @@ export default async function RootLayout({
   const ctVars: Record<string, string> = {};
 
   if (session?.user?.id) {
-    const prefs = await prisma.user.findUnique({
-      where:  { id: session.user.id },
-      select: {
-        themeMode: true, themeBg: true, themeSurface: true,
-        themeBorder: true, themeText: true, themePrimary: true,
-        themeSidebarBg: true, themeSidebarText: true,
-        themeKernel: true, themeModule: true, themeResource: true,
-      },
-    });
+    const prefs = await getUserTheme(session.user.id);
 
     if (prefs?.themeMode === "dark") {
       initialTheme = "dark";
