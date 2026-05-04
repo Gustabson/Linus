@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
+import { USER_BASIC_SELECT } from "@/lib/data";
 
 // ── GET /api/posts  (feed) ────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       take:    50, // cap — won't paginate new-post burst
       include: {
-        author: { select: { id: true, name: true, username: true, image: true } },
+        author: { select: USER_BASIC_SELECT },
         tree: {
           select: {
             id: true, slug: true, title: true, description: true,
@@ -66,7 +67,7 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
     take:    limit + 1,
     include: {
-      author: { select: { id: true, name: true, username: true, image: true } },
+        author: { select: USER_BASIC_SELECT },
       tree: {
         select: {
           id: true, slug: true, title: true, description: true,
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest) {
       authorId: session.user.id,
     },
     include: {
-      author: { select: { id: true, name: true, username: true, image: true } },
+        author: { select: USER_BASIC_SELECT },
       tree: {
         select: {
           id: true, slug: true, title: true, description: true,

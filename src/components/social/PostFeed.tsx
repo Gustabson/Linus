@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { PostComposer } from "./PostComposer";
 import { PostCard, type PostData } from "./PostCard";
 import { Loader2, RefreshCw, ArrowUp } from "lucide-react";
+import { ScrollToTop } from "@/components/shared/ScrollToTop";
 
 const POLL_MS = 120_000; // 2 min — educational feed, not breaking news
 
@@ -27,9 +28,6 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
 
   // Real-time new-posts queue
   const [newQueue, setNewQueue]   = useState<PostData[]>([]);
-
-  // Scroll-to-top button
-  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Track the createdAt of the newest visible post for polling
   const newestDateRef = useRef<string | null>(
@@ -62,23 +60,6 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
     document.addEventListener("visibilitychange", onVisible);
     return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVisible); };
   }, [pollNew]);
-
-  // ── Scroll-to-top detection ───────────────────────────────────────────────
-  useEffect(() => {
-    function onScroll() {
-      setShowScrollTop(window.scrollY > 800);
-    }
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    // If there are queued posts, flush them after reaching top
-    if (newQueue.length > 0) {
-      setTimeout(() => flushQueue(), 400);
-    }
-  }
 
   // ── Show queued posts ──────────────────────────────────────────────────────
   function flushQueue() {
@@ -174,15 +155,7 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
       )}
 
       {/* ── Scroll-to-top floating button (X-style) ──────────────────────── */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-20 right-4 z-30 w-10 h-10 rounded-full bg-primary text-primary-fg shadow-lg hover:bg-primary-h transition-all flex items-center justify-center md:bottom-6"
-          aria-label="Volver arriba"
-        >
-          <ArrowUp className="w-5 h-5" />
-        </button>
-      )}
+      <ScrollToTop />
     </div>
   );
 }

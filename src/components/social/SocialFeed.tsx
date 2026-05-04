@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import Link from "next/link";
 import Image from "next/image";
 import { Flame, Rss, Users, Compass } from "lucide-react";
@@ -24,7 +25,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
     /* Current user info for composer avatar */
     prisma.user.findUnique({
       where:  { id: userId },
-      select: { id: true, name: true, username: true, image: true },
+      select: USER_BASIC_SELECT,
     }),
 
     /* Initial posts (first page) */

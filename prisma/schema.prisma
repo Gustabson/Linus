@@ -165,6 +165,7 @@ model DocumentTree {
   @@index([ownerId])
   @@index([parentTreeId])
   @@index([contentType])
+  @@index([ownerId, updatedAt])
 }
 
 model TreeAttachment {
@@ -469,6 +470,7 @@ model Post {
 
   @@index([authorId])
   @@index([createdAt])
+  @@index([authorId, createdAt])
 }
 
 model PostLike {

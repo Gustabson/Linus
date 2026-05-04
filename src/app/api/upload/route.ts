@@ -6,7 +6,7 @@ const MAX_SIZE_MB = 10;
 
 // Validate by extension (not client-supplied MIME which can be forged)
 const ALLOWED_EXTENSIONS = new Set([
-  "jpg", "jpeg", "png", "gif", "webp", "svg",
+  "jpg", "jpeg", "png", "gif", "webp",
   "pdf",
   "mp4", "webm",
   "zip",
@@ -17,7 +17,7 @@ const ALLOWED_EXTENSIONS = new Set([
 // Canonical content-type per extension (server-assigned, not client-trusted)
 const EXT_TO_MIME: Record<string, string> = {
   jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png",
-  gif: "image/gif",  webp: "image/webp", svg: "image/svg+xml",
+  gif: "image/gif",  webp: "image/webp",
   pdf: "application/pdf",
   mp4: "video/mp4",  webm: "video/webm",
   zip: "application/zip",

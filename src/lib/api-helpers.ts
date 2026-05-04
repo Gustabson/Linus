@@ -9,21 +9,25 @@ export async function getSession() {
   return session?.user?.id ? session : null;
 }
 
-/** Returns the tree if it belongs to userId, otherwise null. */
+/** Returns the tree if it belongs to userId and is not private to others. */
 export async function getOwnedTree(slug: string, userId: string) {
   const tree = await prisma.documentTree.findUnique({
     where: { slug },
-    select: { id: true, ownerId: true },
+    select: { id: true, ownerId: true, visibility: true },
   });
-  return tree?.ownerId === userId ? tree : null;
+  if (!tree) return null;
+  if (tree.visibility === "PRIVATE" && tree.ownerId !== userId) return null;
+  return tree.ownerId === userId ? tree : null;
 }
 
 /** Returns the tree if it's a KERNEL owned by userId, otherwise null. */
 export async function getOwnedKernel(slug: string, userId: string) {
   const tree = await prisma.documentTree.findUnique({
     where: { slug },
-    select: { id: true, ownerId: true, contentType: true },
+    select: { id: true, ownerId: true, contentType: true, visibility: true },
   });
+  if (!tree) return null;
+  if (tree.visibility === "PRIVATE" && tree.ownerId !== userId) return null;
   return tree?.ownerId === userId && tree.contentType === "KERNEL" ? tree : null;
 }
 
@@ -68,3 +72,26 @@ export const unauthorized = () =>
 
 export const forbidden = () =>
   NextResponse.json({ error: "Sin permiso" }, { status: 403 });
+
+// ── Auth wrapper (DRY — replaces 37 manual getSession+unauthorized calls) ──
+type AuthHandler = (
+  req: Request,
+  ctx: { params: Promise<Record<string, string>> },
+  session: { user: { id: string; name?: string | null; username?: string | null; role?: string } }
+) => Promise<Response>;
+
+export function withAuth(handler: AuthHandler) {
+  return async (req: Request, ctx: { params: Promise<Record<string, string>> }) => {
+    const session = await getSession();
+    if (!session) return unauthorized();
+    try {
+      return await handler(req, ctx, session);
+    } catch (err) {
+      console.error("API error:", err);
+      return NextResponse.json(
+        { error: "Error interno del servidor" },
+        { status: 500 }
+      );
+    }
+  };
+}
