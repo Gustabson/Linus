@@ -250,18 +250,15 @@ export default async function UserProfilePage({
                 const ts = CONTENT_TYPE_STYLE[tree.contentType];
                 return (
                   <Link key={tree.id} href={`/${user.username}/${tree.slug}`}
-                    className={`bg-surface rounded-2xl border border-border p-6 ${ts.hoverBorderCls} hover:shadow-md transition-all group block`}>
+                    className={`bg-surface rounded-2xl border ${ts.borderCls} p-6 ${ts.hoverBorderCls} hover:shadow-md transition-all group block`}>
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
-                      <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium ${ts.badgeCls}`}>
-                        {ts.icon}{ts.label}
-                      </span>
                       {tree.forkDepth > 0 && (
                         <span className="bg-border-subtle text-text-muted text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
                           <GitFork className="w-3 h-3" /> Fork
                         </span>
                       )}
                     </div>
-                    <h3 className={`text-base font-bold text-text ${ts.groupHoverTextCls} transition-colors mb-2 line-clamp-2`}>
+                    <h3 className={`text-base font-bold ${ts.textCls} transition-colors mb-2 line-clamp-2`}>
                       {tree.title}
                     </h3>
                     {tree.description && (

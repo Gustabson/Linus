@@ -155,15 +155,12 @@ export default async function DashboardPage({
           {activeTrees.map((tree) => {
             const ts = CONTENT_TYPE_STYLE[tree.contentType];
             return (
-              <div key={tree.id} className={`relative bg-surface rounded-2xl border border-border ${ts.hoverBorderCls} hover:shadow-md transition-all group flex flex-col`}>
+              <div key={tree.id} className={`relative bg-surface rounded-2xl border ${ts.borderCls} ${ts.hoverBorderCls} hover:shadow-md transition-all group flex flex-col`}>
                 <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
                 <div className="p-6 flex flex-col gap-4 flex-1">
-                  {/* Top row: badge + visibility */}
+                  {/* Top row: fork info + visibility */}
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${ts.badgeCls}`}>
-                      {ts.label}
-                    </span>
                     {tree.parentTree && (
                       <span className="text-xs text-text-subtle flex items-center gap-1">
                         <GitFork className="w-3 h-3" />
@@ -179,8 +176,8 @@ export default async function DashboardPage({
                     </span>
                   </div>
 
-                  {/* Title */}
-                  <h3 className={`text-base font-bold text-text ${ts.groupHoverTextCls} transition-colors line-clamp-2 flex-1`}>
+                  {/* Title — colored by content type */}
+                  <h3 className={`text-base font-bold ${ts.textCls} transition-colors line-clamp-2 flex-1`}>
                     {tree.title}
                   </h3>
 
