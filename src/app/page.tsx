@@ -2,7 +2,7 @@ import { auth }         from "@/lib/auth";
 import { LandingPage }  from "@/components/landing/LandingPage";
 import { SocialFeed }   from "@/components/social/SocialFeed";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 30; // ISR: CDN cache 30s, SWR refreshes client-side
 
 export default async function HomePage({
   searchParams,

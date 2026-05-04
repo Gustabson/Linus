@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import useSWR from "swr";
 import { PostComposer } from "./PostComposer";
 import { PostCard, type PostData } from "./PostCard";
 import { Loader2, RefreshCw, ArrowUp } from "lucide-react";
@@ -29,6 +28,9 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
   // Real-time new-posts queue
   const [newQueue, setNewQueue]   = useState<PostData[]>([]);
 
+  // Scroll-to-top button
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
   // Track the createdAt of the newest visible post for polling
   const newestDateRef = useRef<string | null>(
     initialPosts.length > 0 ? initialPosts[0].createdAt : null
@@ -44,7 +46,6 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
       const data = await res.json();
       if (data.posts?.length > 0) {
         setNewQueue((prev) => {
-          // Deduplicate against already queued ids
           const existingIds = new Set(prev.map((p: PostData) => p.id));
           const fresh = (data.posts as PostData[]).filter((p) => !existingIds.has(p.id));
           return fresh.length > 0 ? [...fresh, ...prev] : prev;
@@ -62,10 +63,26 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
     return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVisible); };
   }, [pollNew]);
 
+  // ── Scroll-to-top detection ───────────────────────────────────────────────
+  useEffect(() => {
+    function onScroll() {
+      setShowScrollTop(window.scrollY > 800);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    // If there are queued posts, flush them after reaching top
+    if (newQueue.length > 0) {
+      setTimeout(() => flushQueue(), 400);
+    }
+  }
+
   // ── Show queued posts ──────────────────────────────────────────────────────
   function flushQueue() {
     if (newQueue.length === 0) return;
-    // Prepend (deduplicated against current feed)
     setPosts((prev) => {
       const existingIds = new Set(prev.map((p) => p.id));
       const toAdd = newQueue.filter((p) => !existingIds.has(p.id));
@@ -74,7 +91,6 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
       return merged;
     });
     setNewQueue([]);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   // ── Composer callback ──────────────────────────────────────────────────────
@@ -85,7 +101,6 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
       newestDateRef.current = merged[0].createdAt;
       return merged;
     });
-    // Clear any queued posts that might duplicate this one
     setNewQueue((prev) => prev.filter((p) => p.id !== post.id));
   }
 
@@ -114,8 +129,8 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
       {/* ── "Ver N nuevas publicaciones" banner ─────────────────────────── */}
       {newQueue.length > 0 && (
         <button
-          onClick={flushQueue}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary text-primary-fg text-sm font-semibold shadow-md hover:bg-primary-h transition-colors animate-in fade-in slide-in-from-top-2 duration-300"
+          onClick={() => { flushQueue(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary text-primary-fg text-sm font-semibold shadow-md hover:bg-primary-h transition-colors"
         >
           <ArrowUp className="w-4 h-4" />
           Ver {newQueue.length} publicación{newQueue.length !== 1 ? "es" : ""} nueva{newQueue.length !== 1 ? "s" : ""}
@@ -156,6 +171,17 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
             </button>
           )}
         </>
+      )}
+
+      {/* ── Scroll-to-top floating button (X-style) ──────────────────────── */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-20 right-4 z-30 w-10 h-10 rounded-full bg-primary text-primary-fg shadow-lg hover:bg-primary-h transition-all flex items-center justify-center md:bottom-6"
+          aria-label="Volver arriba"
+        >
+          <ArrowUp className="w-5 h-5" />
+        </button>
       )}
     </div>
   );
