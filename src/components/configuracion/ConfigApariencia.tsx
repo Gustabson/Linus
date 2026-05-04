@@ -115,10 +115,25 @@ export function ConfigApariencia({
       if (mode) themeCookie["mode"] = mode;
       document.cookie = `eduhub_theme=${encodeURIComponent(JSON.stringify(themeCookie))};path=/;max-age=31536000;SameSite=Lax`;
 
+      // Apply CSS vars directly to DOM (instant, no layout reload needed)
+      const root = document.documentElement;
+      for (const [key, value] of Object.entries(themeCookie)) {
+        if (key === "mode") continue;
+        // Map cookieKey → CSS var using THEME_PROPERTIES from theme-config
+        // We import cookieToStyle on the server; here we inline the mapping
+        const cssVar = "--" + key.replace(/([A-Z])/g, "-$1").toLowerCase();
+        root.style.setProperty(cssVar, value);
+        // Derivatives
+        if (key === "border")     root.style.setProperty("--border-subtle", value);
+        if (key === "text")       { root.style.setProperty("--text-muted", value + "cc"); root.style.setProperty("--text-subtle", value + "88"); }
+        if (key === "primary")    root.style.setProperty("--primary-h", value);
+        if (key === "kernel")     root.style.setProperty("--kernel-h", value);
+        if (key === "module")     root.style.setProperty("--module-h", value);
+        if (key === "resource")   root.style.setProperty("--resource-h", value);
+      }
+
       setSaved(true);
       router.refresh();
-      // Force layout re-render so theme cookie is picked up
-      setTimeout(() => { window.location.reload(); }, 500);
       setTimeout(() => setSaved(false), 3000);
     });
   }
