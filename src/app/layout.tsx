@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { auth }            from "@/lib/auth";
 import { SessionProvider } from "@/components/layout/SessionProvider";
 import { LayoutShell }     from "@/components/layout/LayoutShell";
 import { Toaster }         from "@/components/ui/Toaster";
 import { ThemeProvider }   from "@/components/layout/ThemeProvider";
-import { getSession, getUserTheme } from "@/lib/data";
-
-export const dynamic = "force-dynamic";
+import { ThemeLoader }     from "@/components/layout/ThemeLoader";
+import { SWRProvider }     from "@/hooks/use-api";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -27,59 +27,21 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session    = await getSession();
+  const session    = await auth();
   const isLoggedIn = !!session?.user?.id;
 
-  // Load user theme server-side → apply before paint, no flash
-  let initialTheme: "light" | "dark" = "light";
-  let customVars: Record<string, string> | undefined;
-  const ctVars: Record<string, string> = {};
-
-  if (session?.user?.id) {
-    const prefs = await getUserTheme(session.user.id);
-
-    if (prefs?.themeMode === "dark") {
-      initialTheme = "dark";
-    } else if (prefs?.themeMode === "custom") {
-      // Build CSS variable map — applied as inline style on <html>
-      customVars = {
-        ...(prefs.themeBg      ? { "--bg": prefs.themeBg }                                           : {}),
-        ...(prefs.themeSurface ? { "--surface": prefs.themeSurface }                                 : {}),
-        ...(prefs.themeBorder  ? { "--border": prefs.themeBorder, "--border-subtle": prefs.themeBorder } : {}),
-        ...(prefs.themeText    ? {
-          "--text":         prefs.themeText,
-          "--text-muted":   prefs.themeText + "cc",
-          "--text-subtle":  prefs.themeText + "88",
-        } : {}),
-        ...(prefs.themePrimary ? { "--primary": prefs.themePrimary, "--primary-h": prefs.themePrimary } : {}),
-      };
-    }
-
-    // Sidebar colors apply in ALL modes
-    if (prefs?.themeSidebarBg)   ctVars["--sidebar-bg"]   = prefs.themeSidebarBg;
-    if (prefs?.themeSidebarText) ctVars["--sidebar-text"] = prefs.themeSidebarText;
-    // Content type colors apply in ALL modes
-    if (prefs?.themeKernel)   { ctVars["--kernel"]   = prefs.themeKernel;   ctVars["--kernel-h"]   = prefs.themeKernel; }
-    if (prefs?.themeModule)   { ctVars["--module"]   = prefs.themeModule;   ctVars["--module-h"]   = prefs.themeModule; }
-    if (prefs?.themeResource) { ctVars["--resource"] = prefs.themeResource; ctVars["--resource-h"] = prefs.themeResource; }
-  }
-
-  const htmlStyle = { ...ctVars, ...(customVars ?? {}) };
-
   return (
-    <html
-      lang="es"
-      suppressHydrationWarning
-      className={initialTheme === "dark" ? "dark" : ""}
-      style={htmlStyle as React.CSSProperties}
-    >
+    <html lang="es" suppressHydrationWarning>
       <body className="min-h-screen bg-bg">
-        <ThemeProvider attribute="class" defaultTheme={initialTheme} enableSystem={false}>
+        <ThemeLoader />
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
           <SessionProvider session={session}>
-            <LayoutShell isLoggedIn={isLoggedIn}>
-              {children}
-            </LayoutShell>
-            <Toaster />
+            <SWRProvider>
+              <LayoutShell isLoggedIn={isLoggedIn}>
+                {children}
+              </LayoutShell>
+              <Toaster />
+            </SWRProvider>
           </SessionProvider>
         </ThemeProvider>
       </body>

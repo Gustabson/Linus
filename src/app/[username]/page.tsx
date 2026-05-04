@@ -11,7 +11,7 @@ import { ProfileFeed }        from "@/components/profile/ProfileFeed";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import type { PostData }      from "@/components/social/PostCard";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;

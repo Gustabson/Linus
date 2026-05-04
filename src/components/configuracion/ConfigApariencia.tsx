@@ -105,6 +105,14 @@ export function ConfigApariencia({
       if (mode === "light") setTheme("light");
       if (mode === "dark")  setTheme("dark");
 
+      // Save theme to cookie so ThemeLoader can apply it before paint
+      const themeCookie: Record<string, string> = { mode };
+      if (mode === "custom") {
+        for (const [k, v] of Object.entries(colors)) { if (v) themeCookie[k] = v as string; }
+      }
+      for (const [k, v] of Object.entries({ ...sidebarColors, ...ctColors })) { if (v) themeCookie[k] = v as string; }
+      document.cookie = `eduhub_theme=${encodeURIComponent(JSON.stringify(themeCookie))};path=/;max-age=31536000;SameSite=Lax`;
+
       setSaved(true);
       router.refresh();
       setTimeout(() => setSaved(false), 3000);

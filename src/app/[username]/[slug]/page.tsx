@@ -17,7 +17,7 @@ import { QuickAddDocument } from "@/components/trees/QuickAddDocument";
 
 import { BackButton } from "@/components/shared/BackButton";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string; slug: string }> }) {
   const { slug } = await params;

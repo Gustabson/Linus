@@ -12,7 +12,7 @@ import { formatDate } from "@/lib/utils";
 import { CONTENT_TYPE_STYLE, CONTENT_TABS } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function DashboardPage({
   searchParams,

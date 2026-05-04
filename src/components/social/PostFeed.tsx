@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import useSWR from "swr";
 import { PostComposer } from "./PostComposer";
 import { PostCard, type PostData } from "./PostCard";
 import { Loader2, RefreshCw, ArrowUp } from "lucide-react";

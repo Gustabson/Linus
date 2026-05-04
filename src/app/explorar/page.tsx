@@ -6,7 +6,7 @@ import Image from "next/image";
 import { CONTENT_TYPE_STYLE, CONTENT_TABS } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
 
 const SORT_OPTIONS = [
   { key: "trending", label: "Tendencia",    icon: <TrendingUp className="w-4 h-4" /> },
