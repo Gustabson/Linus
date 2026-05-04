@@ -9,6 +9,7 @@ import { ThemeProvider }   from "@/components/layout/ThemeProvider";
 import { SWRProvider }     from "@/hooks/use-api";
 import { cookieToStyle }  from "@/lib/theme-config";
 import { ErrorBoundary }  from "@/components/shared/ErrorBoundary";
+import { ThemeScript }    from "@/components/layout/ThemeScript";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -51,6 +52,7 @@ export default async function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning className={initialTheme === "dark" ? "dark" : ""} style={htmlStyle as React.CSSProperties}>
       <body className="min-h-screen bg-bg">
+        <ThemeScript />
         <ThemeProvider attribute="class" defaultTheme={initialTheme} enableSystem={false}>
           <SessionProvider session={session}>
             <SWRProvider>
