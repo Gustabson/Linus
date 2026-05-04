@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 
 export async function GET(req: NextRequest) {
   // S9: require authentication to prevent unauthenticated user enumeration
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
       ],
     },
     select: {
-      id: true, name: true, username: true, image: true, bio: true,
+      ...USER_BASIC_SELECT, bio: true,
       _count: { select: { followers: true, ownedTrees: true } },
       // Include whether the current user follows each result
       followers: session?.user?.id

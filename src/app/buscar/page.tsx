@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import Image from "next/image";
 import Link from "next/link";
 import { Search } from "lucide-react";
@@ -25,7 +26,7 @@ export default async function BuscarPage({
           ],
         },
         select: {
-          id: true, name: true, username: true, image: true, bio: true,
+          ...USER_BASIC_SELECT, bio: true,
           _count: { select: { followers: true, ownedTrees: true } },
           followers: session?.user?.id
             ? { where: { followerId: session.user.id }, select: { id: true } }

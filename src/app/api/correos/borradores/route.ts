@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 
 // ── GET /api/correos/borradores ───────────────────────────────────────────────
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
     take: 30,
     select: {
       id: true, subject: true, createdAt: true, body: true,
-      recipient: { select: { id: true, name: true, username: true, image: true } },
+      recipient: { select: USER_BASIC_SELECT },
     },
   });
 

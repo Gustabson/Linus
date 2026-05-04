@@ -36,7 +36,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
       orderBy: { createdAt: "desc" },
       take: 71, // 70 to show + 1 for hasMore check
       include: {
-        author: { select: { id: true, name: true, username: true, image: true } },
+        author: { select: USER_BASIC_SELECT },
         tree: {
           select: {
             id: true, slug: true, title: true, description: true,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 
 // ── GET /api/posts/[id]/comments ──────────────────────────────────────────────
@@ -13,7 +14,7 @@ export async function GET(
     where:   { postId },
     orderBy: { createdAt: "asc" },
     include: {
-      author: { select: { id: true, name: true, username: true, image: true } },
+      author: { select: USER_BASIC_SELECT },
     },
   });
 
@@ -47,7 +48,7 @@ export async function POST(
       authorId: session.user.id,
     },
     include: {
-      author: { select: { id: true, name: true, username: true, image: true } },
+      author: { select: USER_BASIC_SELECT },
     },
   });
 

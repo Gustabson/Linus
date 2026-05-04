@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { sanitizeHtml } from "@/lib/sanitize";
 
 type Params = { params: Promise<{ id: string }> };
 
-const USER_SELECT = { id: true, name: true, username: true, image: true } as const;
+const USER_SELECT = USER_BASIC_SELECT;
 
 // ── GET /api/correos/[id] — fetch + auto-mark read ────────────────────────────
 export async function GET(_req: NextRequest, { params }: Params) {

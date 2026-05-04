@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { sanitizeHtml } from "@/lib/sanitize";
 
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       isDraft:     false,
     },
     include: {
-      sender: { select: { id: true, name: true, username: true, image: true } },
+      sender: { select: USER_BASIC_SELECT },
     },
   });
 

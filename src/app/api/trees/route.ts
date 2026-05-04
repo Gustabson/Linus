@@ -1,14 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, uniqueSlug } from "@/lib/api-helpers";
+import { withAuth, uniqueSlug } from "@/lib/api-helpers";
 import type { TreeVisibility, ContentType } from "@prisma/client";
 
 const VALID_TYPES: ContentType[] = ["KERNEL", "MODULE", "RESOURCE"];
 
-export async function POST(req: NextRequest) {
-  const session = await getSession();
-  if (!session) return unauthorized();
-
+export const POST = withAuth(async (req, _ctx, session) => {
   const { title, description, language, visibility, contentType } = await req.json();
   if (!title?.trim()) return NextResponse.json({ error: "El título es requerido" }, { status: 400 });
 
@@ -36,4 +33,4 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ slug: tree.slug, id: tree.id });
-}
+});

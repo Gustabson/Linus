@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { notFound, redirect } from "next/navigation";
 import { CorreosDetalle } from "@/components/correos/CorreosDetalle";
 
@@ -18,12 +19,12 @@ export default async function CorreoDetallePage({
   const message = await prisma.message.findUnique({
     where: { id },
     include: {
-      sender:    { select: { id: true, name: true, username: true, image: true } },
-      recipient: { select: { id: true, name: true, username: true, image: true } },
+      sender:    { select: USER_BASIC_SELECT },
+      recipient: { select: USER_BASIC_SELECT },
       replies: {
         where:   { deletedByRecipient: false, deletedBySender: false },
         orderBy: { createdAt: "asc" },
-        include: { sender: { select: { id: true, name: true, username: true, image: true } } },
+        include: { sender: { select: USER_BASIC_SELECT } },
       },
     },
   });

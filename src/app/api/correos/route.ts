@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { sendCorreoEmail } from "@/lib/notifications";
@@ -7,9 +8,7 @@ import { sendCorreoEmail } from "@/lib/notifications";
 const SUBJECT_MAX = 200;
 const BODY_MAX    = 5000;
 
-const SENDER_SELECT = {
-  id: true, name: true, username: true, image: true,
-} as const;
+const SENDER_SELECT = USER_BASIC_SELECT;
 
 // ── GET /api/correos — bandeja de entrada ─────────────────────────────────────
 export async function GET(req: NextRequest) {

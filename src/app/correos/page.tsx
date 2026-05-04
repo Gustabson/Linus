@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { redirect } from "next/navigation";
 import { CorreosList } from "@/components/correos/CorreosList";
 
@@ -19,7 +20,7 @@ export default async function BandejaPage() {
     take: 30,
     select: {
       id: true, subject: true, isRead: true, createdAt: true, body: true,
-      sender: { select: { id: true, name: true, username: true, image: true } },
+      sender: { select: USER_BASIC_SELECT },
     },
   });
 

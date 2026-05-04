@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { createNotification } from "@/lib/notifications";
 import { getSession, unauthorized, forbidden } from "@/lib/api-helpers";
 
@@ -45,7 +46,7 @@ export async function GET(
       ],
     },
     include: {
-      author: { select: { id: true, name: true, username: true, image: true } },
+      author: { select: USER_BASIC_SELECT },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -81,7 +82,7 @@ export async function POST(
       isPrivate:   isPrivate === true,
     },
     include: {
-      author: { select: { id: true, name: true, username: true, image: true } },
+      author: { select: USER_BASIC_SELECT },
     },
   });
 

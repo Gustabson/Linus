@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
@@ -74,7 +75,7 @@ export default async function TreePage({
   const tree = await prisma.documentTree.findUnique({
     where: { slug },
     include: {
-      owner: { select: { id: true, name: true, username: true, image: true, bio: true } },
+      owner: { select: { ...USER_BASIC_SELECT, bio: true } },
       parentTree: { select: { id: true, slug: true, title: true, contentType: true, parentTreeId: true } },
       documents: {
         orderBy: { createdAt: "asc" },

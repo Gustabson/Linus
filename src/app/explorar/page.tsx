@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { GitFork, BookOpen, Search, Heart, TrendingUp, Clock } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
@@ -35,7 +36,7 @@ export default async function ExplorarPage({
       } : {}),
     },
     include: {
-      owner: { select: { id: true, name: true, username: true, image: true } },
+      owner: { select: USER_BASIC_SELECT },
       _count: { select: { forks: true, likes: true, documents: true } },
     },
     orderBy: { createdAt: "desc" },

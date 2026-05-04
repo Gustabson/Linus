@@ -1,4 +1,5 @@
 import { prisma }       from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { auth }         from "@/lib/auth";
 import { notFound }     from "next/navigation";
 import { formatDate }   from "@/lib/utils";
@@ -72,7 +73,7 @@ export default async function UserProfilePage({
     orderBy: { createdAt: "desc" },
     take:    LIMIT + 1,
     include: {
-      author: { select: { id: true, name: true, username: true, image: true } },
+      author: { select: USER_BASIC_SELECT },
       tree: {
         select: {
           id: true, slug: true, title: true, description: true,

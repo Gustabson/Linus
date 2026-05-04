@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { USER_BASIC_SELECT } from "@/lib/data";
 import { redirect } from "next/navigation";
 import { CorreosList } from "@/components/correos/CorreosList";
 
@@ -20,7 +21,7 @@ export default async function EnviadosPage() {
     take: 30,
     select: {
       id: true, subject: true, isRead: true, createdAt: true, body: true,
-      recipient: { select: { id: true, name: true, username: true, image: true } },
+      recipient: { select: USER_BASIC_SELECT },
     },
   });
 
