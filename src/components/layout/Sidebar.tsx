@@ -11,7 +11,7 @@ import {
 import Image from "next/image";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 
-const POLL_MS = 60_000;
+const POLL_MS = 180_000; // 3 min — badge counts don't need real-time
 
 // ── Sidebar badge counts (correos + propuestas) ────────────────────────────
 function useSidebarCounts() {

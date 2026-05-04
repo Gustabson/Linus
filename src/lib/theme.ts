@@ -1,7 +1,12 @@
 /**
- * Helpers para el tema personalizado del usuario.
- * Cálculo de contraste WCAG 2.1.
+ * Theme utilities: WCAG contrast, hex validation, CSS generation.
+ * 
+ * For theme PROPERTIES (colors, mappings, cookie logic), see:
+ *   lib/theme-config.ts  ← SINGLE SOURCE OF TRUTH
  */
+
+// Re-export from theme-config (single source of truth)
+export { PRESET_LIGHT, PRESET_DARK, buildThemeCookie, THEME_PROPERTIES, cookieToStyle } from "./theme-config";
 
 export interface CustomTheme {
   themeBg:      string;
@@ -62,61 +67,4 @@ export function buildCustomThemeCSS(t: Partial<CustomTheme>): string {
   if (t.themePrimary && isValidHex(t.themePrimary))  vars.push(`--primary: ${t.themePrimary}; --primary-h: ${t.themePrimary};`);
   if (vars.length === 0) return "";
   return `:root { ${vars.join(" ")} }`;
-}
-
-/** Presets para reset rápido */
-export const PRESET_LIGHT: CustomTheme = {
-  themeBg:      "#f9fafb",
-  themeSurface: "#ffffff",
-  themeBorder:  "#e5e7eb",
-  themeText:    "#111827",
-  themePrimary: "#15803d",
-};
-
-export const PRESET_DARK: CustomTheme = {
-  themeBg:      "#0f172a",
-  themeSurface: "#1e293b",
-  themeBorder:  "#334155",
-  themeText:    "#f1f5f9",
-  themePrimary: "#22c55e",
-};
-
-// ── Theme cookie mapping (single source of truth) ─────────────────────────
-
-/** Map DB/config field names → cookie / CSS variable names.
- *  Used by ConfigApariencia (save) and layout (read). */
-export const THEME_COOKIE_MAP: Record<string, string> = {
-  // Custom mode colors
-  themeBg:      "bg",
-  themeSurface: "surface",
-  themeBorder:  "border",
-  themeText:    "text",
-  themePrimary: "primary",
-  // Sidebar (always applied)
-  themeSidebarBg:   "sidebarBg",
-  themeSidebarText: "sidebarText",
-  // Content types (always applied)
-  themeKernel:   "kernel",
-  themeModule:   "module",
-  themeResource: "resource",
-};
-
-interface ThemeConfigInput {
-  mode?: string;
-  colors?:       Partial<CustomTheme>;
-  sidebarColors?: { themeSidebarBg?: string; themeSidebarText?: string };
-  ctColors?:      { themeKernel?: string; themeModule?: string; themeResource?: string };
-}
-
-/** Build the cookie payload from config input. Returns { mode?, bg?, kernel?, ... } */
-export function buildThemeCookie({ mode, colors, sidebarColors, ctColors }: ThemeConfigInput): Record<string, string> {
-  const cookie: Record<string, string> = {};
-  if (mode) cookie["mode"] = mode;
-
-  const sources = { ...colors, ...sidebarColors, ...ctColors };
-  for (const [key, value] of Object.entries(sources)) {
-    const mapped = THEME_COOKIE_MAP[key];
-    if (mapped && value) cookie[mapped] = value;
-  }
-  return cookie;
 }

@@ -6,7 +6,7 @@ import { PostComposer } from "./PostComposer";
 import { PostCard, type PostData } from "./PostCard";
 import { Loader2, RefreshCw, ArrowUp } from "lucide-react";
 
-const POLL_MS = 30_000; // 30 s
+const POLL_MS = 120_000; // 2 min — educational feed, not breaking news
 
 interface Props {
   initialPosts:    PostData[];

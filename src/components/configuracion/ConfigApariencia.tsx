@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Sun, Moon, Palette, RotateCcw, Loader2, Check } from "lucide-react";
 import { SectionCard } from "@/components/ui/Card";
 import { Button }      from "@/components/ui/Button";
-import { PRESET_LIGHT, PRESET_DARK, buildThemeCookie } from "@/lib/theme";
+import { PRESET_LIGHT, PRESET_DARK, buildThemeCookie } from "@/lib/theme-config";
 
 type Mode = "light" | "dark" | "custom";
 
@@ -106,7 +106,13 @@ export function ConfigApariencia({
       if (mode === "dark")  setTheme("dark");
 
       // Save theme to cookie so layout can apply CSS vars before paint
-      const themeCookie = buildThemeCookie({ mode, colors, sidebarColors, ctColors });
+      const themeCookie = buildThemeCookie({
+        themeMode: mode,
+        ...colors,
+        ...sidebarColors,
+        ...ctColors,
+      });
+      if (mode) themeCookie["mode"] = mode;
       document.cookie = `eduhub_theme=${encodeURIComponent(JSON.stringify(themeCookie))};path=/;max-age=31536000;SameSite=Lax`;
 
       setSaved(true);
