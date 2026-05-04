@@ -276,14 +276,14 @@ export default async function TreePage({
             )}
             {isOwner && tree.parentTreeId && userHasOpenProposal && (
               <Link href="/propuestas?tab=enviadas"
-                className="flex items-center gap-1.5 text-sm text-blue-700 border border-blue-200 bg-blue-50 px-3 py-2 rounded-xl hover:bg-blue-100 transition-colors">
+                className="flex items-center gap-1.5 text-sm text-primary border border-primary/20 bg-primary/5 px-3 py-2 rounded-xl hover:bg-primary/10 transition-colors">
                 <GitPullRequest className="w-4 h-4" />
                 Propuesta abierta
               </Link>
             )}
             {isOwner && !tree.parentTreeId && openProposalsCount > 0 && (
               <Link href="/propuestas"
-                className="flex items-center gap-2 text-sm text-blue-700 border border-blue-200 bg-blue-50 px-3 py-2 rounded-xl hover:bg-blue-100 transition-colors">
+                className="flex items-center gap-2 text-sm text-primary border border-primary/20 bg-primary/5 px-3 py-2 rounded-xl hover:bg-primary/10 transition-colors">
                 <GitPullRequest className="w-4 h-4" />
                 {openProposalsCount} propuesta{openProposalsCount !== 1 ? "s" : ""}
               </Link>

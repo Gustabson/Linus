@@ -33,7 +33,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
         ? {}
         : { authorId: { in: followingIds } },
       orderBy: { createdAt: "desc" },
-      take: 21,
+      take: 71, // 70 to show + 1 for hasMore check
       include: {
         author: { select: { id: true, name: true, username: true, image: true } },
         tree: {
@@ -62,8 +62,9 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
     }),
   ]);
 
-  const hasMore      = postsRaw.length > 20;
-  const posts        = hasMore ? postsRaw.slice(0, 20) : postsRaw;
+  const POSTS_PER_PAGE = 70;
+  const hasMore      = postsRaw.length > POSTS_PER_PAGE;
+  const posts        = hasMore ? postsRaw.slice(0, POSTS_PER_PAGE) : postsRaw;
   const nextCursor   = hasMore ? posts[posts.length - 1].createdAt.toISOString() : null;
 
   // Serialize dates for client

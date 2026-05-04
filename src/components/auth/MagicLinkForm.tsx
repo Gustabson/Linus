@@ -32,18 +32,18 @@ export function MagicLinkForm() {
 
   if (sent) {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center space-y-2">
-        <div className="w-10 h-10 mx-auto rounded-full bg-green-100 flex items-center justify-center">
-          <Check className="w-5 h-5 text-green-600" />
+      <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 text-center space-y-2">
+        <div className="w-10 h-10 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+          <Check className="w-5 h-5 text-primary" />
         </div>
-        <p className="text-sm font-semibold text-green-800">¡Link enviado!</p>
-        <p className="text-xs text-green-700">
+        <p className="text-sm font-semibold text-text">¡Link enviado!</p>
+        <p className="text-xs text-text-muted">
           Revisá <span className="font-medium">{email}</span> — hacé click en el link para entrar.
           Expira en 10 minutos.
         </p>
         <button
           onClick={() => { setSent(false); setEmail(""); }}
-          className="text-xs text-green-600 underline hover:no-underline"
+          className="text-xs text-primary underline hover:no-underline"
         >
           Usar otro correo
         </button>

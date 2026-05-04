@@ -17,7 +17,7 @@ import {
 // Mi espacio modal → Mi espacio, Explorar, Buscar, Propuestas
 // Configuración modal → Perfil, Notificaciones, Configuración
 
-const POLL_MS = 60_000;
+const POLL_MS = 180_000; // 3 min — badge counts don't need real-time
 
 function useBottomBadges() {
   const [correos, setCorreos] = useState(0);

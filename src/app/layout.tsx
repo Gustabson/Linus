@@ -8,6 +8,7 @@ import { Toaster }         from "@/components/ui/Toaster";
 import { ThemeProvider }   from "@/components/layout/ThemeProvider";
 import { SWRProvider }     from "@/hooks/use-api";
 import { cookieToStyle }  from "@/lib/theme-config";
+import { ErrorBoundary }  from "@/components/shared/ErrorBoundary";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -54,7 +55,9 @@ export default async function RootLayout({
           <SessionProvider session={session}>
             <SWRProvider>
               <LayoutShell isLoggedIn={isLoggedIn}>
-                {children}
+                <ErrorBoundary>
+                  {children}
+                </ErrorBoundary>
               </LayoutShell>
               <Toaster />
             </SWRProvider>

@@ -35,7 +35,7 @@ function formatRelative(dateStr: string) {
   return `hace ${days}d`;
 }
 
-const POLL_MS = 60_000;
+const POLL_MS = 180_000; // 3 min
 
 interface BellProps {
   triggerClass?: string;

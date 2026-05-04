@@ -35,9 +35,13 @@ export const getUserFollows = cache(async (userId: string) => {
 });
 
 // ── User basic info (avatar, name, username — used everywhere) ────────────
+export const USER_BASIC_SELECT = {
+  id: true, name: true, username: true, image: true,
+} as const;
+
 export const getUserBasic = cache(async (userId: string) => {
   return prisma.user.findUnique({
     where:  { id: userId },
-    select: { id: true, name: true, username: true, image: true },
+    select: USER_BASIC_SELECT,
   });
 });

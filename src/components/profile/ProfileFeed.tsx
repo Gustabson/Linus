@@ -5,7 +5,7 @@ import { PostComposer } from "@/components/social/PostComposer";
 import { PostCard, type PostData } from "@/components/social/PostCard";
 import { Loader2, Pencil, ArrowUp } from "lucide-react";
 
-const POLL_MS = 30_000; // 30 s
+const POLL_MS = 120_000; // 2 min
 
 interface CurrentUser {
   id:       string;
