@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
-  Puzzle, Plus, X, Search, Loader2,
+  Plus, X, Search, Loader2,
   Heart, GitFork, ExternalLink, FileText,
 } from "lucide-react";
+import { CONTENT_TYPE_STYLE } from "@/lib/constants";
+import type { ContentType } from "@prisma/client";
 
 interface AttachedTree {
   id: string;
@@ -26,8 +28,6 @@ interface Attachment {
 const MODULE_META = {
   label: "Módulo",
   plural: "Módulos",
-  icon: <Puzzle className="w-3.5 h-3.5" />,
-  cls: "bg-blue-100 text-blue-800",
   emptyText: "No hay módulos adjuntos.",
   hint: "Creá una unidad didáctica o adjuntá una existente.",
   placeholder: "Ej: Unidad de Fracciones — 4to grado",
@@ -161,8 +161,8 @@ function AttachSection({
       {/* Section header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${meta.cls}`}>
-            {meta.icon} {meta.plural}
+          <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${CONTENT_TYPE_STYLE.MODULE.badgeCls}`}>
+            {CONTENT_TYPE_STYLE.MODULE.icon} {meta.plural}
           </span>
           <span className="text-sm text-text-subtle">{items.length}</span>
         </div>
@@ -288,34 +288,37 @@ function AttachSection({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {items.map((att) => (
-            <div key={att.id}
-              className="relative bg-surface rounded-xl border border-border p-4 hover:border-primary/30 transition-colors group flex flex-col gap-2">
-              <Link href={`/${att.content.owner.username ?? att.content.owner.name ?? att.content.id}/${att.content.slug}`} className="absolute inset-0 rounded-xl" aria-label={att.content.title} />
+          {items.map((att) => {
+            const style = CONTENT_TYPE_STYLE[att.content.contentType as ContentType] ?? CONTENT_TYPE_STYLE.MODULE;
+            return (
+              <div key={att.id}
+                className={`relative bg-surface rounded-xl border p-4 hover:shadow-sm transition-colors group flex flex-col gap-2 ${style.borderCls} ${style.hoverBorderCls}`}>
+                <Link href={`/${att.content.owner.username ?? att.content.owner.name ?? att.content.id}/${att.content.slug}`} className="absolute inset-0 rounded-xl" aria-label={att.content.title} />
 
-              {/* Title row with detach button always visible */}
-              <div className="flex items-start justify-between gap-2">
-                <p className="font-medium text-text text-sm group-hover:text-primary transition-colors line-clamp-2 flex-1">
-                  {att.content.title}
+                {/* Title row with detach button always visible */}
+                <div className="flex items-start justify-between gap-2">
+                  <p className={`font-medium text-sm line-clamp-2 flex-1 transition-colors ${style.textCls}`}>
+                    {att.content.title}
+                  </p>
+                  <button
+                    onClick={() => detach(att.id, att.content.id)}
+                    className="relative z-10 shrink-0 p-1.5 text-text-subtle hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    title="Desadjuntar"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <p className="text-xs text-text-subtle">
+                  {att.content.owner.username ? `@${att.content.owner.username}` : att.content.owner.name}
                 </p>
-                <button
-                  onClick={() => detach(att.id, att.content.id)}
-                  className="relative z-10 shrink-0 p-1.5 text-text-subtle hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                  title="Desadjuntar"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-3 text-xs text-text-subtle">
+                  <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{att.content._count.likes}</span>
+                  <span className="flex items-center gap-1"><GitFork className="w-3 h-3" />{att.content._count.forks}</span>
+                </div>
               </div>
-
-              <p className="text-xs text-text-subtle">
-                {att.content.owner.username ? `@${att.content.owner.username}` : att.content.owner.name}
-              </p>
-              <div className="flex items-center gap-3 text-xs text-text-subtle">
-                <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{att.content._count.likes}</span>
-                <span className="flex items-center gap-1"><GitFork className="w-3 h-3" />{att.content._count.forks}</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

@@ -158,16 +158,13 @@ export default async function DashboardPage({
               <div key={tree.id} className={`relative bg-surface rounded-2xl border ${ts.borderCls} ${ts.hoverBorderCls} hover:shadow-md transition-all group flex flex-col`}>
                 <Link href={`/${session.user.username ?? session.user.id}/${tree.slug}`} className="absolute inset-0 rounded-2xl" aria-label={tree.title} />
 
-                <div className="p-6 flex flex-col gap-4 flex-1">
-                  {/* Top row: fork info + visibility */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {tree.parentTree && (
-                      <span className="text-xs text-text-subtle flex items-center gap-1">
-                        <GitFork className="w-3 h-3" />
-                        Fork de {tree.parentTree.title}
-                      </span>
-                    )}
-                    <span className={`ml-auto text-xs px-2.5 py-1 rounded-full font-medium ${
+                <div className="p-6 flex flex-col gap-3 flex-1">
+                  {/* Title row: title + visibility */}
+                  <div className="flex items-start gap-2">
+                    <h3 className={`text-base font-bold ${ts.textCls} transition-colors line-clamp-2 flex-1`}>
+                      {tree.title}
+                    </h3>
+                    <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${
                       tree.visibility === "PUBLIC"   ? "bg-primary/5 text-primary" :
                       tree.visibility === "UNLISTED" ? "bg-border-subtle text-text-muted"  :
                                                        "bg-red-50 text-red-500"
@@ -176,10 +173,13 @@ export default async function DashboardPage({
                     </span>
                   </div>
 
-                  {/* Title — colored by content type */}
-                  <h3 className={`text-base font-bold ${ts.textCls} transition-colors line-clamp-2 flex-1`}>
-                    {tree.title}
-                  </h3>
+                  {/* Fork info */}
+                  {tree.parentTree && (
+                    <span className="text-xs text-text-subtle flex items-center gap-1">
+                      <GitFork className="w-3 h-3" />
+                      Fork de {tree.parentTree.title}
+                    </span>
+                  )}
 
                   {/* Stats */}
                   <div className="flex items-center gap-4 text-sm text-text-subtle">
