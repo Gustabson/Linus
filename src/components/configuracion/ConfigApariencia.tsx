@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Sun, Moon, Palette, RotateCcw, Loader2, Check } from "lucide-react";
 import { SectionCard } from "@/components/ui/Card";
 import { Button }      from "@/components/ui/Button";
-import { PRESET_LIGHT, PRESET_DARK } from "@/lib/theme";
+import { PRESET_LIGHT, PRESET_DARK, buildThemeCookie } from "@/lib/theme";
 
 type Mode = "light" | "dark" | "custom";
 
@@ -106,19 +106,7 @@ export function ConfigApariencia({
       if (mode === "dark")  setTheme("dark");
 
       // Save theme to cookie so layout can apply CSS vars before paint
-      const themeCookie: Record<string, string> = { mode };
-      if (mode === "custom") {
-        if (colors.themeBg)      themeCookie["bg"]      = colors.themeBg;
-        if (colors.themeSurface) themeCookie["surface"] = colors.themeSurface;
-        if (colors.themeBorder)  themeCookie["border"]  = colors.themeBorder;
-        if (colors.themeText)    themeCookie["text"]    = colors.themeText;
-        if (colors.themePrimary) themeCookie["primary"] = colors.themePrimary;
-      }
-      if (sidebarColors.themeSidebarBg)   themeCookie["sidebarBg"]   = sidebarColors.themeSidebarBg;
-      if (sidebarColors.themeSidebarText) themeCookie["sidebarText"] = sidebarColors.themeSidebarText;
-      if (ctColors.themeKernel)   themeCookie["kernel"]   = ctColors.themeKernel;
-      if (ctColors.themeModule)   themeCookie["module"]   = ctColors.themeModule;
-      if (ctColors.themeResource) themeCookie["resource"] = ctColors.themeResource;
+      const themeCookie = buildThemeCookie({ mode, colors, sidebarColors, ctColors });
       document.cookie = `eduhub_theme=${encodeURIComponent(JSON.stringify(themeCookie))};path=/;max-age=31536000;SameSite=Lax`;
 
       setSaved(true);

@@ -80,3 +80,43 @@ export const PRESET_DARK: CustomTheme = {
   themeText:    "#f1f5f9",
   themePrimary: "#22c55e",
 };
+
+// ── Theme cookie mapping (single source of truth) ─────────────────────────
+
+/** Map DB/config field names → cookie / CSS variable names.
+ *  Used by ConfigApariencia (save) and layout (read). */
+export const THEME_COOKIE_MAP: Record<string, string> = {
+  // Custom mode colors
+  themeBg:      "bg",
+  themeSurface: "surface",
+  themeBorder:  "border",
+  themeText:    "text",
+  themePrimary: "primary",
+  // Sidebar (always applied)
+  themeSidebarBg:   "sidebarBg",
+  themeSidebarText: "sidebarText",
+  // Content types (always applied)
+  themeKernel:   "kernel",
+  themeModule:   "module",
+  themeResource: "resource",
+};
+
+interface ThemeConfigInput {
+  mode?: string;
+  colors?:       Partial<CustomTheme>;
+  sidebarColors?: { themeSidebarBg?: string; themeSidebarText?: string };
+  ctColors?:      { themeKernel?: string; themeModule?: string; themeResource?: string };
+}
+
+/** Build the cookie payload from config input. Returns { mode?, bg?, kernel?, ... } */
+export function buildThemeCookie({ mode, colors, sidebarColors, ctColors }: ThemeConfigInput): Record<string, string> {
+  const cookie: Record<string, string> = {};
+  if (mode) cookie["mode"] = mode;
+
+  const sources = { ...colors, ...sidebarColors, ...ctColors };
+  for (const [key, value] of Object.entries(sources)) {
+    const mapped = THEME_COOKIE_MAP[key];
+    if (mapped && value) cookie[mapped] = value;
+  }
+  return cookie;
+}

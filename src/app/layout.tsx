@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 };
 
 // ── Leer tema de cookie (server-side, antes del paint, sin DB) ────────────
+// Keys must match THEME_COOKIE_MAP in lib/theme.ts (single source of truth)
 interface ThemeCookie {
   mode?: string;
   bg?: string; surface?: string; border?: string;
