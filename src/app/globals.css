@@ -86,6 +86,50 @@
   --color-resource-h:   var(--resource-h);
 }
 
+/* ── Dynamic content-type utilities (Tailwind can't resolve var(--kernel)) ── */
+/* These use CSS variables directly so user theme changes apply instantly. */
+.text-kernel     { color: var(--kernel); }
+.text-module     { color: var(--module); }
+.text-resource   { color: var(--resource); }
+.bg-kernel       { background-color: var(--kernel); }
+.bg-module       { background-color: var(--module); }
+.bg-resource     { background-color: var(--resource); }
+.border-kernel   { border-color: var(--kernel); }
+.border-module   { border-color: var(--module); }
+.border-resource { border-color: var(--resource); }
+/* Opacity variants via color-mix */
+.bg-kernel\/10   { background-color: color-mix(in srgb, var(--kernel) 10%, transparent); }
+.bg-module\/10   { background-color: color-mix(in srgb, var(--module) 10%, transparent); }
+.bg-resource\/10 { background-color: color-mix(in srgb, var(--resource) 10%, transparent); }
+.bg-kernel\/8    { background-color: color-mix(in srgb, var(--kernel) 8%, transparent); }
+.bg-module\/8    { background-color: color-mix(in srgb, var(--module) 8%, transparent); }
+.bg-resource\/8  { background-color: color-mix(in srgb, var(--resource) 8%, transparent); }
+.border-kernel\/30 { border-color: color-mix(in srgb, var(--kernel) 30%, transparent); }
+.border-module\/30 { border-color: color-mix(in srgb, var(--module) 30%, transparent); }
+.border-resource\/30 { border-color: color-mix(in srgb, var(--resource) 30%, transparent); }
+.hover\:border-kernel\/30:hover { border-color: color-mix(in srgb, var(--kernel) 30%, transparent); }
+.hover\:border-module\/30:hover { border-color: color-mix(in srgb, var(--module) 30%, transparent); }
+.hover\:border-resource\/30:hover { border-color: color-mix(in srgb, var(--resource) 30%, transparent); }
+.hover\:text-kernel:hover   { color: var(--kernel); }
+.hover\:text-module:hover   { color: var(--module); }
+.hover\:text-resource:hover { color: var(--resource); }
+.group-hover\:text-kernel:hover { color: var(--kernel); }
+.group-hover\:text-module:hover { color: var(--module); }
+.group-hover\:text-resource:hover { color: var(--resource); }
+.focus\:ring-kernel:focus   { --tw-ring-color: var(--kernel); }
+.focus\:ring-module:focus   { --tw-ring-color: var(--module); }
+.focus\:ring-resource:focus { --tw-ring-color: var(--resource); }
+.from-kernel\/5  { --tw-gradient-from: color-mix(in srgb, var(--kernel) 5%, transparent); }
+.from-module\/5  { --tw-gradient-from: color-mix(in srgb, var(--module) 5%, transparent); }
+.from-resource\/5 { --tw-gradient-from: color-mix(in srgb, var(--resource) 5%, transparent); }
+/* Hover states for solid buttons */
+.bg-kernel-h       { background-color: var(--kernel-h); }
+.bg-module-h       { background-color: var(--module-h); }
+.bg-resource-h     { background-color: var(--resource-h); }
+.hover\:bg-kernel-h:hover   { background-color: var(--kernel-h); }
+.hover\:bg-module-h:hover   { background-color: var(--module-h); }
+.hover\:bg-resource-h:hover { background-color: var(--resource-h); }
+
 /* ── Base ───────────────────────────────────────────────────────────────────── */
 @layer base {
   body {
