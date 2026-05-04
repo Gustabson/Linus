@@ -2,7 +2,7 @@ import { auth }         from "@/lib/auth";
 import { LandingPage }  from "@/components/landing/LandingPage";
 import { SocialFeed }   from "@/components/social/SocialFeed";
 
-export const revalidate = 30;
+export const dynamic = "force-dynamic";
 
 export default async function HomePage({
   searchParams,
