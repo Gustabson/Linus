@@ -4,7 +4,6 @@ import { redirect }     from "next/navigation";
 import { ConfigCuenta }         from "@/components/configuracion/ConfigCuenta";
 import { ConfigApariencia }     from "@/components/configuracion/ConfigApariencia";
 import { ConfigNotificaciones } from "@/components/configuracion/ConfigNotificaciones";
-import { SignOutButton } from "@/components/configuracion/SignOutButton";
 import { PRESET_LIGHT }         from "@/lib/theme";
 import type { Metadata } from "next";
 
@@ -92,8 +91,6 @@ export default async function ConfiguracionPage() {
           notifPropuestas:  user.notifPropuestas,
         }}
       />
-
-      <SignOutButton />
 
     </div>
   );

@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useCallback } from "react";
 import {
   Home, LayoutDashboard, Mail, Search, Compass, GitPullRequest,
-  Settings, User, Bell, X, Inbox, Send, FileText, Pencil,
+  Settings, User, Bell, X, Inbox, Send, FileText, Pencil, LogOut,
 } from "lucide-react";
 
 // ── BottomNav: visible only on mobile (<768px) ────────────────────────────
@@ -238,6 +238,16 @@ export function BottomNav() {
         <ModalLink href={profileHref}        icon={User}     label="Perfil"          onClose={() => setConfigOpen(false)} />
         <ModalLink href="/notificaciones"   icon={Bell}     label="Notificaciones"  badge={unreadNotifications} onClose={() => setConfigOpen(false)} />
         <ModalLink href="/configuracion"    icon={Settings} label="Configuración"   onClose={() => setConfigOpen(false)} />
+
+        <div className="border-t border-sidebar-text/20 mt-2 pt-2">
+          <button
+            onClick={() => { setConfigOpen(false); signOut(); }}
+            className="flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium text-sidebar-text/60 hover:bg-sidebar-text/10 hover:text-sidebar-text transition-colors"
+          >
+            <LogOut className="w-5 h-5 shrink-0" />
+            Cerrar sesión
+          </button>
+        </div>
       </BottomModal>
     </>
   );
