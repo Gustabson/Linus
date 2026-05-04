@@ -84,6 +84,28 @@ export function ConfigApariencia({
   const [saved,   setSaved]        = useState(false);
   const [error,   setError]        = useState("");
 
+  // Apply theme CSS vars to <html> from raw values (no cookie round-trip)
+  function applyVars() {
+    const r = document.documentElement;
+    const set = (k: string, v: string) => r.style.setProperty(k, v);
+    if (mode === "custom") {
+      set("--bg",       colors.themeBg);
+      set("--surface",  colors.themeSurface);
+      set("--border",   colors.themeBorder);
+      set("--border-subtle", colors.themeBorder);
+      set("--text",     colors.themeText);
+      set("--text-muted", colors.themeText + "cc");
+      set("--text-subtle", colors.themeText + "88");
+      set("--primary",  colors.themePrimary);
+      set("--primary-h", colors.themePrimary);
+    }
+    set("--sidebar-bg",   sidebarColors.themeSidebarBg);
+    set("--sidebar-text", sidebarColors.themeSidebarText);
+    set("--kernel",     ctColors.themeKernel);   set("--kernel-h",   ctColors.themeKernel);
+    set("--module",     ctColors.themeModule);   set("--module-h",   ctColors.themeModule);
+    set("--resource",   ctColors.themeResource); set("--resource-h", ctColors.themeResource);
+  }
+
   function handleSave() {
     setSaved(false); setError("");
     startTransition(async () => {
@@ -115,54 +137,12 @@ export function ConfigApariencia({
       if (mode) themeCookie["mode"] = mode;
       document.cookie = `eduhub_theme=${encodeURIComponent(JSON.stringify(themeCookie))};path=/;max-age=31536000;SameSite=Lax`;
 
-      // Apply CSS vars directly to DOM (instant, no layout reload needed)
-      const root = document.documentElement;
-      for (const [key, value] of Object.entries(themeCookie)) {
-        if (key === "mode") continue;
-        const cssVar = "--" + key.replace(/([A-Z])/g, "-$1").toLowerCase();
-        root.style.setProperty(cssVar, value);
-        if (key === "border")     root.style.setProperty("--border-subtle", value);
-        if (key === "text")       { root.style.setProperty("--text-muted", value + "cc"); root.style.setProperty("--text-subtle", value + "88"); }
-        if (key === "primary")    root.style.setProperty("--primary-h", value);
-        if (key === "kernel")     root.style.setProperty("--kernel-h", value);
-        if (key === "module")     root.style.setProperty("--module-h", value);
-        if (key === "resource")   root.style.setProperty("--resource-h", value);
-      }
-
-      // Belt-and-suspenders: also apply content type colors directly from state
-      root.style.setProperty("--kernel",     ctColors.themeKernel);
-      root.style.setProperty("--kernel-h",   ctColors.themeKernel);
-      root.style.setProperty("--module",     ctColors.themeModule);
-      root.style.setProperty("--module-h",   ctColors.themeModule);
-      root.style.setProperty("--resource",   ctColors.themeResource);
-      root.style.setProperty("--resource-h", ctColors.themeResource);
+      applyVars();
 
       setSaved(true);
       router.refresh();
-      // router.refresh() re-applies layout's <html style> which overwrites
-      // our DOM vars. Re-apply after React reconciles.
-      setTimeout(() => {
-        const r = document.documentElement;
-        r.style.setProperty("--kernel",     ctColors.themeKernel);
-        r.style.setProperty("--kernel-h",   ctColors.themeKernel);
-        r.style.setProperty("--module",     ctColors.themeModule);
-        r.style.setProperty("--module-h",   ctColors.themeModule);
-        r.style.setProperty("--resource",   ctColors.themeResource);
-        r.style.setProperty("--resource-h", ctColors.themeResource);
-        if (mode === "custom") {
-          r.style.setProperty("--bg",       colors.themeBg);
-          r.style.setProperty("--surface",  colors.themeSurface);
-          r.style.setProperty("--border",   colors.themeBorder);
-          r.style.setProperty("--text",     colors.themeText);
-          r.style.setProperty("--primary",  colors.themePrimary);
-          r.style.setProperty("--primary-h", colors.themePrimary);
-          r.style.setProperty("--border-subtle", colors.themeBorder);
-          r.style.setProperty("--text-muted", colors.themeText + "cc");
-          r.style.setProperty("--text-subtle", colors.themeText + "88");
-        }
-        r.style.setProperty("--sidebar-bg",   sidebarColors.themeSidebarBg);
-        r.style.setProperty("--sidebar-text", sidebarColors.themeSidebarText);
-      }, 100);
+      // router.refresh() overwrites <html style> → re-apply after reconcile
+      setTimeout(applyVars, 100);
       setTimeout(() => setSaved(false), 3000);
     });
   }
