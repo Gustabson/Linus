@@ -19,20 +19,25 @@ export function LayoutShell({ children, isLoggedIn }: Props) {
   const isHome = pathname === "/" || pathname === "/feed";
   const mobilePt = isHome ? "pt-0" : "pt-3";
 
+  // Guests only see the sidebar after leaving the landing page
+  const showSidebar = isLoggedIn || pathname !== "/";
+
   return (
     <div className="min-h-screen bg-bg">
 
       {/* ── Hamburger button — tablet only (768px–1023px) ──────────────── */}
-      <button
-        onClick={() => setSidebarOpen(true)}
-        className="fixed top-4 left-4 z-30 p-2.5 rounded-xl bg-surface border border-border text-text-muted hover:text-text hover:bg-bg transition-colors hidden md:flex lg:hidden shadow-sm"
-        aria-label="Abrir menú"
-      >
-        <Menu className="w-5 h-5" />
-      </button>
+      {showSidebar && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-4 left-4 z-30 p-2.5 rounded-xl bg-surface border border-border text-text-muted hover:text-text hover:bg-bg transition-colors hidden md:flex lg:hidden shadow-sm"
+          aria-label="Abrir menú"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
 
       {/* ── Sidebar overlay backdrop — tablet only ──────────────────────── */}
-      {sidebarOpen && (
+      {showSidebar && sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/40 z-40 hidden md:block lg:hidden"
           onClick={() => setSidebarOpen(false)}
@@ -40,10 +45,12 @@ export function LayoutShell({ children, isLoggedIn }: Props) {
       )}
 
       {/* ── Sidebar — hidden on mobile (<768px), toggleable on tablet, fixed on desktop ── */}
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {showSidebar && (
+        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      )}
 
       {/* ── Main content ────────────────────────────────────────────────── */}
-      <main className={`lg:ml-64 min-h-screen pb-16 md:pb-0 ${mobilePt} md:pt-14 lg:pt-6 px-4 sm:px-6 overflow-x-hidden`}>
+      <main className={`${showSidebar ? "lg:ml-64" : ""} min-h-screen pb-16 md:pb-0 ${mobilePt} md:pt-14 lg:pt-6 px-4 sm:px-6 overflow-x-hidden`}>
         {children}
       </main>
 

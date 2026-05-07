@@ -1,14 +1,14 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { USER_BASIC_SELECT } from "@/lib/data";
-import { redirect } from "next/navigation";
 import { CorreosList } from "@/components/correos/CorreosList";
+import { LoginRequired } from "@/components/shared/LoginRequired";
 
 export const dynamic = "force-dynamic";
 
 export default async function BorradoresPage() {
   const session = await auth();
-  if (!session?.user?.id) redirect("/");
+  if (!session?.user?.id) return <LoginRequired feature="los correos" />;
 
   const messages = await prisma.message.findMany({
     where: {

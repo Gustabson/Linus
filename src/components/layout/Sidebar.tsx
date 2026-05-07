@@ -85,7 +85,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     }`;
 
   const NAV_ITEMS: { href: string; icon: React.ElementType; label: string; badge?: number }[] = [
-    { href: "/",           icon: Home,           label: "Inicio"     },
+    { href: isLoggedIn ? "/" : "/feed", icon: Home, label: "Inicio" },
     { href: "/dashboard",  icon: LayoutDashboard, label: "Mi espacio" },
     { href: "/explorar",   icon: Compass,         label: "Explorar"   },
     { href: "/buscar",     icon: Search,          label: "Buscar"     },
@@ -206,20 +206,13 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             </Link>
 
             {/* Iniciar sesión / Crear cuenta */}
-            <div className="pt-2 space-y-2">
+            <div className="pt-2">
               <Link
                 href="/login"
                 onClick={onClose}
                 className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary-h transition-colors"
               >
-                Iniciar sesión
-              </Link>
-              <Link
-                href="/login"
-                onClick={onClose}
-                className="flex items-center justify-center w-full px-4 py-2.5 rounded-xl text-sm font-medium text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text border border-sidebar-text/20 transition-colors"
-              >
-                Crear cuenta gratis
+                Iniciar sesión / Registrarse
               </Link>
             </div>
           </>

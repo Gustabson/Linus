@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { CorreosRedactar } from "@/components/correos/CorreosRedactar";
+import { LoginRequired } from "@/components/shared/LoginRequired";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,7 @@ export default async function RedactarPage({
   searchParams: Promise<{ id?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.id) redirect("/");
+  if (!session?.user?.id) return <LoginRequired feature="los correos" />;
 
   const { id } = await searchParams;
 
