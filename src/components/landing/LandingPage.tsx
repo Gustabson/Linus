@@ -43,7 +43,7 @@ export async function LandingPage() {
             href="/feed"
             className="bg-primary text-white px-7 py-3.5 rounded-xl font-semibold text-base hover:bg-primary-h transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
           >
-            Ver el feed
+            Ver publicaciones
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
@@ -134,7 +134,7 @@ export async function LandingPage() {
             {
               icon: <BookOpen className="w-5 h-5 text-primary" />,
               title: "Explorá y aprendé",
-              desc:  "Accedé a kernels, módulos y recursos creados por docentes. Sin cuenta, sin barreras. Todo el contenido público es tuyo para ver.",
+              desc:  "Accedé a kernels, módulos y recursos de la comunidad. Sin cuenta, sin barreras. Todo el contenido público es tuyo para ver.",
             },
             {
               icon: <GitFork className="w-5 h-5 text-primary" />,
@@ -175,7 +175,7 @@ export async function LandingPage() {
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link href="/feed" className="text-text-muted hover:text-text text-sm transition-colors">
-            o entrá sin cuenta →
+            o explorá sin registrarte →
           </Link>
         </div>
       </section>
