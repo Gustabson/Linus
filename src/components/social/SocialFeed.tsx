@@ -14,7 +14,8 @@ interface Props {
 }
 
 export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
-  const isTendencias = tab !== "siguiendo";
+  const isTendencias  = tab !== "siguiendo";
+  const TWO_WEEKS_AGO = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
   const follows = await prisma.userFollow.findMany({
     where:  { followerId: userId },
@@ -63,31 +64,33 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
       take: 4,
     }),
 
-    /* Featured: top 30 candidates by raw score, re-ranked in JS with recency boost */
+    /* Featured: top 30 by total likes (pre-filter), re-ranked by recent activity */
     prisma.documentTree.findMany({
       where:   { visibility: "PUBLIC" },
       orderBy: { likes: { _count: "desc" } },
       take:    30,
       select: {
-        id: true, slug: true, title: true, contentType: true, createdAt: true,
-        owner: { select: { username: true, name: true } },
+        id: true, slug: true, title: true, contentType: true,
+        owner:  { select: { username: true, name: true } },
+        // Total counts (tiebreaker)
         _count: { select: { likes: true, forks: true } },
+        // Recent activity: likes and forks in the last 2 weeks
+        likes: { where: { createdAt: { gte: TWO_WEEKS_AGO } }, select: { id: true } },
+        forks: { where: { createdAt: { gte: TWO_WEEKS_AGO } }, select: { id: true } },
       },
     }),
   ]);
 
   // ── Featured content scoring ────────────────────────────────────────────────
-  // Base score: likes + forks*2  (forks indicate the content was reused)
-  // Recency boost: ×1.5 if published in the last 2 weeks
-  // Old content competes on raw score alone — a surge of new likes/forks
-  // can push it back above recent content without the boost.
-  const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
-  const now          = Date.now();
+  // Primary:   recent activity in the last 2 weeks (likes + forks×2)
+  //            A 3-year-old post with 1000 recent forks + 2000 recent likes
+  //            will easily outrank any new post with little activity.
+  // Tiebreaker: lifetime score × 0.1 so popular classics win ties.
   const featured = featuredCandidates
     .map((tree) => {
-      const base    = tree._count.likes + tree._count.forks * 2;
-      const isNew   = now - tree.createdAt.getTime() < TWO_WEEKS_MS;
-      const score   = base * (isNew ? 1.5 : 1);
+      const recentScore = tree.likes.length + tree.forks.length * 2;
+      const totalScore  = tree._count.likes  + tree._count.forks  * 2;
+      const score       = recentScore + totalScore * 0.1;
       return { ...tree, _score: score };
     })
     .sort((a, b) => b._score - a._score)
