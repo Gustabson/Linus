@@ -2,26 +2,21 @@ import { prisma }  from "@/lib/prisma";
 import Link        from "next/link";
 import Image       from "next/image";
 import {
-  ArrowRight, BookOpen, GitFork, Heart,
-  Users, Rss, Layers,
+  ArrowRight, BookOpen, GitFork, Heart, Rss,
 } from "lucide-react";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 
 export async function LandingPage() {
-  const [treeCount, userCount, featured] = await Promise.all([
-    prisma.documentTree.count({ where: { visibility: "PUBLIC" } }),
-    prisma.user.count(),
-    prisma.documentTree.findMany({
-      where:   { visibility: "PUBLIC" },
-      orderBy: { likes: { _count: "desc" } },
-      take:    6,
-      select: {
-        id: true, slug: true, title: true, description: true, contentType: true,
-        owner: { select: { username: true, name: true, image: true } },
-        _count: { select: { likes: true, forks: true } },
-      },
-    }),
-  ]);
+  const featured = await prisma.documentTree.findMany({
+    where:   { visibility: "PUBLIC" },
+    orderBy: { likes: { _count: "desc" } },
+    take:    6,
+    select: {
+      id: true, slug: true, title: true, description: true, contentType: true,
+      owner: { select: { username: true, name: true, image: true } },
+      _count: { select: { likes: true, forks: true } },
+    },
+  });
 
   return (
     <div className="space-y-24 pb-24">
@@ -36,12 +31,12 @@ export async function LandingPage() {
         <h1 className="text-5xl sm:text-6xl font-bold text-text leading-[1.1] tracking-tight">
           Creá, compartí y descubrí{" "}
           <span className="text-primary">contenido educativo</span>{" "}
-          con docentes de todo el mundo
+          junto a una comunidad decidida a mejorar la educación
         </h1>
 
         <p className="text-xl text-text-muted leading-relaxed max-w-2xl mx-auto">
-          Kernels, módulos y recursos que cualquiera puede explorar, forkear y adaptar
-          a su contexto. Una comunidad donde el conocimiento crece en conjunto.
+          La fórmula de la educación ideal no puede salir de una sola persona.
+          Tus aportes a la comunidad son más valiosos de lo que imaginás.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -65,25 +60,6 @@ export async function LandingPage() {
         </p>
       </section>
 
-      {/* ── Stats bar ───────────────────────────────────────────────── */}
-      {(treeCount > 0 || userCount > 0) && (
-        <div className="border-y border-border py-8">
-          <div className="flex flex-wrap justify-center gap-x-16 gap-y-6">
-            {[
-              { value: userCount,  label: "educadores",         icon: <Users className="w-5 h-5"  /> },
-              { value: treeCount,  label: "contenidos públicos", icon: <Layers className="w-5 h-5" /> },
-            ].map((s) => (
-              <div key={s.label} className="flex items-center gap-3">
-                <div className="text-primary/60">{s.icon}</div>
-                <div>
-                  <div className="text-3xl font-bold text-text tabular-nums">{s.value.toLocaleString("es")}</div>
-                  <div className="text-sm text-text-muted">{s.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ── Featured content ────────────────────────────────────────── */}
       {featured.length > 0 && (
