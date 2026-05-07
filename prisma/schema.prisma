@@ -165,6 +165,8 @@ model DocumentTree {
   @@index([ownerId])
   @@index([parentTreeId])
   @@index([contentType])
+  @@index([visibility])
+  @@index([visibility, contentType])
   @@index([ownerId, updatedAt])
 }
 

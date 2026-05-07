@@ -102,7 +102,7 @@ export async function PATCH(req: NextRequest) {
   if (themeText    !== undefined) data.themeText    = themeText    ? String(themeText)    : null;
   if (themePrimary    !== undefined) data.themePrimary    = themePrimary    ? String(themePrimary)    : null;
   if (themeSidebarBg  !== undefined) data.themeSidebarBg  = themeSidebarBg  ? String(themeSidebarBg)  : null;
-  if (themeSidebarText!== undefined) data.themeSidebarText= themeSidebarText? String(themeSidebarText): null;
+  if (themeSidebarText !== undefined) data.themeSidebarText = themeSidebarText ? String(themeSidebarText) : null;
   if (themeKernel   !== undefined) data.themeKernel   = themeKernel   ? String(themeKernel)   : null;
   if (themeModule   !== undefined) data.themeModule   = themeModule   ? String(themeModule)   : null;
   if (themeResource !== undefined) data.themeResource = themeResource ? String(themeResource) : null;

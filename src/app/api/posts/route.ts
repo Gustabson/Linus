@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { USER_BASIC_SELECT } from "@/lib/data";
+import type { Prisma } from "@prisma/client";
 
 // ── GET /api/posts  (feed) ────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
@@ -14,8 +15,7 @@ export async function GET(req: NextRequest) {
 
   const session = await getSession();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let whereClause: Record<string, any> = {};
+  let whereClause: Prisma.PostWhereInput = {};
 
   // Profile feed: filter by a specific author's username
   if (username) {
@@ -36,8 +36,12 @@ export async function GET(req: NextRequest) {
 
   // `since` mode: return only posts newer than the given ISO timestamp (no pagination)
   if (since) {
+    const sinceDate = new Date(since);
+    if (isNaN(sinceDate.getTime()))
+      return NextResponse.json({ error: "Parámetro since inválido" }, { status: 400 });
+
     const newPosts = await prisma.post.findMany({
-      where:   { ...whereClause, createdAt: { gt: new Date(since) } },
+      where:   { ...whereClause, createdAt: { gt: sinceDate } },
       orderBy: { createdAt: "desc" },
       take:    50, // cap — won't paginate new-post burst
       include: {
@@ -62,8 +66,12 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  const cursorDate = cursor ? new Date(cursor) : null;
+  if (cursorDate && isNaN(cursorDate.getTime()))
+    return NextResponse.json({ error: "Parámetro cursor inválido" }, { status: 400 });
+
   const posts = await prisma.post.findMany({
-    where:   { ...whereClause, ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}) },
+    where:   { ...whereClause, ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}) },
     orderBy: { createdAt: "desc" },
     take:    limit + 1,
     include: {

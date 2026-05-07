@@ -16,8 +16,7 @@ export async function POST(req: NextRequest) {
   try {
     await signIn("resend", { email: email.trim().toLowerCase(), redirect: false });
     return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error("[send-verification]", err);
+  } catch {
     return NextResponse.json({ error: "No se pudo enviar el link" }, { status: 500 });
   }
 }
