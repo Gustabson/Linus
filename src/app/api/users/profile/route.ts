@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
 
 export async function PATCH(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
-  const { name, username, bio, website, location } = await req.json();
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { name, username, bio, website, location } = body;
 
   // Check username uniqueness
   if (username) {

@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
 
 const USERNAME_REGEX = /^[a-z0-9_-]{3,32}$/;
 
 export async function PATCH(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
-  const { username } = await req.json();
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { username } = body;
 
   if (!username || !USERNAME_REGEX.test(username)) {
     return NextResponse.json(

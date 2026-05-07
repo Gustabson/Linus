@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { USER_BASIC_SELECT } from "@/lib/data";
 import { createNotification } from "@/lib/notifications";
-import { getSession, unauthorized, forbidden } from "@/lib/api-helpers";
+import { getSession, unauthorized, forbidden, parseBody } from "@/lib/api-helpers";
 
 // ── shared helper ─────────────────────────────────────────────────────────────
 
@@ -68,8 +68,10 @@ export async function POST(
   const doc = await getVisibleDoc(docId, session.user.id);
   if (!doc) return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
 
-  const { content, quotedText, sectionType, isPrivate } = await req.json();
-  if (!content?.trim())
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { content, quotedText, sectionType, isPrivate } = body;
+  if (!(content as string)?.trim())
     return NextResponse.json({ error: "El comentario no puede estar vacío" }, { status: 400 });
 
   const comment = await prisma.documentComment.create({
@@ -109,7 +111,9 @@ export async function DELETE(
   if (!session) return unauthorized();
 
   const { docId }     = await params;
-  const { commentId } = await req.json();
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { commentId } = body;
 
   const comment = await prisma.documentComment.findUnique({ where: { id: commentId } });
   if (!comment || comment.documentId !== docId)

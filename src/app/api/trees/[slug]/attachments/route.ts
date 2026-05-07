@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, getOwnedKernel, unauthorized, forbidden } from "@/lib/api-helpers";
+import { getSession, getOwnedKernel, unauthorized, forbidden, parseBody } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -12,7 +12,9 @@ export async function POST(req: NextRequest, { params }: Params) {
   const kernel = await getOwnedKernel(slug, session.user.id);
   if (!kernel) return forbidden();
 
-  const { contentId } = await req.json();
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { contentId } = body;
   if (!contentId) return NextResponse.json({ error: "contentId requerido" }, { status: 400 });
 
   const content = await prisma.documentTree.findUnique({
@@ -49,7 +51,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const kernel = await getOwnedKernel(slug, session.user.id);
   if (!kernel) return forbidden();
 
-  const { contentId } = await req.json();
+  const delBody = await parseBody(req);
+  if (!delBody) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { contentId } = delBody;
 
   await prisma.treeAttachment.deleteMany({
     where: { kernelId: kernel.id, contentId },

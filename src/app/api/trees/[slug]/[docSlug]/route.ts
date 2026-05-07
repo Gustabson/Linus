@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
 
@@ -29,8 +29,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!doc)
     return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
 
-  const { title } = await req.json();
-  if (!title?.trim())
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { title } = body;
+  if (!(title as string)?.trim())
     return NextResponse.json({ error: "El título no puede estar vacío" }, { status: 400 });
 
   await prisma.document.update({ where: { id: doc.id }, data: { title: title.trim() } });

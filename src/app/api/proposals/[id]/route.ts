@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
 import { createNotification } from "@/lib/notifications";
 import { copySectionFields } from "@/lib/sections";
 
@@ -8,9 +8,8 @@ type Params = { params: Promise<{ id: string }> };
 
 // GET /api/proposals/[id] — full detail with docs from both trees
 export async function GET(_req: NextRequest, { params }: Params) {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
   const { id } = await params;
   const proposal = await prisma.changeProposal.findUnique({
@@ -57,12 +56,13 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 // PATCH /api/proposals/[id] — accept | reject | withdraw
 export async function PATCH(req: NextRequest, { params }: Params) {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
   const { id } = await params;
-  const { action } = await req.json(); // "accept" | "reject" | "withdraw"
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { action } = body; // "accept" | "reject" | "withdraw"
 
   const proposal = await prisma.changeProposal.findUnique({
     where:   { id },

@@ -67,6 +67,12 @@ export function isUniqueViolation(err: unknown): boolean {
   );
 }
 
+/** Parses the JSON body of a request. Returns null on malformed JSON. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function parseBody(req: Request): Promise<Record<string, any> | null> {
+  return req.json().catch(() => null);
+}
+
 export const unauthorized = () =>
   NextResponse.json({ error: "No autenticado" }, { status: 401 });
 

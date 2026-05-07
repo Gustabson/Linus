@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, getOwnedTree, unauthorized, forbidden, uniqueSlug } from "@/lib/api-helpers";
+import { getSession, getOwnedTree, unauthorized, forbidden, uniqueSlug, parseBody } from "@/lib/api-helpers";
 
 export async function POST(
   req: NextRequest,
@@ -13,8 +13,10 @@ export async function POST(
   const tree = await getOwnedTree(slug, session.user.id);
   if (!tree) return forbidden();
 
-  const { title } = await req.json();
-  if (!title?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 });
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { title } = body;
+  if (!(title as string)?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 });
 
   const docSlug = await uniqueSlug(title, (s) =>
     prisma.document

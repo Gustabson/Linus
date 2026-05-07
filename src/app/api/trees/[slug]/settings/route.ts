@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, uniqueSlug } from "@/lib/api-helpers";
+import { getSession, unauthorized, uniqueSlug, parseBody } from "@/lib/api-helpers";
 import type { TreeVisibility, ContentType } from "@prisma/client";
 
 // ── DELETE — permanently removes a tree ──────────────────────────────────────
@@ -47,7 +47,9 @@ export async function PATCH(
   if (!tree || tree.ownerId !== session.user.id)
     return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
 
-  const { title, description, visibility, contentType, archived } = await req.json();
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { title, description, visibility, contentType, archived } = body;
 
   if (archived) {
     await prisma.documentTree.update({

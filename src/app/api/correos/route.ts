@@ -18,12 +18,16 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const cursor = searchParams.get("cursor");
 
+  const cursorDate = cursor ? new Date(cursor) : null;
+  if (cursorDate && isNaN(cursorDate.getTime()))
+    return NextResponse.json({ error: "Parámetro cursor inválido" }, { status: 400 });
+
   const messages = await prisma.message.findMany({
     where: {
       recipientId:        session.user.id,   // only own inbox
       isDraft:            false,
       deletedByRecipient: false,
-      ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
+      ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
     },
     orderBy: { createdAt: "desc" },
     take: 30,

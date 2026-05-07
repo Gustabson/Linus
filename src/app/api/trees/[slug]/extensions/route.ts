@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, getOwnedTree, unauthorized, forbidden } from "@/lib/api-helpers";
+import { getSession, getOwnedTree, unauthorized, forbidden, parseBody } from "@/lib/api-helpers";
 
 export async function POST(
   req: NextRequest,
@@ -13,8 +13,10 @@ export async function POST(
   const tree = await getOwnedTree(slug, session.user.id);
   if (!tree) return forbidden();
 
-  const { type, title, description, url, imageUrl } = await req.json();
-  if (!title?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 });
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { type, title, description, url, imageUrl } = body;
+  if (!(title as string)?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 });
 
   const ext = await prisma.treeExtension.create({
     data: {
@@ -40,7 +42,9 @@ export async function DELETE(
   if (!session) return unauthorized();
 
   const { slug }        = await params;
-  const { extensionId } = await req.json();
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { extensionId } = body;
 
   const ext = await prisma.treeExtension.findUnique({
     where:  { id: extensionId },

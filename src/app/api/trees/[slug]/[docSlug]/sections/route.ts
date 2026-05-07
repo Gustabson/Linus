@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { copySectionFields } from "@/lib/sections";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
 import type { DocumentSection, VersionStatus } from "@prisma/client";
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
@@ -110,8 +110,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   const result = await getOwnerDoc(slug, docSlug, session.user.id);
   if (!result) return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
 
-  const { title } = await req.json();
-  if (!title?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 });
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { title } = body;
+  if (!(title as string)?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 });
 
   const { doc } = result;
   const latestVersion = doc.versions[0];
@@ -172,8 +174,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const latestVersion = doc.versions[0];
   if (!latestVersion) return NextResponse.json({ error: "Sin versión" }, { status: 404 });
 
+  const patchBody = await parseBody(req);
+  if (!patchBody) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
   const { sectionId, richTextContent, sectionTitle, difficultyLevel, ageRangeMin, ageRangeMax, durationMinutes } =
-    await req.json();
+    patchBody;
 
   const target = latestVersion.sections.find((s) => s.id === sectionId);
   if (!target) return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
@@ -238,7 +242,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   const latestVersion = doc.versions[0];
   if (!latestVersion) return NextResponse.json({ error: "Sin versión" }, { status: 404 });
 
-  const { sectionId } = await req.json();
+  const delBody = await parseBody(req);
+  if (!delBody) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { sectionId } = delBody;
 
   // ── Case 1: DRAFT → delete section directly ───────────────────────────────
   if (latestVersion.status === "DRAFT") {

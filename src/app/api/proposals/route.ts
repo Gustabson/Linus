@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
 import { createNotification } from "@/lib/notifications";
 
 // GET /api/proposals — list received (owner of target) + sent (author)
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
   const userId = session.user.id;
 
@@ -37,17 +36,19 @@ export async function GET() {
 
 // POST /api/proposals — create a proposal from a fork
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id)
-    return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  const session = await getSession();
+  if (!session) return unauthorized();
 
-  const { sourceTreeId, title, description } = await req.json();
-  if (!sourceTreeId || !title?.trim())
+  const body = await parseBody(req);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+
+  const { sourceTreeId, title, description } = body;
+  if (!sourceTreeId || !(title as string)?.trim())
     return NextResponse.json({ error: "sourceTreeId y título son requeridos" }, { status: 400 });
 
   // Source must be owned by current user and be a fork
   const source = await prisma.documentTree.findUnique({
-    where:  { id: sourceTreeId },
+    where:  { id: sourceTreeId as string },
     select: { id: true, slug: true, title: true, ownerId: true, parentTreeId: true },
   });
   if (!source || source.ownerId !== session.user.id)
