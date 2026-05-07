@@ -107,9 +107,10 @@ export async function SocialFeed({ userId = null, tab = "tendencias" }: Props) {
   const posts        = hasMore ? postsRaw.slice(0, POSTS_PER_PAGE) : postsRaw;
   const nextCursor   = hasMore ? posts[posts.length - 1].createdAt.toISOString() : null;
 
-  // Serialize dates for client
+  // Serialize dates for client; guests have no likes field — inject empty array
   const serializedPosts: PostData[] = posts.map((p) => ({
     ...p,
+    likes:     (p as { likes?: { id: string }[] }).likes ?? [],
     createdAt: p.createdAt.toISOString(),
     updatedAt: undefined as never,
   }));

@@ -40,7 +40,7 @@ export async function LandingPage() {
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            href="/"
+            href="/feed"
             className="bg-primary text-white px-7 py-3.5 rounded-xl font-semibold text-base hover:bg-primary-h transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
           >
             Ver el feed
@@ -55,7 +55,7 @@ export async function LandingPage() {
         </div>
 
         <p className="text-sm text-text-subtle">
-          No necesitás cuenta para ver el feed ni explorar contenido
+          No necesitás cuenta para ver el feed ni explorar
         </p>
       </section>
 
@@ -174,7 +174,7 @@ export async function LandingPage() {
             Crear cuenta gratis
             <ArrowRight className="w-4 h-4" />
           </Link>
-          <Link href="/" className="text-text-muted hover:text-text text-sm transition-colors">
+          <Link href="/feed" className="text-text-muted hover:text-text text-sm transition-colors">
             o entrá sin cuenta →
           </Link>
         </div>
