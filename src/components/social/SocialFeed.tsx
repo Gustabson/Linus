@@ -91,20 +91,20 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
   const hasSidebar = suggested.length > 0 || featured.length > 0;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
 
-      {/* ── Sticky tab bar — fuera del grid para que funcione en todos los tamaños ── */}
+      {/* ── Sticky tab bar — centrada en todos los dispositivos ── */}
       <div className="sticky top-0 z-20 bg-bg border-b border-border mb-6 -mx-4 sm:-mx-6 px-4 sm:px-6">
-        <div className="flex">
+        <div className="flex justify-center">
           <TabLink href="/?tab=tendencias" active={isTendencias}  icon={<Flame className="w-4 h-4" />} label="Tendencias" />
           <TabLink href="/?tab=siguiendo"  active={!isTendencias} icon={<Rss   className="w-4 h-4" />} label="Siguiendo"  />
         </div>
       </div>
 
-      <div className={`grid grid-cols-1 items-start gap-x-6 ${hasSidebar ? "lg:grid-cols-[1fr_272px]" : ""}`}>
+      <div className={`flex flex-col items-stretch gap-8 lg:items-start ${hasSidebar ? "lg:flex-row lg:justify-center" : ""}`}>
 
-        {/* ── Feed column ─────────────────────────────────────────── */}
-        <div className="min-w-0">
+        {/* ── Feed column — ancho máximo propio, centrado ── */}
+        <div className="min-w-0 w-full lg:max-w-2xl lg:shrink-0">
           <PostFeed
             initialPosts={serializedPosts}
             initialCursor={nextCursor}
@@ -120,7 +120,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
 
         {/* ── Right sidebar ───────────────────────────────────────── */}
         {hasSidebar && (
-        <div className="hidden lg:block lg:sticky lg:top-20 space-y-4">
+        <div className="hidden lg:block lg:sticky lg:top-20 w-[260px] shrink-0 space-y-4">
 
           {/* Personas para seguir */}
           {suggested.length > 0 && (
