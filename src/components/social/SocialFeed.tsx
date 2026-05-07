@@ -9,26 +9,28 @@ import { PostFeed } from "./PostFeed";
 import type { PostData } from "./PostCard";
 
 interface Props {
-  userId: string;
-  tab?:   string;
+  userId?: string | null;
+  tab?:    string;
 }
 
-export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
-  const isTendencias  = tab !== "siguiendo";
+export async function SocialFeed({ userId = null, tab = "tendencias" }: Props) {
+  const isGuest       = !userId;
+  // Guests only see tendencias (can't follow anyone)
+  const isTendencias  = isGuest || tab !== "siguiendo";
   const TWO_WEEKS_AGO = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
 
-  const follows = await prisma.userFollow.findMany({
-    where:  { followerId: userId },
-    select: { followingId: true },
-  });
-  const followingIds = follows.map((f) => f.followingId);
+  const followingIds = userId
+    ? (await prisma.userFollow.findMany({
+        where:  { followerId: userId },
+        select: { followingId: true },
+      })).map((f) => f.followingId)
+    : [];
 
   const [currentUser, postsRaw, suggested, featuredCandidates] = await Promise.all([
     /* Current user info for composer avatar */
-    prisma.user.findUnique({
-      where:  { id: userId },
-      select: USER_BASIC_SELECT,
-    }),
+    userId
+      ? prisma.user.findUnique({ where: { id: userId }, select: USER_BASIC_SELECT })
+      : Promise.resolve(null),
 
     /* Initial posts (first page) */
     prisma.post.findMany({
@@ -36,7 +38,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
         ? {}
         : { authorId: { in: followingIds } },
       orderBy: { createdAt: "desc" },
-      take: 71, // 70 to show + 1 for hasMore check
+      take: 71,
       include: {
         author: { select: USER_BASIC_SELECT },
         tree: {
@@ -48,21 +50,25 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
           },
         },
         _count: { select: { likes: true, comments: true } },
-        likes:  { where: { userId }, select: { id: true } },
+        likes: userId
+          ? { where: { userId }, select: { id: true } }
+          : false,
       },
     }),
 
-    /* Suggested users to follow */
-    prisma.user.findMany({
-      where: {
-        id:         { notIn: [userId, ...followingIds] },
-        ownedTrees: { some: { visibility: "PUBLIC" } },
-        username:   { not: null },
-      },
-      include: { _count: { select: { followers: true, ownedTrees: true } } },
-      orderBy: { followers: { _count: "desc" } },
-      take: 4,
-    }),
+    /* Suggested users to follow — skip for guests */
+    userId
+      ? prisma.user.findMany({
+          where: {
+            id:         { notIn: [userId, ...followingIds] },
+            ownedTrees: { some: { visibility: "PUBLIC" } },
+            username:   { not: null },
+          },
+          include: { _count: { select: { followers: true, ownedTrees: true } } },
+          orderBy: { followers: { _count: "desc" } },
+          take: 4,
+        })
+      : Promise.resolve([]),
 
     /* Featured: top 30 by total likes (pre-filter), re-ranked by recent activity */
     prisma.documentTree.findMany({
@@ -113,11 +119,31 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
   return (
     <div className="max-w-5xl mx-auto">
 
+      {/* ── Guest banner ─────────────────────────────────────────── */}
+      {isGuest && (
+        <div className="mb-4 flex items-center justify-between gap-4 bg-primary/5 border border-primary/20 rounded-2xl px-5 py-3.5 flex-wrap">
+          <p className="text-sm text-text-muted">
+            Iniciá sesión para dar likes, comentar y seguir a otros.
+          </p>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link href="/login" className="text-sm font-medium text-primary hover:underline">
+              Iniciar sesión
+            </Link>
+            <span className="text-border">|</span>
+            <Link href="/login" className="text-sm font-semibold bg-primary text-white px-4 py-1.5 rounded-lg hover:bg-primary-h transition-colors">
+              Crear cuenta
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* ── Sticky tab bar — centrada en todos los dispositivos ── */}
       <div className="sticky top-0 z-20 bg-bg border-b border-border mb-6 -mx-4 sm:-mx-6 px-4 sm:px-6">
         <div className="flex justify-center">
           <TabLink href="/?tab=tendencias" active={isTendencias}  icon={<Flame className="w-4 h-4" />} label="Tendencias" />
-          <TabLink href="/?tab=siguiendo"  active={!isTendencias} icon={<Rss   className="w-4 h-4" />} label="Siguiendo"  />
+          {!isGuest && (
+            <TabLink href="/?tab=siguiendo" active={!isTendencias} icon={<Rss className="w-4 h-4" />} label="Siguiendo" />
+          )}
         </div>
       </div>
 
@@ -130,12 +156,12 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
             initialPosts={serializedPosts}
             initialCursor={nextCursor}
             tab={tab}
-            currentUser={{
-              id:       currentUser?.id ?? userId,
-              name:     currentUser?.name ?? null,
-              username: currentUser?.username ?? null,
-              image:    currentUser?.image ?? null,
-            }}
+            currentUser={currentUser ? {
+              id:       currentUser.id,
+              name:     currentUser.name     ?? null,
+              username: currentUser.username ?? null,
+              image:    currentUser.image    ?? null,
+            } : null}
           />
         </div>
 

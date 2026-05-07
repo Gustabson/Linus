@@ -34,28 +34,28 @@ export async function LandingPage() {
         </h1>
 
         <p className="text-xl text-text-muted leading-relaxed max-w-2xl mx-auto">
-          La fórmula de la educación ideal no puede salir de una sola persona.
-          Tus aportes a la comunidad son más valiosos de lo que imaginás.
+          La fórmula de la educación ideal no puede salir de una sola persona,
+          menos de políticos. Tus aportes a la comunidad son más valiosos de lo que imaginás.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link
-            href="/explorar"
+            href="/"
             className="bg-primary text-white px-7 py-3.5 rounded-xl font-semibold text-base hover:bg-primary-h transition-colors flex items-center gap-2 w-full sm:w-auto justify-center"
           >
-            Explorar contenido
+            Ver el feed
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            href="/login"
+            href="/explorar"
             className="border border-border text-text px-7 py-3.5 rounded-xl font-semibold text-base hover:bg-surface transition-colors w-full sm:w-auto text-center"
           >
-            Crear cuenta gratis
+            Explorar contenido
           </Link>
         </div>
 
         <p className="text-sm text-text-subtle">
-          No necesitás cuenta para explorar
+          No necesitás cuenta para ver el feed ni explorar contenido
         </p>
       </section>
 
@@ -174,11 +174,8 @@ export async function LandingPage() {
             Crear cuenta gratis
             <ArrowRight className="w-4 h-4" />
           </Link>
-          <Link
-            href="/explorar"
-            className="text-text-muted hover:text-text text-sm transition-colors"
-          >
-            o explorá sin cuenta →
+          <Link href="/" className="text-text-muted hover:text-text text-sm transition-colors">
+            o entrá sin cuenta →
           </Link>
         </div>
       </section>

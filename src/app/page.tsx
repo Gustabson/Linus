@@ -1,8 +1,7 @@
-import { auth }         from "@/lib/auth";
-import { LandingPage }  from "@/components/landing/LandingPage";
-import { SocialFeed }   from "@/components/social/SocialFeed";
+import { auth }        from "@/lib/auth";
+import { SocialFeed }  from "@/components/social/SocialFeed";
 
-export const revalidate = 90; // ISR: CDN cache 90s, user scrolls existing content
+export const revalidate = 90;
 
 export default async function HomePage({
   searchParams,
@@ -10,8 +9,8 @@ export default async function HomePage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.id) return <LandingPage />;
-
   const { tab = "tendencias" } = await searchParams;
-  return <SocialFeed userId={session.user.id} tab={tab} />;
+  // Both guests and logged-in users see the feed.
+  // Guests get read-only mode (no composer, no likes/comments).
+  return <SocialFeed userId={session?.user?.id ?? null} tab={tab} />;
 }

@@ -17,7 +17,7 @@ interface Props {
     name:     string | null;
     username: string | null;
     image:    string | null;
-  };
+  } | null;
 }
 
 export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Props) {
@@ -104,8 +104,8 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
 
   return (
     <div className="space-y-4">
-      {/* Composer always at top */}
-      <PostComposer currentUser={currentUser} onPostCreated={handlePostCreated} />
+      {/* Composer only for authenticated users */}
+      {currentUser && <PostComposer currentUser={currentUser} onPostCreated={handlePostCreated} />}
 
       {/* ── "Ver N nuevas publicaciones" banner ─────────────────────────── */}
       {newQueue.length > 0 && (
@@ -134,8 +134,8 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
             <PostCard
               key={post.id}
               post={post}
-              isAuthenticated={true}
-              currentUserId={currentUser.id}
+              isAuthenticated={!!currentUser}
+              currentUserId={currentUser?.id}
             />
           ))}
 
