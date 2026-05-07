@@ -25,13 +25,12 @@ export async function LandingPage() {
       <section className="text-center pt-16 pb-4 space-y-8 max-w-3xl mx-auto">
         <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm px-4 py-1.5 rounded-full font-medium">
           <BookOpen className="w-4 h-4" />
-          Educación abierta y colaborativa
+          Era de la Educación Experimental
         </div>
 
         <h1 className="text-5xl sm:text-6xl font-bold text-text leading-[1.1] tracking-tight">
-          Creá, compartí y descubrí{" "}
-          <span className="text-primary">contenido educativo</span>{" "}
-          junto a una comunidad decidida a mejorar la educación
+          Un sistema educativo roto.{" "}
+          <span className="text-primary">Acá lo reconstruimos.</span>
         </h1>
 
         <p className="text-xl text-text-muted leading-relaxed max-w-2xl mx-auto">
