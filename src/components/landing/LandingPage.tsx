@@ -35,7 +35,7 @@ export async function LandingPage() {
 
         <p className="text-xl text-text-muted leading-relaxed max-w-2xl mx-auto">
           La fórmula de la educación ideal no puede salir de una sola persona,
-          menos de políticos. Tus aportes a la comunidad son más valiosos de lo que imaginás.
+          menos de políticos. Tus aportes son más valiosos de lo que imaginás.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
