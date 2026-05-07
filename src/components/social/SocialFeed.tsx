@@ -91,7 +91,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
   const hasSidebar = suggested.length > 0 || featured.length > 0;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-5xl mx-auto">
 
       {/* ── Sticky tab bar — centrada en todos los dispositivos ── */}
       <div className="sticky top-0 z-20 bg-bg border-b border-border mb-6 -mx-4 sm:-mx-6 px-4 sm:px-6">
@@ -101,10 +101,11 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
         </div>
       </div>
 
-      <div className={`flex flex-col items-stretch gap-8 lg:items-start ${hasSidebar ? "lg:flex-row lg:justify-center" : ""}`}>
+      {/* xl+ → flex row (sidebar visible); por debajo → columna, feed centered */}
+      <div className={hasSidebar ? "xl:flex xl:items-start xl:gap-10" : ""}>
 
-        {/* ── Feed column — ancho máximo propio, centrado ── */}
-        <div className="min-w-0 w-full lg:max-w-2xl lg:shrink-0">
+        {/* ── Feed — full width hasta xl, luego flex-1 ── */}
+        <div className={`min-w-0 ${hasSidebar ? "xl:flex-1" : "max-w-2xl mx-auto w-full"}`}>
           <PostFeed
             initialPosts={serializedPosts}
             initialCursor={nextCursor}
@@ -120,7 +121,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
 
         {/* ── Right sidebar ───────────────────────────────────────── */}
         {hasSidebar && (
-        <div className="hidden lg:block lg:sticky lg:top-20 w-[260px] shrink-0 space-y-4">
+        <div className="hidden xl:block xl:sticky xl:top-20 w-[260px] shrink-0 space-y-4">
 
           {/* Personas para seguir */}
           {suggested.length > 0 && (
