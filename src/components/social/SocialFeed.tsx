@@ -63,9 +63,9 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
       take: 4,
     }),
 
-    /* Featured public content */
+    /* Featured public content (includes own content so sidebar shows even solo) */
     prisma.documentTree.findMany({
-      where:   { visibility: "PUBLIC", ownerId: { not: userId } },
+      where:   { visibility: "PUBLIC" },
       orderBy: { likes: { _count: "desc" } },
       take:    5,
       select: {
@@ -88,21 +88,23 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
     updatedAt: undefined as never,
   }));
 
+  const hasSidebar = suggested.length > 0 || featured.length > 0;
+
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_272px] gap-x-6 items-start">
+
+      {/* ── Sticky tab bar — fuera del grid para que funcione en todos los tamaños ── */}
+      <div className="sticky top-0 z-20 bg-bg border-b border-border mb-6 -mx-4 sm:-mx-6 px-4 sm:px-6">
+        <div className="flex">
+          <TabLink href="/?tab=tendencias" active={isTendencias}  icon={<Flame className="w-4 h-4" />} label="Tendencias" />
+          <TabLink href="/?tab=siguiendo"  active={!isTendencias} icon={<Rss   className="w-4 h-4" />} label="Siguiendo"  />
+        </div>
+      </div>
+
+      <div className={`grid grid-cols-1 items-start gap-x-6 ${hasSidebar ? "lg:grid-cols-[1fr_272px]" : ""}`}>
 
         {/* ── Feed column ─────────────────────────────────────────── */}
         <div className="min-w-0">
-
-          {/* Sticky tab bar — alineado con el feed */}
-          <div className="sticky top-0 z-20 bg-bg border-b border-border mb-6 -mx-4 sm:-mx-6 px-4 sm:px-6">
-            <div className="flex">
-              <TabLink href="/?tab=tendencias" active={isTendencias}  icon={<Flame className="w-4 h-4" />} label="Tendencias" />
-              <TabLink href="/?tab=siguiendo"  active={!isTendencias} icon={<Rss   className="w-4 h-4" />} label="Siguiendo"  />
-            </div>
-          </div>
-
           <PostFeed
             initialPosts={serializedPosts}
             initialCursor={nextCursor}
@@ -117,7 +119,8 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
         </div>
 
         {/* ── Right sidebar ───────────────────────────────────────── */}
-        <div className="hidden lg:block lg:sticky lg:top-6 space-y-4 pt-[57px]">
+        {hasSidebar && (
+        <div className="hidden lg:block lg:sticky lg:top-20 space-y-4">
 
           {/* Personas para seguir */}
           {suggested.length > 0 && (
@@ -211,6 +214,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
           )}
 
         </div>
+        )}
       </div>
     </div>
   );
