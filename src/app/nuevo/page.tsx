@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { LoginRequired } from "@/components/shared/LoginRequired";
 import { redirect } from "next/navigation";
 import { NewTreeForm } from "@/components/trees/NewTreeForm";
 
@@ -8,7 +9,7 @@ export default async function NuevoPage({
   searchParams: Promise<{ tipo?: string; kernel?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) return <LoginRequired feature="crear contenido" />;
 
   const { tipo, kernel } = await searchParams;
   const validTypes = ["KERNEL", "MODULE", "RESOURCE"];

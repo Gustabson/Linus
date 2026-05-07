@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu }        from "lucide-react";
-import { Navbar }      from "@/components/layout/Navbar";
 import { Sidebar }     from "@/components/layout/Sidebar";
 import { BottomNav }   from "@/components/layout/BottomNav";
 
@@ -16,19 +15,8 @@ export function LayoutShell({ children, isLoggedIn }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
-  if (!isLoggedIn) {
-    return (
-      <>
-        <Navbar />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {children}
-        </main>
-      </>
-    );
-  }
-
   // Home page gets no top padding on mobile; all others get a tiny bit
-  const isHome = pathname === "/";
+  const isHome = pathname === "/" || pathname === "/feed";
   const mobilePt = isHome ? "pt-0" : "pt-3";
 
   return (

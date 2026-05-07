@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { LoginRequired } from "@/components/shared/LoginRequired";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -22,7 +23,7 @@ export default async function PropuestasPage({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) return <LoginRequired feature="las propuestas" />;
 
   const { tab = "recibidas" } = await searchParams;
   const userId = session.user.id;

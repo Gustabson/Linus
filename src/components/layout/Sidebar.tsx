@@ -15,10 +15,12 @@ const POLL_MS = 180_000; // 3 min — badge counts don't need real-time
 
 // ── Sidebar badge counts (correos + propuestas) ────────────────────────────
 function useSidebarCounts() {
+  const { data: session }        = useSession();
   const [correos,   setCorroes]   = useState(0);
   const [propuestas, setPropuestas] = useState(0);
 
   const fetchCounts = useCallback(async () => {
+    if (!session) return;
     try {
       const [c, p] = await Promise.all([
         fetch("/api/correos/no-leidos").then((r) => r.ok ? r.json() : { count: 0 }),
@@ -27,7 +29,7 @@ function useSidebarCounts() {
       setCorroes(c.count ?? 0);
       setPropuestas(p.count ?? 0);
     } catch { /* ignore */ }
-  }, []);
+  }, [session]);
 
   useEffect(() => {
     fetchCounts();
@@ -66,11 +68,10 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   const { data: session }  = useSession();
   const { correos, propuestas } = useSidebarCounts();
 
-  if (!session) return null;
-
-  const username      = session.user?.username;
+  const isLoggedIn    = !!session;
+  const username      = session?.user?.username;
   const profileHref   = username ? `/${username}` : "/bienvenida";
-  const needsUsername = !username;
+  const needsUsername = isLoggedIn && !username;
 
   function isActive(href: string) {
     return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -140,55 +141,89 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* ── Bottom ───────────────────────────────────────────── */}
       <div className="px-3 pb-4 border-t border-sidebar-text/20 pt-3 space-y-1">
 
-        {/* Notificaciones — link to full page with unread badge */}
-        <NotificationBell
-          href="/notificaciones"
-          triggerClass={`flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium transition-all ${
-            isActive("/notificaciones")
-              ? "bg-sidebar-text/15 text-sidebar-text"
-              : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
-          }`}
-          label="Notificaciones"
-        />
+        {isLoggedIn ? (
+          <>
+            {/* Notificaciones */}
+            <NotificationBell
+              href="/notificaciones"
+              triggerClass={`flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium transition-all ${
+                isActive("/notificaciones")
+                  ? "bg-sidebar-text/15 text-sidebar-text"
+                  : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
+              }`}
+              label="Notificaciones"
+            />
 
-        {/* Configuración */}
-        <Link
-          href="/configuracion"
-          className={itemCls("/configuracion").replace("py-3 text-base", "py-2.5 text-sm")}
-          onClick={onClose}
-        >
-          <Settings className="w-5 h-5 shrink-0" />
-          Configuración
-        </Link>
+            {/* Configuración */}
+            <Link
+              href="/configuracion"
+              className={itemCls("/configuracion").replace("py-3 text-base", "py-2.5 text-sm")}
+              onClick={onClose}
+            >
+              <Settings className="w-5 h-5 shrink-0" />
+              Configuración
+            </Link>
 
-        {/* Perfil */}
-        <Link
-          href={profileHref}
-          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-            username && pathname === `/${username}`
-              ? "bg-sidebar-text/15 text-sidebar-text"
-              : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
-          }`}
-          onClick={onClose}
-        >
-          {session.user?.image ? (
-            <Image src={session.user.image} alt="" width={28} height={28} className="rounded-full shrink-0" />
-          ) : (
-            <div className="w-7 h-7 rounded-full bg-sidebar-text/20 flex items-center justify-center text-sidebar-text text-xs font-bold shrink-0">
-              {(session.user?.name ?? "?")[0]}
+            {/* Perfil */}
+            <Link
+              href={profileHref}
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                username && pathname === `/${username}`
+                  ? "bg-sidebar-text/15 text-sidebar-text"
+                  : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
+              }`}
+              onClick={onClose}
+            >
+              {session?.user?.image ? (
+                <Image src={session.user.image} alt="" width={28} height={28} className="rounded-full shrink-0" />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-sidebar-text/20 flex items-center justify-center text-sidebar-text text-xs font-bold shrink-0">
+                  {(session?.user?.name ?? "?")[0]}
+                </div>
+              )}
+              <span className="truncate">{session?.user?.name?.split(" ")[0] ?? "Perfil"}</span>
+            </Link>
+
+            {/* Cerrar sesión */}
+            <button
+              onClick={() => signOut()}
+              className="flex items-center gap-3.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-sidebar-text/60 hover:bg-sidebar-text/10 hover:text-sidebar-text transition-all"
+            >
+              <LogOut className="w-5 h-5 shrink-0" />
+              Cerrar sesión
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Configuración (accesible sin cuenta) */}
+            <Link
+              href="/configuracion"
+              className={itemCls("/configuracion").replace("py-3 text-base", "py-2.5 text-sm")}
+              onClick={onClose}
+            >
+              <Settings className="w-5 h-5 shrink-0" />
+              Configuración
+            </Link>
+
+            {/* Iniciar sesión / Crear cuenta */}
+            <div className="pt-2 space-y-2">
+              <Link
+                href="/login"
+                onClick={onClose}
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary-h transition-colors"
+              >
+                Iniciar sesión
+              </Link>
+              <Link
+                href="/login"
+                onClick={onClose}
+                className="flex items-center justify-center w-full px-4 py-2.5 rounded-xl text-sm font-medium text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text border border-sidebar-text/20 transition-colors"
+              >
+                Crear cuenta gratis
+              </Link>
             </div>
-          )}
-          <span className="truncate">{session.user?.name?.split(" ")[0] ?? "Perfil"}</span>
-        </Link>
-
-        {/* Cerrar sesión */}
-        <button
-          onClick={() => signOut()}
-          className="flex items-center gap-3.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-sidebar-text/60 hover:bg-sidebar-text/10 hover:text-sidebar-text transition-all"
-        >
-          <LogOut className="w-5 h-5 shrink-0" />
-          Cerrar sesión
-        </button>
+          </>
+        )}
       </div>
     </aside>
   );
