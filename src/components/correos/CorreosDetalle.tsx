@@ -1,26 +1,11 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
-import TextAlign from "@tiptap/extension-text-align";
-import TiptapLink from "@tiptap/extension-link";
-import Placeholder from "@tiptap/extension-placeholder";
-import Highlight from "@tiptap/extension-highlight";
-import Superscript from "@tiptap/extension-superscript";
-import Subscript from "@tiptap/extension-subscript";
-import {
-  ArrowLeft, Trash2, Reply, Send, Loader2,
-  Bold, Italic, Underline as UnderlineIcon,
-  List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
-  Link as LinkIcon, Heading2, Heading3,
-  Superscript as SuperscriptIcon, Subscript as SubscriptIcon,
-  Highlighter, Smile,
-} from "lucide-react";
+import { ArrowLeft, Trash2, Reply, Send, Loader2 } from "lucide-react";
+import { RichEditor } from "@/components/editor/RichEditor";
 import { formatDate } from "@/lib/utils";
 
 interface UserMini {
@@ -55,29 +40,7 @@ interface Props {
   backLabel:     string;
 }
 
-// ── Shared toolbar button ────────────────────────────────────────────────────
-function ToolBtn({
-  onClick, active = false, title, children,
-}: {
-  onClick: () => void; active?: boolean; title: string; children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onMouseDown={(e) => { e.preventDefault(); onClick(); }}
-      title={title}
-      className={`p-2 rounded-lg transition-colors ${
-        active
-          ? "bg-primary/10 text-primary"
-          : "text-text-muted hover:bg-border-subtle hover:text-text"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-// ── Reply composer with full TipTap editor ────────────────────────────────
+// ── Reply composer — wraps RichEditor with send/cancel actions ────────────────
 function ReplyComposer({
   onSend,
   onCancel,
@@ -87,172 +50,19 @@ function ReplyComposer({
   onCancel: () => void;
   sending:  boolean;
 }) {
-  const [showEmoji, setShowEmoji] = useState(false);
-  const emojiRef = useRef<HTMLDivElement>(null);
-
-  const EMOJI_GROUPS: { label: string; emojis: string[] }[] = [
-    { label: "Frecuentes",  emojis: ["😊","👍","❤️","🎉","🙏","😂","🔥","✅","⭐","💡","📚","✏️","🧠","🎓","💪"] },
-    { label: "Académico",   emojis: ["📖","📝","📌","📎","🔍","📊","📈","🧪","🔬","⚗️","🧮","📐","📏","💻","🖊️"] },
-    { label: "Expresiones", emojis: ["😀","😎","🤔","🤩","😍","🥳","😅","🤗","👏","🙌","💯","🚀","⚡","🌟","✨"] },
-  ];
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (emojiRef.current && !emojiRef.current.contains(e.target as Node))
-        setShowEmoji(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Underline,
-      Highlight.configure({ multicolor: false }),
-      Superscript,
-      Subscript,
-      TextAlign.configure({ types: ["heading", "paragraph"] }),
-      TiptapLink.configure({
-        openOnClick:    false,
-        HTMLAttributes: { target: "_blank", rel: "noopener noreferrer" },
-      }),
-      Placeholder.configure({ placeholder: "Escribí tu respuesta..." }),
-    ],
-    editorProps: {
-      attributes: {
-        class: "prose prose-sm max-w-none focus:outline-none min-h-[160px] px-1 py-2 text-text",
-      },
-    },
-    content: "",
-  });
-
-  function setLink() {
-    if (!editor) return;
-    const prev = editor.getAttributes("link").href as string | undefined;
-    const url  = window.prompt("URL del enlace:", prev ?? "https://");
-    if (url === null) return;
-    if (!url) { editor.chain().focus().unsetLink().run(); return; }
-    editor.chain().focus().setLink({ href: url }).run();
-  }
-
-  function handleSend() {
-    if (!editor || editor.isEmpty) return;
-    onSend(editor.getHTML());
-  }
+  const [html, setHtml] = useState("");
+  const isEmpty = !html || html === "<p></p>";
 
   return (
     <div className="bg-surface rounded-2xl border border-border overflow-hidden">
       <p className="text-sm font-medium text-text px-4 pt-4 pb-2">Tu respuesta</p>
-
-      {/* Toolbar */}
-      {editor && (
-        <div className="flex items-center gap-0.5 px-3 py-1.5 border-y border-border-subtle flex-wrap bg-bg">
-          <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()}
-            active={editor.isActive("bold")} title="Negrita">
-            <Bold className="w-4 h-4" />
-          </ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()}
-            active={editor.isActive("italic")} title="Cursiva">
-            <Italic className="w-4 h-4" />
-          </ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleUnderline().run()}
-            active={editor.isActive("underline")} title="Subrayado">
-            <UnderlineIcon className="w-4 h-4" />
-          </ToolBtn>
-
-          <div className="w-px h-5 bg-border mx-1" />
-
-          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            active={editor.isActive("heading", { level: 2 })} title="Título H2">
-            <Heading2 className="w-4 h-4" />
-          </ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            active={editor.isActive("heading", { level: 3 })} title="Título H3">
-            <Heading3 className="w-4 h-4" />
-          </ToolBtn>
-
-          <div className="w-px h-5 bg-border mx-1" />
-
-          <ToolBtn onClick={() => editor.chain().focus().toggleBulletList().run()}
-            active={editor.isActive("bulletList")} title="Lista con viñetas">
-            <List className="w-4 h-4" />
-          </ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            active={editor.isActive("orderedList")} title="Lista numerada">
-            <ListOrdered className="w-4 h-4" />
-          </ToolBtn>
-
-          <div className="w-px h-5 bg-border mx-1" />
-
-          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("left").run()}
-            active={editor.isActive({ textAlign: "left" })} title="Izquierda">
-            <AlignLeft className="w-4 h-4" />
-          </ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("center").run()}
-            active={editor.isActive({ textAlign: "center" })} title="Centrar">
-            <AlignCenter className="w-4 h-4" />
-          </ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().setTextAlign("right").run()}
-            active={editor.isActive({ textAlign: "right" })} title="Derecha">
-            <AlignRight className="w-4 h-4" />
-          </ToolBtn>
-
-          <div className="w-px h-5 bg-border mx-1" />
-
-          <ToolBtn onClick={() => editor.chain().focus().toggleHighlight().run()} active={editor.isActive("highlight")} title="Resaltado">
-            <Highlighter className="w-4 h-4" />
-          </ToolBtn>
-
-          <div className="w-px h-5 bg-border mx-1" />
-
-          <ToolBtn onClick={() => editor.chain().focus().toggleSuperscript().run()} active={editor.isActive("superscript")} title="Superíndice">
-            <SuperscriptIcon className="w-4 h-4" />
-          </ToolBtn>
-          <ToolBtn onClick={() => editor.chain().focus().toggleSubscript().run()} active={editor.isActive("subscript")} title="Subíndice">
-            <SubscriptIcon className="w-4 h-4" />
-          </ToolBtn>
-
-          <div className="w-px h-5 bg-border mx-1" />
-
-          <ToolBtn onClick={setLink} active={editor.isActive("link")} title="Enlace">
-            <LinkIcon className="w-4 h-4" />
-          </ToolBtn>
-
-          {/* Emoji picker */}
-          <div className="relative" ref={emojiRef}>
-            <ToolBtn onClick={() => setShowEmoji((v) => !v)} active={showEmoji} title="Emojis">
-              <Smile className="w-4 h-4" />
-            </ToolBtn>
-            {showEmoji && (
-              <div className="absolute top-full left-0 mt-1 w-64 bg-surface border border-border rounded-2xl shadow-xl z-50 p-3 space-y-2">
-                {EMOJI_GROUPS.map((group) => (
-                  <div key={group.label}>
-                    <p className="text-[10px] font-semibold text-text-subtle uppercase tracking-wide mb-1">{group.label}</p>
-                    <div className="flex flex-wrap gap-0.5">
-                      {group.emojis.map((emoji) => (
-                        <button key={emoji} type="button"
-                          onClick={() => { editor.chain().focus().insertContent(emoji).run(); setShowEmoji(false); }}
-                          className="w-8 h-8 flex items-center justify-center text-lg hover:bg-bg rounded-lg transition-colors">
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Editor area */}
-      <div className="px-4 py-3 min-h-[160px]">
-        <EditorContent editor={editor} />
-      </div>
-
-      {/* Actions */}
+      <RichEditor
+        compact
+        showEmoji
+        minHeight="160px"
+        placeholder="Escribí tu respuesta..."
+        onChange={setHtml}
+      />
       <div className="flex justify-end gap-2 px-4 pb-4 pt-2 border-t border-border-subtle">
         <button
           onClick={onCancel}
@@ -261,13 +71,13 @@ function ReplyComposer({
           Cancelar
         </button>
         <button
-          onClick={handleSend}
-          disabled={sending || !editor || editor.isEmpty}
+          onClick={() => { if (!isEmpty) onSend(html); }}
+          disabled={sending || isEmpty}
           className="flex items-center gap-2 text-sm font-semibold bg-primary text-primary-fg px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors"
         >
           {sending
             ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Enviando...</>
-            : <><Send className="w-3.5 h-3.5" /> Enviar</>
+            : <><Send    className="w-3.5 h-3.5" /> Enviar</>
           }
         </button>
       </div>
@@ -278,11 +88,11 @@ function ReplyComposer({
 // ── Main component ────────────────────────────────────────────────────────────
 export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, backLabel }: Props) {
   const router = useRouter();
-  const [showReply, setShowReply]   = useState(false);
-  const [replies, setReplies]       = useState<CorreoRespuesta[]>(message.replies);
-  const [deleting, startDelete]     = useTransition();
-  const [sending,  startSend]       = useTransition();
-  const [error, setError]           = useState("");
+  const [showReply, setShowReply] = useState(false);
+  const [replies, setReplies]     = useState<CorreoRespuesta[]>(message.replies);
+  const [deleting, startDelete]   = useTransition();
+  const [sending,  startSend]     = useTransition();
+  const [error, setError]         = useState("");
 
   // Notify sidebar immediately when a received message is opened (already marked read server-side)
   useEffect(() => {
@@ -318,17 +128,19 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
     });
   }
 
-  const avatarFor = (user: UserMini) =>
-    user.image ? (
+  function avatarFor(user: UserMini) {
+    return user.image ? (
       <Image src={user.image} alt="" width={40} height={40} className="rounded-full shrink-0" />
     ) : (
       <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
         {(user.name ?? "?")[0].toUpperCase()}
       </div>
     );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-6">
+
       {/* Back */}
       <Link
         href={backHref}
@@ -345,6 +157,7 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
 
       {/* Main message card */}
       <div className="bg-surface rounded-2xl border border-border p-6 space-y-5">
+
         {/* Sender row */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -381,7 +194,6 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
           </div>
         </div>
 
-        {/* Divider */}
         <hr className="border-border-subtle" />
 
         {/* S8 ⚠ SECURITY: dangerouslySetInnerHTML is safe ONLY because
@@ -437,9 +249,7 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
         </div>
       )}
 
-      {error && (
-        <p className="mt-4 text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
     </div>
   );
 }
