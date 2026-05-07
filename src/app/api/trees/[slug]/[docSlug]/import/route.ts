@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { splitTextIntoSections, pdfEmbedContent } from "@/lib/importUtils";
+import { splitTextIntoSections, pdfEmbedContent, textToTipTapDoc } from "@/lib/importUtils";
 import { ensureDraft } from "@/lib/sections";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 
@@ -82,6 +82,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No se recibió archivo" }, { status: 400 });
 
+  const mode     = (formData.get("mode") as string | null) ?? "split";
   const filename = file.name.toLowerCase();
   const buffer   = Buffer.from(await file.arrayBuffer());
 
@@ -118,7 +119,10 @@ export async function POST(req: NextRequest, { params }: Params) {
       }
     }
 
-    sections = splitTextIntoSections(text, file.name.replace(/\.pdf$/i, ""));
+    const baseTitle = file.name.replace(/\.pdf$/i, "");
+    sections = mode === "single"
+      ? [{ title: baseTitle, richTextContent: textToTipTapDoc(text) }]
+      : splitTextIntoSections(text, baseTitle);
 
   // ── DOCX ─────────────────────────────────────────────────────────────────
   } else if (filename.endsWith(".docx")) {
@@ -129,7 +133,10 @@ export async function POST(req: NextRequest, { params }: Params) {
       if (!text.trim()) {
         return NextResponse.json({ error: "El archivo Word parece estar vacío." }, { status: 422 });
       }
-      sections = splitTextIntoSections(text, file.name.replace(/\.docx$/i, ""));
+      const baseTitle = file.name.replace(/\.docx$/i, "");
+      sections = mode === "single"
+        ? [{ title: baseTitle, richTextContent: textToTipTapDoc(text) }]
+        : splitTextIntoSections(text, baseTitle);
     } catch {
       return NextResponse.json({ error: "No se pudo leer el archivo Word." }, { status: 422 });
     }

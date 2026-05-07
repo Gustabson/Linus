@@ -19,6 +19,7 @@ interface Props {
 
 type ImportState =
   | { step: "idle" }
+  | { step: "choosingMode"; file: File }
   | { step: "uploading" }
   | { step: "needsTitle"; blobUrl: string }
   | { step: "done"; count: number }
@@ -88,15 +89,19 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
     }
   }
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
+    setImportState({ step: "choosingMode", file });
+  }
 
+  async function uploadFile(file: File, mode: "split" | "single") {
     setImportState({ step: "uploading" });
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("mode", mode);
 
     const res  = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, { method: "POST", body: formData });
     const data = await res.json();
@@ -221,6 +226,38 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
           )}
         </div>
       </div>
+
+      {/* ── Import mode chooser ── */}
+      {importState.step === "choosingMode" && (
+        <div className="bg-bg border border-border rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-text flex items-center gap-2">
+              <FileText className="w-4 h-4 shrink-0 text-text-muted" />
+              <span className="truncate max-w-[240px]">{importState.file.name}</span>
+            </p>
+            <button onClick={() => setImportState({ step: "idle" })} className="shrink-0 text-text-muted hover:text-text transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <p className="text-xs text-text-muted">¿Cómo querés importar el contenido?</p>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => uploadFile(importState.file, "split")}
+              className="flex-1 min-w-[140px] flex flex-col items-center gap-1.5 border border-border rounded-xl px-4 py-3 text-sm text-text hover:bg-surface hover:border-primary/40 transition-colors text-center"
+            >
+              <span className="font-medium">Dividir en secciones</span>
+              <span className="text-xs text-text-muted">Detecta títulos automáticamente</span>
+            </button>
+            <button
+              onClick={() => uploadFile(importState.file, "single")}
+              className="flex-1 min-w-[140px] flex flex-col items-center gap-1.5 border border-border rounded-xl px-4 py-3 text-sm text-text hover:bg-surface hover:border-primary/40 transition-colors text-center"
+            >
+              <span className="font-medium">Una sola sección</span>
+              <span className="text-xs text-text-muted">Todo el contenido junto</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Import feedback ── */}
       {importState.step === "done" && (

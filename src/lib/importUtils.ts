@@ -41,11 +41,12 @@ export function splitTextIntoSections(
     const trimmed = line.trim();
     const isBlank = trimmed === "";
 
+    const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
     const isHeading =
       !isBlank &&
       prevWasBlank &&
-      trimmed.length >= 2 &&
-      trimmed.length <= 80 &&
+      wordCount >= 1 &&
+      wordCount <= 15 &&
       !/[.!?,;:]$/.test(trimmed) &&
       !/^\d+[\.\)]/.test(trimmed); // not "1. Item"
 
