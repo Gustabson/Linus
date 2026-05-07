@@ -22,7 +22,7 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
   });
   const followingIds = follows.map((f) => f.followingId);
 
-  const [currentUser, postsRaw, suggested, featured] = await Promise.all([
+  const [currentUser, postsRaw, suggested, featuredCandidates] = await Promise.all([
     /* Current user info for composer avatar */
     prisma.user.findUnique({
       where:  { id: userId },
@@ -63,18 +63,35 @@ export async function SocialFeed({ userId, tab = "tendencias" }: Props) {
       take: 4,
     }),
 
-    /* Featured public content (includes own content so sidebar shows even solo) */
+    /* Featured: top 30 candidates by raw score, re-ranked in JS with recency boost */
     prisma.documentTree.findMany({
       where:   { visibility: "PUBLIC" },
       orderBy: { likes: { _count: "desc" } },
-      take:    5,
+      take:    30,
       select: {
-        id: true, slug: true, title: true, contentType: true,
+        id: true, slug: true, title: true, contentType: true, createdAt: true,
         owner: { select: { username: true, name: true } },
         _count: { select: { likes: true, forks: true } },
       },
     }),
   ]);
+
+  // ── Featured content scoring ────────────────────────────────────────────────
+  // Base score: likes + forks*2  (forks indicate the content was reused)
+  // Recency boost: ×1.5 if published in the last 2 weeks
+  // Old content competes on raw score alone — a surge of new likes/forks
+  // can push it back above recent content without the boost.
+  const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+  const now          = Date.now();
+  const featured = featuredCandidates
+    .map((tree) => {
+      const base    = tree._count.likes + tree._count.forks * 2;
+      const isNew   = now - tree.createdAt.getTime() < TWO_WEEKS_MS;
+      const score   = base * (isNew ? 1.5 : 1);
+      return { ...tree, _score: score };
+    })
+    .sort((a, b) => b._score - a._score)
+    .slice(0, 5);
 
   const POSTS_PER_PAGE = 70;
   const hasMore      = postsRaw.length > POSTS_PER_PAGE;
