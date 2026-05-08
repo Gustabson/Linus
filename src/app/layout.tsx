@@ -33,26 +33,30 @@ export default async function RootLayout({
   const session    = await auth();
   const isLoggedIn = !!session?.user?.id;
 
-  // Read theme from cookie (server-side, before paint, no DB)
-  // Uses THEME_PROPERTIES in lib/theme-config.ts — single source of truth
+  // Theme cookie is only applied for logged-in users.
+  // Guests always get the default theme — their browser must not inherit
+  // another user's saved theme (cookie is per-browser, not per-account).
   let initialTheme: "light" | "dark" = "light";
   let htmlStyle: Record<string, string> = {};
 
-  try {
-    const jar = await cookies();
-    const raw = jar.get("eduhub_theme")?.value;
-    if (raw) {
-      const parsed = JSON.parse(decodeURIComponent(raw));
-      const result = cookieToStyle(parsed);
-      htmlStyle = result.htmlStyle;
-      if (result.isDark) initialTheme = "dark";
-    }
-  } catch { /* cookie inválida, usar defaults */ }
+  if (isLoggedIn) {
+    try {
+      const jar = await cookies();
+      const raw = jar.get("eduhub_theme")?.value;
+      if (raw) {
+        const parsed = JSON.parse(decodeURIComponent(raw));
+        const result = cookieToStyle(parsed);
+        htmlStyle = result.htmlStyle;
+        if (result.isDark) initialTheme = "dark";
+      }
+    } catch { /* cookie inválida, usar defaults */ }
+  }
 
   return (
     <html lang="es" suppressHydrationWarning className={initialTheme === "dark" ? "dark" : ""} style={htmlStyle as React.CSSProperties}>
       <body className="min-h-screen bg-bg">
-        <ThemeScript />
+        {/* ThemeScript only for logged-in users — guests never read saved theme */}
+        {isLoggedIn && <ThemeScript />}
         <ThemeProvider attribute="class" defaultTheme={initialTheme} enableSystem={false}>
           <SessionProvider session={session}>
             <SWRProvider>

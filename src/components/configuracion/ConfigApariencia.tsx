@@ -34,7 +34,6 @@ interface Props {
   initialColors:        CustomColors;
   initialSidebarColors: SidebarColors;
   initialContentColors: ContentTypeColors;
-  isGuest?:             boolean;
 }
 
 const COLOR_FIELDS: { key: keyof CustomColors; label: string; desc: string }[] = [
@@ -65,7 +64,6 @@ export function ConfigApariencia({
   initialColors,
   initialSidebarColors,
   initialContentColors,
-  isGuest = false,
 }: Props) {
   const { setTheme } = useTheme();
   const router = useRouter();
@@ -111,22 +109,20 @@ export function ConfigApariencia({
   function handleSave() {
     setSaved(false); setError("");
     startTransition(async () => {
-      if (!isGuest) {
-        const body: Record<string, unknown> = {
-          themeMode: mode,
-          ...sidebarColors,
-          ...ctColors,
-        };
-        if (mode === "custom") Object.assign(body, colors);
+      const body: Record<string, unknown> = {
+        themeMode: mode,
+        ...sidebarColors,
+        ...ctColors,
+      };
+      if (mode === "custom") Object.assign(body, colors);
 
-        const res = await fetch("/api/configuracion", {
-          method:  "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify(body),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) { setError(data.error ?? "Error al guardar."); return; }
-      }
+      const res = await fetch("/api/configuracion", {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error ?? "Error al guardar."); return; }
 
       if (mode === "light") setTheme("light");
       if (mode === "dark")  setTheme("dark");

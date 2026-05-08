@@ -13,24 +13,8 @@ export const metadata: Metadata = { title: "Configuración" };
 export default async function ConfiguracionPage() {
   const session = await auth();
 
-  // Guests can only change appearance (cookie-based, no DB needed)
-  if (!session?.user?.id) {
-    return (
-      <div className="max-w-2xl mx-auto py-8 px-4 space-y-6">
-        <div className="pb-2">
-          <h1 className="text-2xl font-bold text-text">Configuración</h1>
-          <p className="text-sm text-text-muted mt-1">Personalizá la apariencia de la plataforma.</p>
-        </div>
-        <ConfigApariencia
-          isGuest
-          initialMode="light"
-          initialColors={{ ...PRESET_LIGHT }}
-          initialSidebarColors={{ themeSidebarBg: "#15803d", themeSidebarText: "#ffffff" }}
-          initialContentColors={{ themeKernel: "#15803d", themeModule: "#1d4ed8", themeResource: "#b45309" }}
-        />
-      </div>
-    );
-  }
+  // Configuration requires an account — theme is stored in the DB, not the browser.
+  if (!session?.user?.id) redirect("/login");
 
   const user = await prisma.user.findUnique({
     where:  { id: session.user.id },

@@ -89,7 +89,7 @@ export function Navbar() {
                   </Link>
                   <NotificationBell />
                   <button
-                    onClick={() => signOut()}
+                    onClick={() => { document.cookie = "eduhub_theme=;path=/;max-age=0"; signOut(); }}
                     title="Cerrar sesión"
                     className="text-text-subtle hover:text-red-500 p-2 rounded-xl hover:bg-red-50 transition-colors"
                   >
@@ -136,7 +136,7 @@ export function Navbar() {
                       onClick={() => setOpen(false)}
                     />
                     <button
-                      onClick={() => signOut()}
+                      onClick={() => { document.cookie = "eduhub_theme=;path=/;max-age=0"; signOut(); }}
                       className="flex items-center gap-2 px-3 py-2.5 text-red-500 rounded-xl hover:bg-red-50 w-full text-sm transition-colors"
                     >
                       <LogOut className="w-4 h-4" /> Cerrar sesión
