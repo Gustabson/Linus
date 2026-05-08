@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, MessageCircle, GitFork, Send, Loader2, Trash2 } from "lucide-react";
+import { Heart, MessageCircle, GitFork, Send, Loader2, Trash2, MoreHorizontal, Flag } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
@@ -44,6 +44,173 @@ interface PostComment {
     username: string | null;
     image:    string | null;
   };
+}
+
+// ── Report reasons ───────────────────────────────────────────────────────────
+const REPORT_REASONS: { value: string; label: string }[] = [
+  { value: "spam",           label: "Spam o publicidad" },
+  { value: "inappropriate",  label: "Contenido inapropiado" },
+  { value: "misinformation", label: "Información falsa" },
+  { value: "other",          label: "Otro motivo" },
+];
+
+// ── Post options dropdown (delete for owner / report for others) ──────────────
+function PostOptions({
+  postId,
+  isOwner,
+  onDeleted,
+}: {
+  postId:    string;
+  isOwner:   boolean;
+  onDeleted: () => void;
+}) {
+  const [open,      setOpen]      = useState(false);
+  const [step,      setStep]      = useState<"menu" | "report" | "done">("menu");
+  const [reason,    setReason]    = useState(REPORT_REASONS[0].value);
+  const [detail,    setDetail]    = useState("");
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState("");
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    function handle(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setStep("menu");
+      }
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
+
+  async function handleDelete() {
+    setLoading(true);
+    setError("");
+    const res = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
+    setLoading(false);
+    if (res.ok) { setOpen(false); onDeleted(); }
+    else        { setError("No se pudo eliminar."); }
+  }
+
+  async function handleReport() {
+    setLoading(true);
+    setError("");
+    const res = await fetch(`/api/posts/${postId}/report`, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ reason, detail: detail.trim() || undefined }),
+    });
+    setLoading(false);
+    if (res.ok)  { setStep("done"); }
+    else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "No se pudo enviar el reporte.");
+    }
+  }
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => { setOpen((v) => !v); setStep("menu"); setError(""); }}
+        className="p-1.5 rounded-lg text-text-subtle hover:text-text hover:bg-bg transition-colors"
+        title="Opciones"
+      >
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 bg-surface border border-border rounded-xl shadow-lg w-56 overflow-hidden">
+
+          {/* ── Menu step ── */}
+          {step === "menu" && (
+            isOwner ? (
+              <button
+                onClick={handleDelete}
+                disabled={loading}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+              >
+                {loading
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <Trash2   className="w-4 h-4" />
+                }
+                Eliminar publicación
+              </button>
+            ) : (
+              <button
+                onClick={() => setStep("report")}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-muted hover:text-text hover:bg-bg transition-colors"
+              >
+                <Flag className="w-4 h-4" />
+                Reportar publicación
+              </button>
+            )
+          )}
+
+          {/* ── Report form step ── */}
+          {step === "report" && (
+            <div className="p-4 space-y-3">
+              <p className="text-sm font-medium text-text">¿Por qué reportás esto?</p>
+              <div className="space-y-1.5">
+                {REPORT_REASONS.map((r) => (
+                  <label key={r.value} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="report-reason"
+                      value={r.value}
+                      checked={reason === r.value}
+                      onChange={() => setReason(r.value)}
+                      className="accent-primary"
+                    />
+                    <span className="text-sm text-text">{r.label}</span>
+                  </label>
+                ))}
+              </div>
+              {reason === "other" && (
+                <textarea
+                  value={detail}
+                  onChange={(e) => setDetail(e.target.value)}
+                  placeholder="Contanos más (opcional)"
+                  maxLength={300}
+                  rows={2}
+                  className="w-full text-sm bg-bg border border-border rounded-xl px-3 py-2 resize-none text-text placeholder:text-text-subtle focus:outline-none focus:border-primary/40"
+                />
+              )}
+              {error && <p className="text-xs text-red-500">{error}</p>}
+              <div className="flex gap-2 justify-end pt-1">
+                <button
+                  onClick={() => { setStep("menu"); setError(""); }}
+                  className="text-xs text-text-muted px-3 py-1.5 rounded-lg hover:bg-bg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleReport}
+                  disabled={loading}
+                  className="text-xs font-medium bg-primary text-primary-fg px-3 py-1.5 rounded-lg hover:bg-primary-h disabled:opacity-50 transition-colors flex items-center gap-1.5"
+                >
+                  {loading && <Loader2 className="w-3 h-3 animate-spin" />}
+                  Enviar reporte
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Done step ── */}
+          {step === "done" && (
+            <div className="px-4 py-3 text-sm text-text-muted">
+              ✓ Reporte enviado. Lo revisaremos pronto.
+            </div>
+          )}
+
+          {error && step === "menu" && (
+            <p className="px-4 pb-3 text-xs text-red-500">{error}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── Comment section ───────────────────────────────────────────────────────────
@@ -233,6 +400,9 @@ export function PostCard({
   const [liked, setLiked]         = useState(post.likes.length > 0);
   const [liking, setLiking]       = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [deleted, setDeleted]     = useState(false);
+
+  if (deleted) return null;
 
   async function toggleLike() {
     if (!isAuthenticated || liking) return;
@@ -272,7 +442,7 @@ export function PostCard({
             </div>
           )}
         </Link>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <Link href={authorHref} className="text-sm font-semibold text-text hover:text-primary transition-colors">
             {post.author.name ?? "Usuario"}
           </Link>
@@ -280,6 +450,14 @@ export function PostCard({
             {post.author.username ? `@${post.author.username} · ` : ""}{formatDate(new Date(post.createdAt))}
           </p>
         </div>
+        {/* Options: delete (owner) or report (authenticated non-owner) */}
+        {currentUserId && (
+          <PostOptions
+            postId={post.id}
+            isOwner={post.author.id === currentUserId}
+            onDeleted={() => setDeleted(true)}
+          />
+        )}
       </div>
 
       {/* Content */}

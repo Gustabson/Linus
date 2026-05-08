@@ -108,6 +108,7 @@ model User {
   posts               Post[]
   postLikes           PostLike[]
   postComments        PostComment[]
+  postReports         PostReport[]
   sentMessages        Message[] @relation("MessageSender")
   receivedMessages    Message[] @relation("MessageRecipient")
 }
@@ -469,6 +470,7 @@ model Post {
 
   likes    PostLike[]
   comments PostComment[]
+  reports  PostReport[]
 
   @@index([authorId])
   @@index([createdAt])
@@ -503,6 +505,24 @@ model PostComment {
 
   @@index([postId])
   @@index([authorId])
+}
+
+model PostReport {
+  id        String   @id @default(cuid())
+  reason    String   // "spam" | "inappropriate" | "misinformation" | "other"
+  detail    String?  // optional extra detail from the reporter
+  createdAt DateTime @default(now())
+  reviewed  Boolean  @default(false)
+
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  reporterId String
+  reporter   User   @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, reporterId])  // one report per user per post
+  @@index([postId])
+  @@index([reviewed, createdAt]) // for future admin panel queries
 }
 
 // ─── MESSAGES (Correos) ───────────────────────────────────────────────────────
