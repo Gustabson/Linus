@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Menu }        from "lucide-react";
 import { Sidebar }     from "@/components/layout/Sidebar";
@@ -14,6 +14,16 @@ interface Props {
 export function LayoutShell({ children, isLoggedIn }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+
+  // Guests must never inherit theme state from a previous logged-in user.
+  // next-themes persists the chosen theme in localStorage under key "theme".
+  // Clear it (and the cookie) so the default light theme always applies.
+  useEffect(() => {
+    if (!isLoggedIn) {
+      localStorage.removeItem("theme");
+      document.cookie = "eduhub_theme=;path=/;max-age=0";
+    }
+  }, [isLoggedIn]);
 
   // Home page gets no top padding on mobile; all others get a tiny bit
   const isHome = pathname === "/" || pathname === "/feed";
