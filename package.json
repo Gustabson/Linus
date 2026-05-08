@@ -10,7 +10,9 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "test":    "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [],
   "author": "",
@@ -73,6 +75,8 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/pg": "^8.20.0",
-    "tsx": "^4.21.0"
+    "@vitejs/plugin-react": "^6.0.1",
+    "tsx": "^4.21.0",
+    "vitest": "^4.1.5"
   }
 }

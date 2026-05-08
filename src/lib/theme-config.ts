@@ -117,7 +117,5 @@ export const PRESET_DARK = {
   themePrimary: "#22c55e",
 } as const;
 
-// ── Legacy exports (keep existing imports working) ────────────────────────
-export function isValidHex(hex: string): boolean {
-  return /^#[0-9a-fA-F]{6}$/.test(hex);
-}
+// isValidHex lives in lib/theme.ts (alongside the other WCAG utilities).
+// Import it from there: import { isValidHex } from "@/lib/theme";

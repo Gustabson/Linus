@@ -33,6 +33,14 @@ export async function POST(req: NextRequest) {
   if (!source || source.visibility === "PRIVATE")
     return NextResponse.json({ error: "Contenido no encontrado" }, { status: 404 });
 
+  // Forks are only 1 level deep: originals can be forked, forks cannot.
+  // This keeps the graph flat and queries simple.
+  if (source.forkDepth > 0)
+    return NextResponse.json(
+      { error: "No se puede forkear un fork. Solo se pueden forkear los originales." },
+      { status: 400 }
+    );
+
   if (targetKernelId) {
     const targetKernel = await prisma.documentTree.findUnique({
       where:  { id: targetKernelId },
