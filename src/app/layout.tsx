@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import "./globals.css";
 import { auth }            from "@/lib/auth";
+import { prisma }          from "@/lib/prisma";
 import { SessionProvider } from "@/components/layout/SessionProvider";
 import { LayoutShell }     from "@/components/layout/LayoutShell";
 import { Toaster }         from "@/components/ui/Toaster";
 import { ThemeProvider }   from "@/components/layout/ThemeProvider";
 import { SWRProvider }     from "@/hooks/use-api";
-import { cookieToStyle }  from "@/lib/theme-config";
+import { buildThemeCookie, cookieToStyle } from "@/lib/theme-config";
 import { ErrorBoundary }  from "@/components/shared/ErrorBoundary";
 import { ThemeScript }    from "@/components/layout/ThemeScript";
 
@@ -33,23 +34,65 @@ export default async function RootLayout({
   const session    = await auth();
   const isLoggedIn = !!session?.user?.id;
 
-  // Theme cookie is only applied for logged-in users.
-  // Guests always get the default theme — their browser must not inherit
-  // another user's saved theme (cookie is per-browser, not per-account).
+  // Theme is account-scoped. Guests always get the default light theme.
+  // For logged-in users: fast path reads the cookie; if missing (first login
+  // or cleared on logout), falls back to DB so the theme applies immediately
+  // without requiring the user to re-save settings.
   let initialTheme: "light" | "dark" = "light";
-  let htmlStyle: Record<string, string> = {};
+  let htmlStyle:    Record<string, string> = {};
+  // Cookie value to pass to the client so it persists it for future page loads
+  // (Server Components cannot call cookies().set, so the client does it once).
+  let cookieToHydrate: string | null = null;
 
   if (isLoggedIn) {
     try {
       const jar = await cookies();
       const raw = jar.get("eduhub_theme")?.value;
+
       if (raw) {
+        // ── Fast path: cookie already present ─────────────────────────
         const parsed = JSON.parse(decodeURIComponent(raw));
         const result = cookieToStyle(parsed);
-        htmlStyle = result.htmlStyle;
+        htmlStyle    = result.htmlStyle;
         if (result.isDark) initialTheme = "dark";
+      } else {
+        // ── Slow path: first login or cookie was cleared ───────────────
+        // Load from DB so the theme applies without a manual re-save.
+        const user = await prisma.user.findUnique({
+          where:  { id: session!.user.id },
+          select: {
+            themeMode: true,
+            themeBg: true, themeSurface: true, themeBorder: true,
+            themeText: true, themePrimary: true,
+            themeSidebarBg: true, themeSidebarText: true,
+            themeKernel: true, themeModule: true, themeResource: true,
+          },
+        });
+
+        if (user) {
+          const payload = buildThemeCookie({
+            themeBg:          user.themeBg          ?? "",
+            themeSurface:     user.themeSurface     ?? "",
+            themeBorder:      user.themeBorder      ?? "",
+            themeText:        user.themeText        ?? "",
+            themePrimary:     user.themePrimary     ?? "",
+            themeSidebarBg:   user.themeSidebarBg   ?? "",
+            themeSidebarText: user.themeSidebarText ?? "",
+            themeKernel:      user.themeKernel      ?? "",
+            themeModule:      user.themeModule      ?? "",
+            themeResource:    user.themeResource    ?? "",
+          });
+          if (user.themeMode) payload.mode = user.themeMode;
+
+          const result = cookieToStyle(payload);
+          htmlStyle    = result.htmlStyle;
+          if (result.isDark) initialTheme = "dark";
+
+          // Pass to LayoutShell — client will persist this as the cookie.
+          cookieToHydrate = encodeURIComponent(JSON.stringify(payload));
+        }
       }
-    } catch { /* cookie inválida, usar defaults */ }
+    } catch { /* DB/cookie error — use defaults */ }
   }
 
   return (
@@ -60,7 +103,7 @@ export default async function RootLayout({
         <ThemeProvider attribute="class" defaultTheme={initialTheme} enableSystem={false}>
           <SessionProvider session={session}>
             <SWRProvider>
-              <LayoutShell isLoggedIn={isLoggedIn}>
+              <LayoutShell isLoggedIn={isLoggedIn} cookieToHydrate={cookieToHydrate}>
                 <ErrorBoundary>
                   {children}
                 </ErrorBoundary>

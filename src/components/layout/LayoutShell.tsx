@@ -7,11 +7,15 @@ import { Sidebar }     from "@/components/layout/Sidebar";
 import { BottomNav }   from "@/components/layout/BottomNav";
 
 interface Props {
-  children:    React.ReactNode;
-  isLoggedIn:  boolean;
+  children:         React.ReactNode;
+  isLoggedIn:       boolean;
+  /** Encoded cookie value produced by layout.tsx when no cookie existed (first
+   *  login / cleared). The client persists it so subsequent page loads use the
+   *  fast cookie path instead of hitting the DB again. */
+  cookieToHydrate?: string | null;
 }
 
-export function LayoutShell({ children, isLoggedIn }: Props) {
+export function LayoutShell({ children, isLoggedIn, cookieToHydrate }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
@@ -24,6 +28,15 @@ export function LayoutShell({ children, isLoggedIn }: Props) {
       document.cookie = "eduhub_theme=;path=/;max-age=0";
     }
   }, [isLoggedIn]);
+
+  // When layout loaded the theme from DB (no cookie present on login),
+  // persist it as a cookie so future navigations use the fast path.
+  useEffect(() => {
+    if (isLoggedIn && cookieToHydrate) {
+      document.cookie = `eduhub_theme=${cookieToHydrate};path=/;max-age=31536000;SameSite=Lax`;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount — value is stable from SSR
 
   // Home page gets no top padding on mobile; all others get a tiny bit
   const isHome = pathname === "/" || pathname === "/feed";
