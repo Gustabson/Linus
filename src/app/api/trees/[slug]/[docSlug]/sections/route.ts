@@ -246,6 +246,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (!delBody) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
   const { sectionId } = delBody;
 
+  // Verify the sectionId belongs to this version — prevents IDOR
+  if (!latestVersion.sections.some((s) => s.id === sectionId))
+    return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
+
   // ── Case 1: DRAFT → delete section directly ───────────────────────────────
   if (latestVersion.status === "DRAFT") {
     await prisma.documentSection.delete({ where: { id: sectionId } });

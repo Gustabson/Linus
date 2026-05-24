@@ -42,7 +42,7 @@ export default function BienvenidaPage() {
     setSaving(true);
     setError("");
 
-    const res = await fetch("/api/users/username", {
+    const res = await fetch("/api/configuracion", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username }),

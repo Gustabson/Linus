@@ -4,6 +4,16 @@ import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { isValidHex } from "@/lib/theme";
 
+// Length caps for text fields — protects DB from megabyte-string spam.
+const LIMITS = {
+  name:     80,
+  username: 32,
+  bio:      280,
+  website:  200,
+  location: 80,
+};
+const URL_RE = /^https?:\/\//i;
+
 // ── GET /api/configuracion ────────────────────────────────────────────────────
 export async function GET() {
   const session = await getSession();
@@ -58,10 +68,10 @@ export async function PATCH(req: NextRequest) {
   } = body;
 
   // Validate username
-  if (username !== undefined) {
+  if (username !== undefined && username !== null && String(username).trim() !== "") {
     const trimmed = String(username).trim().toLowerCase();
-    if (trimmed.length < 3)
-      return NextResponse.json({ error: "El usuario debe tener al menos 3 caracteres" }, { status: 400 });
+    if (trimmed.length < 3 || trimmed.length > LIMITS.username)
+      return NextResponse.json({ error: `El usuario debe tener entre 3 y ${LIMITS.username} caracteres` }, { status: 400 });
     if (!/^[a-z0-9_-]+$/.test(trimmed))
       return NextResponse.json({ error: "Solo letras, números, guion y guion bajo" }, { status: 400 });
     const existing = await prisma.user.findFirst({
@@ -70,6 +80,22 @@ export async function PATCH(req: NextRequest) {
     if (existing)
       return NextResponse.json({ error: "Ese nombre de usuario ya está en uso" }, { status: 409 });
   }
+
+  // Validate length of other text fields
+  const lengthChecks: Array<[string, unknown, number]> = [
+    ["name", name, LIMITS.name],
+    ["bio", bio, LIMITS.bio],
+    ["website", website, LIMITS.website],
+    ["location", location, LIMITS.location],
+  ];
+  for (const [key, val, max] of lengthChecks) {
+    if (val !== undefined && val !== null && String(val).length > max)
+      return NextResponse.json({ error: `${key} es demasiado largo (máximo ${max})` }, { status: 400 });
+  }
+
+  // Website must be http(s) if provided — prevents javascript: scheme XSS
+  if (website !== undefined && website !== null && String(website).trim() !== "" && !URL_RE.test(String(website).trim()))
+    return NextResponse.json({ error: "El sitio web debe empezar con http:// o https://" }, { status: 400 });
 
   // Validate sidebar + content type hex colors (always, not just in custom mode)
   const ctHexFields = { themeSidebarBg, themeSidebarText, themeKernel, themeModule, themeResource };

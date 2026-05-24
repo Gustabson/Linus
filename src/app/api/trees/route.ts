@@ -3,7 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized, uniqueSlug, isUniqueViolation } from "@/lib/api-helpers";
 import type { TreeVisibility, ContentType } from "@prisma/client";
 
-const VALID_TYPES: ContentType[] = ["KERNEL", "MODULE", "RESOURCE"];
+const VALID_TYPES:        ContentType[]    = ["KERNEL", "MODULE", "RESOURCE"];
+const VALID_VISIBILITIES: TreeVisibility[] = ["PUBLIC", "UNLISTED", "PRIVATE"];
+
+const TITLE_MAX       = 120;
+const DESCRIPTION_MAX = 1000;
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -14,8 +18,15 @@ export async function POST(req: NextRequest) {
 
   const { title, description, language, visibility, contentType } = body;
   if (!title?.trim()) return NextResponse.json({ error: "El título es requerido" }, { status: 400 });
+  if (String(title).length > TITLE_MAX)
+    return NextResponse.json({ error: `Título demasiado largo (máximo ${TITLE_MAX})` }, { status: 400 });
+  if (description != null && String(description).length > DESCRIPTION_MAX)
+    return NextResponse.json({ error: `Descripción demasiado larga (máximo ${DESCRIPTION_MAX})` }, { status: 400 });
 
-  const resolvedType: ContentType = VALID_TYPES.includes(contentType) ? contentType : "KERNEL";
+  const resolvedType: ContentType =
+    VALID_TYPES.includes(contentType) ? contentType : "KERNEL";
+  const resolvedVisibility: TreeVisibility =
+    VALID_VISIBILITIES.includes(visibility) ? visibility : "PUBLIC";
   const slugExists = (s: string) =>
     prisma.documentTree.findUnique({ where: { slug: s }, select: { id: true } }).then(Boolean);
 
@@ -29,7 +40,7 @@ export async function POST(req: NextRequest) {
           title:       title.trim(),
           description: description?.trim() || null,
           language:    language ?? "es",
-          visibility:  (visibility as TreeVisibility) ?? "PUBLIC",
+          visibility:  resolvedVisibility,
           contentType: resolvedType,
           forkDepth:   0,
           ownerId:     session.user.id,

@@ -79,6 +79,24 @@ export const unauthorized = () =>
 export const forbidden = () =>
   NextResponse.json({ error: "Sin permiso" }, { status: 403 });
 
+/** Trims, returns null if empty, returns null if longer than max. */
+export function safeString(v: unknown, max: number): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  if (!t || t.length > max) return null;
+  return t;
+}
+
+/** Escapes HTML special chars — use before interpolating user content into HTML. */
+export function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // ── Auth wrapper (DRY — replaces 37 manual getSession+unauthorized calls) ──
 type AuthHandler = (
   req: Request,

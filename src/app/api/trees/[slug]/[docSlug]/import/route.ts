@@ -6,6 +6,19 @@ import { getSession, unauthorized } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
 
+const MAX_IMPORT_SIZE = 10 * 1024 * 1024; // 10 MB — same as /api/upload
+const TITLE_MAX       = 200;
+
+/** Validates a Vercel Blob URL — prevents arbitrary URLs from being embedded. */
+function isValidBlobUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && u.hostname.endsWith(".public.blob.vercel-storage.com");
+  } catch {
+    return false;
+  }
+}
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 /** Append new sections to an existing draft version. */
@@ -70,10 +83,16 @@ export async function POST(req: NextRequest, { params }: Params) {
   const pendingTitle   = formData.get("sectionTitle") as string | null;
 
   if (pendingBlobUrl && pendingTitle) {
+    if (!isValidBlobUrl(pendingBlobUrl))
+      return NextResponse.json({ error: "blobUrl inválida" }, { status: 400 });
+    const trimmedTitle = pendingTitle.trim();
+    if (!trimmedTitle || trimmedTitle.length > TITLE_MAX)
+      return NextResponse.json({ error: `Título inválido (máximo ${TITLE_MAX})` }, { status: 400 });
+
     const draft      = await ensureDraft(doc.id, session.user.id);
     const startOrder = draft.sections.length;
     await appendSections(draft.id, startOrder, [
-      { title: pendingTitle, richTextContent: pdfEmbedContent(pendingBlobUrl) },
+      { title: trimmedTitle, richTextContent: pdfEmbedContent(pendingBlobUrl) },
     ]);
     return NextResponse.json({ ok: true, count: 1 });
   }
@@ -81,6 +100,11 @@ export async function POST(req: NextRequest, { params }: Params) {
   // ── Case B: new file upload ───────────────────────────────────────────────
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "No se recibió archivo" }, { status: 400 });
+  if (file.size > MAX_IMPORT_SIZE)
+    return NextResponse.json(
+      { error: `El archivo supera el límite de ${MAX_IMPORT_SIZE / (1024 * 1024)} MB` },
+      { status: 400 },
+    );
 
   const mode     = (formData.get("mode") as string | null) ?? "split";
   const filename = file.name.toLowerCase();

@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized, uniqueSlug, parseBody } from "@/lib/api-helpers";
 import type { TreeVisibility, ContentType } from "@prisma/client";
 
+const VALID_TYPES:        ContentType[]    = ["KERNEL", "MODULE", "RESOURCE"];
+const VALID_VISIBILITIES: TreeVisibility[] = ["PUBLIC", "UNLISTED", "PRIVATE"];
+
+const TITLE_MAX       = 120;
+const DESCRIPTION_MAX = 1000;
+
 // ── DELETE — permanently removes a tree ──────────────────────────────────────
 export async function DELETE(
   _req: NextRequest,
@@ -50,6 +56,15 @@ export async function PATCH(
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
   const { title, description, visibility, contentType, archived } = body;
+
+  if (title != null && String(title).length > TITLE_MAX)
+    return NextResponse.json({ error: `Título demasiado largo (máximo ${TITLE_MAX})` }, { status: 400 });
+  if (description != null && String(description).length > DESCRIPTION_MAX)
+    return NextResponse.json({ error: `Descripción demasiado larga (máximo ${DESCRIPTION_MAX})` }, { status: 400 });
+  if (visibility != null && !VALID_VISIBILITIES.includes(visibility as TreeVisibility))
+    return NextResponse.json({ error: "Visibilidad inválida" }, { status: 400 });
+  if (contentType != null && !VALID_TYPES.includes(contentType as ContentType))
+    return NextResponse.json({ error: "Tipo de contenido inválido" }, { status: 400 });
 
   if (archived) {
     await prisma.documentTree.update({

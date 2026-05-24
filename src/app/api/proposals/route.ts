@@ -45,6 +45,10 @@ export async function POST(req: NextRequest) {
   const { sourceTreeId, title, description } = body;
   if (!sourceTreeId || !(title as string)?.trim())
     return NextResponse.json({ error: "sourceTreeId y título son requeridos" }, { status: 400 });
+  if (String(title).length > 120)
+    return NextResponse.json({ error: "Título demasiado largo (máximo 120)" }, { status: 400 });
+  if (description != null && String(description).length > 2000)
+    return NextResponse.json({ error: "Descripción demasiado larga (máximo 2000)" }, { status: 400 });
 
   // Source must be owned by current user and be a fork
   const source = await prisma.documentTree.findUnique({

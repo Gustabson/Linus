@@ -53,9 +53,9 @@ Copiá `.env.example` a `.env.local` y completá los valores:
 # Base de datos
 DATABASE_URL="postgresql://usuario:contraseña@host:5432/eduhub"
 
-# NextAuth
+# NextAuth v5
 AUTH_SECRET="generá uno con: openssl rand -base64 32"
-NEXTAUTH_URL="http://localhost:3000"
+AUTH_URL="http://localhost:3000"
 
 # OAuth (opcional — podés autenticarte solo con email)
 AUTH_GOOGLE_ID=""

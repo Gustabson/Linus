@@ -76,7 +76,7 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
       }
 
       // 2. Save text fields
-      const res = await fetch("/api/users/profile", {
+      const res = await fetch("/api/configuracion", {
         method:  "PATCH",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(form),

@@ -19,11 +19,15 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const content = await prisma.documentTree.findUnique({
     where:  { id: contentId },
-    select: { id: true, contentType: true, title: true },
+    select: { id: true, contentType: true, title: true, visibility: true, ownerId: true },
   });
 
   if (!content || content.contentType === "KERNEL")
     return NextResponse.json({ error: "Solo se pueden adjuntar módulos o recursos" }, { status: 400 });
+
+  // Can only attach content that's PUBLIC, or that belongs to the kernel owner
+  if (content.visibility === "PRIVATE" && content.ownerId !== session.user.id)
+    return NextResponse.json({ error: "No tenés acceso a ese contenido" }, { status: 403 });
 
   const attachment = await prisma.treeAttachment.upsert({
     where:   { kernelId_contentId: { kernelId: kernel.id, contentId } },

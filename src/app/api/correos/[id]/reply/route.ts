@@ -15,20 +15,26 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { id: parentId } = await params;
 
-  // Fetch parent — verify access
-  const parent = await prisma.message.findUnique({
-    where:  { parentId: null, id: parentId },   // only top-level messages can be replied to
-    select: { id: true, senderId: true, recipientId: true, isDraft: true },
+  // Fetch parent — must be a top-level non-draft message
+  const parent = await prisma.message.findFirst({
+    where:  { id: parentId, parentId: null, isDraft: false },
+    select: { id: true, senderId: true, recipientId: true },
   });
 
-  if (!parent || parent.isDraft) {
+  if (!parent) {
     return NextResponse.json({ error: "Mensaje no encontrado" }, { status: 404 });
   }
 
-  // Only the recipient of the original message can reply
-  if (parent.recipientId !== session.user.id) {
-    return NextResponse.json({ error: "Solo el destinatario puede responder" }, { status: 403 });
+  // Either participant in the thread can reply
+  const isParticipant =
+    parent.senderId === session.user.id || parent.recipientId === session.user.id;
+  if (!isParticipant) {
+    return NextResponse.json({ error: "Sin acceso" }, { status: 403 });
   }
+
+  // Reply goes to the other party
+  const replyRecipientId =
+    parent.senderId === session.user.id ? parent.recipientId : parent.senderId;
 
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
@@ -45,10 +51,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const reply = await prisma.message.create({
     data: {
-      subject:     "Re:",      // replies don't need separate subject
+      subject:     "Re:",
       body:        cleanBody,
       senderId:    session.user.id,
-      recipientId: parent.senderId,  // reply goes back to original sender
+      recipientId: replyRecipientId,
       parentId,
       isDraft:     false,
     },

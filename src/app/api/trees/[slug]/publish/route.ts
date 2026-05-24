@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHash } from "crypto";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, unauthorized, isUniqueViolation } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const tree = await prisma.documentTree.findUnique({
     where:   { slug },
-    select:  { id: true, ownerId: true, contentType: true, title: true },
+    select:  { id: true, ownerId: true },
   });
 
   if (!tree || tree.ownerId !== session.user.id)
@@ -35,38 +35,37 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (draftVersions.length === 0)
     return NextResponse.json({ error: "No hay cambios para publicar" }, { status: 400 });
 
-  // Generate a short unique public ID (8 hex chars)
-  const fingerprint = createHash("sha256")
-    .update(tree.id + session.user.id + Date.now().toString())
-    .digest("hex");
-  const publicId = fingerprint.slice(0, 8);
-
   const now = new Date();
 
-  await prisma.$transaction(async (tx) => {
-    // Mark all draft versions as published
-    await tx.documentVersion.updateMany({
-      where: { id: { in: draftVersions.map((v) => v.id) } },
-      data:  { status: "PUBLISHED", commitMessage: msg },
-    });
+  // Try up to 5 times to handle (extremely rare) publicId collisions
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const publicId = randomBytes(6).toString("hex"); // 12 hex chars
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.documentVersion.updateMany({
+          where: { id: { in: draftVersions.map((v) => v.id) } },
+          data:  { status: "PUBLISHED", commitMessage: msg },
+        });
+        await tx.documentTree.update({
+          where: { id: tree.id },
+          data:  { publishedAt: now },
+        });
+        await tx.treePublication.create({
+          data: {
+            publicId,
+            commitMessage: msg,
+            publishedAt:   now,
+            treeId:        tree.id,
+            authorId:      session.user.id,
+          },
+        });
+      });
+      return NextResponse.json({ publicId, publishedAt: now.toISOString() });
+    } catch (err) {
+      if (!isUniqueViolation(err)) throw err;
+      // publicId collision — retry with a new random
+    }
+  }
 
-    // Update tree's last published timestamp
-    await tx.documentTree.update({
-      where: { id: tree.id },
-      data:  { publishedAt: now },
-    });
-
-    // Create the publication record
-    await tx.treePublication.create({
-      data: {
-        publicId,
-        commitMessage: msg,
-        publishedAt:   now,
-        treeId:        tree.id,
-        authorId:      session.user.id,
-      },
-    });
-  });
-
-  return NextResponse.json({ publicId, publishedAt: now.toISOString() });
+  return NextResponse.json({ error: "No se pudo generar un ID único" }, { status: 500 });
 }

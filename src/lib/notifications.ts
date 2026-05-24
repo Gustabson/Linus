@@ -1,6 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
 import type { NotificationType } from "@prisma/client";
+import { escapeHtml } from "./api-helpers";
+
+function appBaseUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.AUTH_URL ??
+    "https://eduhub.vercel.app"
+  );
+}
 
 // ── Preference field for each notification type ───────────────────────────────
 const TYPE_TO_PREF: Partial<Record<NotificationType, string>> = {
@@ -82,12 +91,14 @@ export async function createNotification({
     // Check the specific preference for this notification type
     if (!recipient[prefField as keyof typeof recipient]) return;
 
-    const actorName = actor?.name ?? actor?.username ?? "Alguien";
-    const subject   = TYPE_SUBJECT[type]?.(actorName);
-    const body      = TYPE_BODY[type]?.(actorName);
-    if (!subject || !body) return;
+    const rawActorName = actor?.name ?? actor?.username ?? "Alguien";
+    const actorName    = escapeHtml(rawActorName);
+    const subject      = TYPE_SUBJECT[type]?.(rawActorName); // email header — plain text
+    const htmlSubject  = TYPE_SUBJECT[type]?.(actorName);    // used inside HTML body
+    const body         = TYPE_BODY[type]?.(actorName);
+    if (!subject || !body || !htmlSubject) return;
 
-    const appUrl = process.env.AUTH_URL ?? "https://eduhub.vercel.app";
+    const appUrl   = appBaseUrl();
     const fullLink = link.startsWith("http") ? link : `${appUrl}${link}`;
 
     const resend = new Resend(process.env.RESEND_API_KEY);
@@ -95,7 +106,7 @@ export async function createNotification({
       from:    "EduHub <onboarding@resend.dev>",
       to:      recipient.email,
       subject,
-      html:    buildNotificationEmail({ subject, body, link: fullLink }),
+      html:    buildNotificationEmail({ subject: htmlSubject, body, link: fullLink }),
     });
   } catch {
     // swallow — notifications must never break the main action
@@ -127,16 +138,19 @@ export async function sendCorreoEmail({
 
     if (!recipient?.email || !recipient.notifCorreos) return;
 
-    const appUrl = process.env.AUTH_URL ?? "https://eduhub.vercel.app";
+    const appUrl = appBaseUrl();
     const resend = new Resend(process.env.RESEND_API_KEY);
+
+    const safeSender  = escapeHtml(senderName);
+    const safePreview = escapeHtml(previewText);
 
     await resend.emails.send({
       from:    "EduHub <onboarding@resend.dev>",
       to:      recipient.email,
       subject: `Nuevo correo de ${senderName}: ${subject}`,
       html:    buildNotificationEmail({
-        subject: `Nuevo correo de ${senderName}`,
-        body:    `<strong>${senderName}</strong> te envió un mensaje: <em>"${previewText}"</em>`,
+        subject: `Nuevo correo de ${safeSender}`,
+        body:    `<strong>${safeSender}</strong> te envió un mensaje: <em>"${safePreview}"</em>`,
         link:    `${appUrl}/correos`,
         cta:     "Ver correo",
       }),
@@ -210,7 +224,7 @@ function buildNotificationEmail({
             <td style="padding:16px 40px 28px;border-top:1px solid #f3f4f6;">
               <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.5;">
                 Recibís este correo porque tenés activadas las notificaciones en EduHub.<br/>
-                Podés cambiar tus preferencias en <a href="${process.env.AUTH_URL ?? ""}/configuracion" style="color:#15803d;">Configuración → Notificaciones</a>.
+                Podés cambiar tus preferencias en <a href="${appBaseUrl()}/configuracion" style="color:#15803d;">Configuración → Notificaciones</a>.
               </p>
             </td>
           </tr>
