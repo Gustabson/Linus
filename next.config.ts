@@ -11,17 +11,21 @@ const securityHeaders = [
     value: "max-age=63072000; includeSubDomains; preload",
   },
   {
-    // CSP: allows same-origin + trusted avatar CDNs.
-    // 'unsafe-inline' needed for Next.js inline styles/scripts; tighten over time.
+    // 'unsafe-inline' sigue siendo necesario para los inline scripts/styles
+    // que inyecta Next.js. Para endurecer más, habría que migrar a nonces
+    // vía middleware (ver docs de Next.js sobre CSP).
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://*.public.blob.vercel-storage.com",
       "font-src 'self'",
       "connect-src 'self'",
       "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "object-src 'none'",
     ].join("; "),
   },
 ];
@@ -39,7 +43,6 @@ const nextConfig: NextConfig = {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
 
-  // D5: /kernel redirect moved here — no standalone page needed
   async redirects() {
     return [
       { source: "/kernel", destination: "/explorar?tipo=KERNEL", permanent: true },

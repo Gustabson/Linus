@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { USER_BASIC_SELECT } from "@/lib/data";
 
 export async function GET(req: NextRequest) {
-  // S9: require authentication to prevent unauthenticated user enumeration
+  // Requiere auth: evita enumeración pública de usuarios
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 

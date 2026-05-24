@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   const slugExists = (s: string) =>
     prisma.documentTree.findUnique({ where: { slug: s }, select: { id: true } }).then(Boolean);
 
-  // Retry up to 5 times to handle the slug uniqueness race condition (B1 in uniqueSlug docs)
+  // Retry para resolver la race condition de uniqueSlug
   for (let attempt = 0; attempt < 5; attempt++) {
     const slug = await uniqueSlug(forkTitle, slugExists);
     try {

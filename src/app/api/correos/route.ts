@@ -8,8 +8,6 @@ import { sendCorreoEmail } from "@/lib/notifications";
 const SUBJECT_MAX = 200;
 const BODY_MAX    = 5000;
 
-const SENDER_SELECT = USER_BASIC_SELECT;
-
 // ── GET /api/correos — bandeja de entrada ─────────────────────────────────────
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -34,7 +32,7 @@ export async function GET(req: NextRequest) {
     select: {
       id: true, subject: true, isRead: true, createdAt: true,
       body: true,   // needed for preview (trimmed client-side)
-      sender: { select: SENDER_SELECT },
+      sender: { select: USER_BASIC_SELECT },
     },
   });
 
@@ -96,7 +94,7 @@ export async function POST(req: NextRequest) {
     },
     select: {
       id: true, subject: true, isDraft: true, createdAt: true,
-      recipient: { select: SENDER_SELECT },
+      recipient: { select: USER_BASIC_SELECT },
     },
   });
 

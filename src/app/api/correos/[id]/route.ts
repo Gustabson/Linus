@@ -6,8 +6,6 @@ import { sanitizeHtml } from "@/lib/sanitize";
 
 type Params = { params: Promise<{ id: string }> };
 
-const USER_SELECT = USER_BASIC_SELECT;
-
 // ── GET /api/correos/[id] — fetch + auto-mark read ────────────────────────────
 export async function GET(_req: NextRequest, { params }: Params) {
   const session = await getSession();
@@ -18,12 +16,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const message = await prisma.message.findUnique({
     where: { id },
     include: {
-      sender:    { select: USER_SELECT },
-      recipient: { select: USER_SELECT },
+      sender:    { select: USER_BASIC_SELECT },
+      recipient: { select: USER_BASIC_SELECT },
       replies: {
         where:   { deletedByRecipient: false, deletedBySender: false },
         orderBy: { createdAt: "asc" },
-        include: { sender: { select: USER_SELECT } },
+        include: { sender: { select: USER_BASIC_SELECT } },
       },
     },
   });

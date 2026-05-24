@@ -32,19 +32,10 @@ export async function getOwnedKernel(slug: string, userId: string) {
 }
 
 /**
- * Finds a unique slug by appending -1, -2, … until exists() returns false.
- * @param base    Plain text title — will be slugified internally.
- * @param exists  Async predicate that returns true if the slug is taken.
+ * Genera un slug único agregando -1, -2, … hasta que exists() devuelva false.
  *
- * B1: The check + insert is not atomic — two concurrent requests with the
- * same title could both pass exists() and collide on the DB unique constraint.
- * Callers must wrap the insert in a try/catch and retry on unique violation.
- * Example:
- *   for (let attempt = 0; attempt < 5; attempt++) {
- *     const slug = await uniqueSlug(title, exists);
- *     try { return await prisma.documentTree.create({ data: { slug, … } }); }
- *     catch (e) { if (!isUniqueViolation(e)) throw e; }  // retry
- *   }
+ * Ojo: check + insert no es atómico. Los callers deben envolver el insert en
+ * try/catch y reintentar con isUniqueViolation(err) (ver trees/route.ts).
  */
 export async function uniqueSlug(
   base: string,

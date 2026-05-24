@@ -196,10 +196,8 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
 
         <hr className="border-border-subtle" />
 
-        {/* S8 ⚠ SECURITY: dangerouslySetInnerHTML is safe ONLY because
-            message.body is sanitized server-side via sanitize-html before storage.
-            See src/lib/sanitize.ts + src/app/api/correos/route.ts.
-            DO NOT remove or weaken that sanitization — stored XSS risk. */}
+        {/* SAFE: message.body se sanitiza server-side con sanitize-html antes
+            de guardarse (lib/sanitize.ts). No quitar esa sanitización. */}
         <div
           className="prose prose-sm max-w-none text-text"
           dangerouslySetInnerHTML={{ __html: message.body }}
@@ -218,7 +216,7 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
                   <p className="text-xs text-text-subtle">{formatDate(new Date(reply.createdAt))}</p>
                 </div>
               </div>
-              {/* S8 ⚠ SECURITY: see comment above — sanitized server-side */}
+              {/* SAFE: reply.body sanitizado server-side (ver comentario arriba). */}
               <div
                 className="prose prose-sm max-w-none text-text"
                 dangerouslySetInnerHTML={{ __html: reply.body }}
@@ -228,26 +226,24 @@ export function CorreosDetalle({ message, currentUserId, isRecipient, backHref, 
         </div>
       )}
 
-      {/* Reply area — only recipient can reply */}
-      {isRecipient && (
-        <div className="mt-6">
-          {!showReply ? (
-            <button
-              onClick={() => setShowReply(true)}
-              className="flex items-center gap-2 text-sm font-medium text-primary border border-primary/20 px-4 py-2.5 rounded-xl hover:bg-primary/5 transition-colors"
-            >
-              <Reply className="w-4 h-4" />
-              Responder
-            </button>
-          ) : (
-            <ReplyComposer
-              onSend={handleReply}
-              onCancel={() => { setShowReply(false); setError(""); }}
-              sending={sending}
-            />
-          )}
-        </div>
-      )}
+      {/* Reply area — sender and recipient can both reply */}
+      <div className="mt-6">
+        {!showReply ? (
+          <button
+            onClick={() => setShowReply(true)}
+            className="flex items-center gap-2 text-sm font-medium text-primary border border-primary/20 px-4 py-2.5 rounded-xl hover:bg-primary/5 transition-colors"
+          >
+            <Reply className="w-4 h-4" />
+            Responder
+          </button>
+        ) : (
+          <ReplyComposer
+            onSend={handleReply}
+            onCancel={() => { setShowReply(false); setError(""); }}
+            sending={sending}
+          />
+        )}
+      </div>
 
       {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
     </div>
