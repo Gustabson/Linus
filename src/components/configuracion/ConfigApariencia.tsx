@@ -108,6 +108,41 @@ function applyThemeVars({ mode, colors, sidebarColors, ctColors }: ThemeSnapshot
   set("--resource-h",  ctColors.themeResource);
 }
 
+function readThemeCookie(): ThemeSnapshot | null {
+  const raw = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("eduhub_theme="))
+    ?.split("=")[1];
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(decodeURIComponent(raw)) as Record<string, string>;
+    const mode: Mode = parsed.mode === "dark" || parsed.mode === "custom" ? parsed.mode : "light";
+
+    return {
+      mode,
+      colors: {
+        themeBg:      parsed.bg,
+        themeSurface: parsed.surface,
+        themeBorder:  parsed.border,
+        themeText:    parsed.text,
+        themePrimary: parsed.primary,
+      },
+      sidebarColors: {
+        themeSidebarBg:   parsed.sidebarBg,
+        themeSidebarText: parsed.sidebarText,
+      },
+      ctColors: {
+        themeKernel:   parsed.kernel,
+        themeModule:   parsed.module,
+        themeResource: parsed.resource,
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function ConfigApariencia({
   initialMode,
   initialColors,
@@ -117,7 +152,6 @@ export function ConfigApariencia({
   const { setTheme } = useTheme();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
 
   const [mode,   setMode]   = useState<Mode>(initialMode);
   const [colors, setColors] = useState<CustomColors>(
@@ -132,6 +166,46 @@ export function ConfigApariencia({
   const [pending, startTransition] = useTransition();
   const [saved,   setSaved]        = useState(false);
   const [error,   setError]        = useState("");
+
+  useEffect(() => {
+    const cookieTheme = readThemeCookie();
+    if (!cookieTheme) {
+      setMounted(true);
+      return;
+    }
+
+    const nextMode = cookieTheme.mode;
+    const nextColors = nextMode === "custom" ? {
+      themeBg:      cookieTheme.colors.themeBg      || initialColors.themeBg,
+      themeSurface: cookieTheme.colors.themeSurface || initialColors.themeSurface,
+      themeBorder:  cookieTheme.colors.themeBorder  || initialColors.themeBorder,
+      themeText:    cookieTheme.colors.themeText    || initialColors.themeText,
+      themePrimary: cookieTheme.colors.themePrimary || initialColors.themePrimary,
+    } : colors;
+    const nextSidebarColors = {
+      themeSidebarBg:   cookieTheme.sidebarColors.themeSidebarBg   || sidebarColors.themeSidebarBg,
+      themeSidebarText: cookieTheme.sidebarColors.themeSidebarText || sidebarColors.themeSidebarText,
+    };
+    const nextCtColors = {
+      themeKernel:   cookieTheme.ctColors.themeKernel   || ctColors.themeKernel,
+      themeModule:   cookieTheme.ctColors.themeModule   || ctColors.themeModule,
+      themeResource: cookieTheme.ctColors.themeResource || ctColors.themeResource,
+    };
+
+    setMode(nextMode);
+    setColors(nextColors);
+    setSidebarColors(nextSidebarColors);
+    setCtColors(nextCtColors);
+    applyThemeVars({
+      mode: nextMode,
+      colors: nextColors,
+      sidebarColors: nextSidebarColors,
+      ctColors: nextCtColors,
+    });
+    setMounted(true);
+    // Run once on mount; initial props/state are the server fallback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!mounted) return;
