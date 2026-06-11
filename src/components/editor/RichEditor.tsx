@@ -14,6 +14,7 @@ import {
   List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
   Heading1, Heading2, Heading3, Highlighter, Quote,
   Code, CodeXml, Minus, Link as LinkIcon, Undo, Redo, Smile,
+  Sun, Moon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -75,6 +76,7 @@ export function RichEditor({
 }: RichEditorProps) {
 
   // ── UI state ──────────────────────────────────────────────────────────────
+  const [pageDark,      setPageDark]      = useState(false);
   const [showHighlight, setShowHighlight] = useState(false);
   const [linkOpen,      setLinkOpen]      = useState(false);
   const [linkUrl,       setLinkUrl]       = useState("");
@@ -307,19 +309,38 @@ export function RichEditor({
 
           {/* Character count */}
           {showCharCount && (
-            <span className="ml-auto text-xs text-text-subtle shrink-0">
+            <span className={cn("text-xs text-text-subtle shrink-0", pageLayout ? "" : "ml-auto")}>
               {editor.storage.characterCount?.characters() ?? 0} caracteres
             </span>
+          )}
+
+          {/* Page theme toggle — only in page layout mode */}
+          {pageLayout && (
+            <button
+              type="button"
+              title={pageDark ? "Cambiar a página blanca" : "Cambiar a página oscura"}
+              onMouseDown={(e) => { e.preventDefault(); setPageDark(v => !v); }}
+              className={cn(btnBase, "ml-auto transition-colors shrink-0 text-text-muted hover:bg-border-subtle hover:text-text")}
+            >
+              {pageDark ? <Sun className={iconCls} /> : <Moon className={iconCls} />}
+            </button>
           )}
         </div>
       )}
 
       {/* ── Content area ────────────────────────────────────────────── */}
       {pageLayout ? (
-        <div className="bg-gray-100 overflow-y-auto">
+        <div className={cn("overflow-y-auto", pageDark ? "bg-bg" : "bg-gray-200")}>
           <div
-            className="bg-white mx-auto my-6 shadow-[0_2px_14px_rgba(0,0,0,0.10)]"
-            style={{ maxWidth: "794px", minHeight: "1054px", padding: "96px 120px" }}
+            className="mx-auto my-6 shadow-[0_2px_14px_rgba(0,0,0,0.12)]"
+            style={{
+              maxWidth:    "794px",
+              minHeight:   "1054px",
+              padding:     "96px 120px",
+              background:  pageDark ? "var(--surface)" : "white",
+              color:       pageDark ? undefined : "#111827",
+              colorScheme: pageDark ? undefined : "light",
+            }}
           >
             <EditorContent editor={editor} className="tiptap" />
           </div>
