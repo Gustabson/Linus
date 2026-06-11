@@ -66,7 +66,6 @@ async function main() {
           create: KERNEL_SECTIONS.map((s) => ({
             sectionType: s.sectionType,
             sectionOrder: s.sectionOrder,
-            difficultyLevel: "BEGINNER" as never,
             isComplete: true,
             richTextContent: s.content,
           })),

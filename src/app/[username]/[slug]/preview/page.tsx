@@ -167,25 +167,6 @@ export default async function KernelPreviewPage({
                         {di + 1}.{si + 1}
                       </span>
                       <h3 className="font-semibold text-text">{section.sectionType}</h3>
-                      <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
-                        {section.difficultyLevel && (
-                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
-                            {section.difficultyLevel === "BEGINNER" ? "Inicial" :
-                             section.difficultyLevel === "INTERMEDIATE" ? "Intermedio" :
-                             section.difficultyLevel === "ADVANCED" ? "Avanzado" : "Experto"}
-                          </span>
-                        )}
-                        {section.ageRangeMin != null && section.ageRangeMax != null && (
-                          <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">
-                            {section.ageRangeMin}–{section.ageRangeMax} años
-                          </span>
-                        )}
-                        {section.durationMinutes && (
-                          <span className="text-xs bg-border-subtle text-text-muted px-2 py-0.5 rounded-full">
-                            {section.durationMinutes} min
-                          </span>
-                        )}
-                      </div>
                     </div>
 
                     {/* Content */}

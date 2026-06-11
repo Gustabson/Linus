@@ -54,8 +54,7 @@ export function DocumentEditor({
         {
           id: data.id, sectionType: data.sectionType, sectionOrder: data.sectionOrder,
           isComplete: false, richTextContent: data.richTextContent,
-          difficultyLevel: data.difficultyLevel, ageRangeMin: null, ageRangeMax: null,
-          gradeLevel: null, durationMinutes: null, createdAt: new Date(), versionId: data.versionId,
+          gradeLevel: null, createdAt: new Date(), versionId: data.versionId,
         } as DocumentSection,
       ]);
       setOpenId(data.id);
@@ -65,15 +64,11 @@ export function DocumentEditor({
     setAdding(false);
   }
 
-  async function handleSave(
-    sectionId:       string,
-    richTextContent: object,
-    meta:            Record<string, string | number | null>
-  ) {
+  async function handleSave(sectionId: string, richTextContent: object) {
     const res = await fetch(`/api/trees/${treeSlug}/${docSlug}/sections`, {
       method:  "PATCH",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ sectionId, richTextContent, ...meta }),
+      body:    JSON.stringify({ sectionId, richTextContent }),
     });
     if (res.ok) {
       const data = await res.json();

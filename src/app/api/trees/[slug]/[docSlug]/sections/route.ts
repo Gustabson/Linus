@@ -123,7 +123,6 @@ export async function POST(req: NextRequest, { params }: Params) {
   const newSectionData = {
     sectionType:     title.trim(),
     sectionOrder:    newOrder,
-    difficultyLevel: "BEGINNER" as const,
     isComplete:      false,
     richTextContent: { type: "doc", content: [] },
   };
@@ -176,18 +175,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const patchBody = await parseBody(req);
   if (!patchBody) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { sectionId, richTextContent, sectionTitle, difficultyLevel, ageRangeMin, ageRangeMax, durationMinutes } =
-    patchBody;
+  const { sectionId, richTextContent, sectionTitle } = patchBody;
 
   const target = latestVersion.sections.find((s) => s.id === sectionId);
   if (!target) return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
 
   const sectionUpdates = {
     sectionType:     sectionTitle    ?? undefined,
-    difficultyLevel: (difficultyLevel ?? undefined) as never,
-    ageRangeMin:     ageRangeMin     ?? undefined,
-    ageRangeMax:     ageRangeMax     ?? undefined,
-    durationMinutes: durationMinutes ?? undefined,
     isComplete:      richTextContent != null ? true : undefined,
     richTextContent: richTextContent ?? undefined,
   };
@@ -212,10 +206,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       sectionType:     sectionTitle    ?? target.sectionType,
       richTextContent: richTextContent ?? (target.richTextContent as object),
       isComplete:      richTextContent != null ? true : target.isComplete,
-      difficultyLevel: (difficultyLevel ?? target.difficultyLevel) as never,
-      ageRangeMin:     ageRangeMin     ?? target.ageRangeMin   ?? undefined,
-      ageRangeMax:     ageRangeMax     ?? target.ageRangeMax   ?? undefined,
-      durationMinutes: durationMinutes ?? target.durationMinutes ?? undefined,
     },
   };
 

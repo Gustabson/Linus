@@ -7,7 +7,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SectionEditor } from "./SectionEditor";
-import { SectionMetaFields } from "./SectionMetaFields";
 import type { DocumentSection } from "@prisma/client";
 
 // ── Word counter (works on TipTap JSON tree) ─────────────────────────────────
@@ -32,7 +31,7 @@ interface SectionCardProps {
   isOwner:         boolean;
   isAuthenticated: boolean;
   onToggle:        () => void;
-  onSave:   (sectionId: string, content: object, meta: Record<string, string | number | null>) => Promise<void>;
+  onSave:   (sectionId: string, content: object) => Promise<void>;
   onRename: (sectionId: string, newTitle: string) => Promise<void>;
   onDelete: (sectionId: string) => Promise<void>;
   onQuote?: (text: string, sectionTitle: string) => void;
@@ -51,7 +50,6 @@ export function SectionCard({
   onQuote,
 }: SectionCardProps) {
   const [content, setContent]               = useState<object | null>(null);
-  const [meta, setMeta]                     = useState<Record<string, string | number | null>>({});
   const [saving, setSaving]                 = useState(false);
   const [saved, setSaved]                   = useState(false);
   const [confirmDelete, setConfirmDelete]   = useState(false);
@@ -62,7 +60,6 @@ export function SectionCard({
 
   // ── Auto-save refs ────────────────────────────────────────────────────────
   const latestContentRef  = useRef<object | null>(null);
-  const latestMetaRef     = useRef<Record<string, string | number | null>>({});
   const autoSaveTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedWordsRef = useRef(0);
   const [autoSaveState, setAutoSaveState] =
@@ -71,20 +68,13 @@ export function SectionCard({
   const isDirty   = content !== null;
   const isPdfEmbed = (section.richTextContent as Record<string, unknown>)?.__type === "pdf_embed";
 
-  function handleMetaChange(field: string, value: string | number | null) {
-    const next = { ...latestMetaRef.current, [field]: value };
-    latestMetaRef.current = next;
-    setMeta(next);
-  }
-
   // ── Auto-save (silent background save) ───────────────────────────────────
   const doAutoSave = useCallback(async () => {
     const c = latestContentRef.current;
-    const m = latestMetaRef.current;
     if (!c) return;
     setAutoSaveState("saving");
     try {
-      await onSave(section.id, c, m);
+      await onSave(section.id, c);
       lastSavedWordsRef.current = countWords(c);
       setAutoSaveState("saved");
       setTimeout(() => setAutoSaveState("idle"), 2500);
@@ -116,7 +106,7 @@ export function SectionCard({
     if (!content) return;
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
     setSaving(true);
-    await onSave(section.id, content, meta);
+    await onSave(section.id, content);
     lastSavedWordsRef.current = countWords(content);
     setSaving(false);
     setSaved(true);
@@ -260,17 +250,6 @@ export function SectionCard({
       {/* ── Body ── */}
       {isOpen && (
         <div className="border-t border-border-subtle px-5 pb-6 pt-5 space-y-5">
-
-          {/* Metadata (owner only) */}
-          {isOwner && (
-            <SectionMetaFields
-              difficultyLevel={section.difficultyLevel}
-              ageRangeMin={section.ageRangeMin}
-              ageRangeMax={section.ageRangeMax}
-              durationMinutes={section.durationMinutes}
-              onChange={handleMetaChange}
-            />
-          )}
 
           {/* Content */}
           {isPdfEmbed ? (
