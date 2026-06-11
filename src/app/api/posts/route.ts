@@ -96,9 +96,13 @@ export async function GET(req: NextRequest) {
 
   const nextCursor = hasMore ? posts[posts.length - 1].createdAt.toISOString() : null;
 
+  const cacheHeader = session?.user?.id
+    ? "no-store"
+    : "public, s-maxage=30, stale-while-revalidate=60";
+
   return NextResponse.json(
     { posts, nextCursor },
-    { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" } },
+    { headers: { "Cache-Control": cacheHeader } },
   );
 }
 
@@ -114,6 +118,14 @@ export async function POST(req: NextRequest) {
   }
   if (content.trim().length > 2000) {
     return NextResponse.json({ error: "Máximo 2000 caracteres" }, { status: 400 });
+  }
+  if (imageUrl != null) {
+    try {
+      const parsed = new URL(imageUrl);
+      if (parsed.protocol !== "https:") throw new Error();
+    } catch {
+      return NextResponse.json({ error: "URL de imagen inválida" }, { status: 400 });
+    }
   }
 
   // Validate treeId belongs to a public tree (or owned by author)

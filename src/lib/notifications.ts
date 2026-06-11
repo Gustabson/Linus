@@ -7,7 +7,7 @@ function appBaseUrl(): string {
   return (
     process.env.NEXT_PUBLIC_APP_URL ??
     process.env.AUTH_URL ??
-    "https://eduhub.vercel.app"
+    "https://linus-jet.vercel.app"
   );
 }
 
@@ -103,7 +103,7 @@ export async function createNotification({
 
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
-      from:    "EduHub <onboarding@resend.dev>",
+      from:    process.env.RESEND_FROM_EMAIL ?? "EduHub <onboarding@resend.dev>",
       to:      recipient.email,
       subject,
       html:    buildNotificationEmail({ subject: htmlSubject, body, link: fullLink }),
@@ -145,7 +145,7 @@ export async function sendCorreoEmail({
     const safePreview = escapeHtml(previewText);
 
     await resend.emails.send({
-      from:    "EduHub <onboarding@resend.dev>",
+      from:    process.env.RESEND_FROM_EMAIL ?? "EduHub <onboarding@resend.dev>",
       to:      recipient.email,
       subject: `Nuevo correo de ${senderName}: ${subject}`,
       html:    buildNotificationEmail({

@@ -24,9 +24,9 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   const { slug } = await params;
   const tree = await prisma.documentTree.findUnique({
     where:  { slug },
-    select: { title: true, description: true, contentType: true, owner: { select: { name: true } } },
+    select: { title: true, description: true, contentType: true, visibility: true, owner: { select: { name: true } } },
   });
-  if (!tree) return {};
+  if (!tree || tree.visibility === "PRIVATE") return {};
   const typeLabel = tree.contentType === "KERNEL" ? "Kernel" : tree.contentType === "MODULE" ? "Módulo" : "Recurso";
   return {
     title:       tree.title,

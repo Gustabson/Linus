@@ -20,9 +20,9 @@ export async function generateMetadata({
   const { slug, docSlug } = await params;
   const tree = await prisma.documentTree.findUnique({
     where:  { slug },
-    select: { title: true, id: true, contentType: true },
+    select: { title: true, id: true, contentType: true, visibility: true },
   });
-  if (!tree) return {};
+  if (!tree || tree.visibility === "PRIVATE") return {};
   const doc = await prisma.document.findUnique({
     where:  { treeId_slug: { treeId: tree.id, slug: docSlug } },
     select: { title: true },

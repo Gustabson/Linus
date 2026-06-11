@@ -87,7 +87,7 @@ export async function PATCH(
     where: { id: tree.id },
     data: {
       title:       title?.trim()                        ?? tree.title,
-      description: description?.trim() || null,
+      description: description !== undefined ? (description?.trim() || null) : tree.description,
       visibility:  (visibility  as TreeVisibility)      ?? tree.visibility,
       contentType: (contentType as ContentType)         ?? tree.contentType,
       slug:        newSlug,

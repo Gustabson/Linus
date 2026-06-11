@@ -74,6 +74,14 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: `El usuario debe tener entre 3 y ${LIMITS.username} caracteres` }, { status: 400 });
     if (!/^[a-z0-9_-]+$/.test(trimmed))
       return NextResponse.json({ error: "Solo letras, números, guion y guion bajo" }, { status: 400 });
+    const RESERVED = new Set([
+      "explorar", "dashboard", "buscar", "propuestas", "ledger", "nuevo",
+      "bienvenida", "kernel", "api", "login", "t", "u", "admin", "preview",
+      "configuracion", "historial", "about", "settings", "ayuda", "correos",
+      "feed", "notificaciones", "reset", "v",
+    ]);
+    if (RESERVED.has(trimmed))
+      return NextResponse.json({ error: "Ese nombre de usuario no está disponible" }, { status: 400 });
     const existing = await prisma.user.findFirst({
       where: { username: trimmed, NOT: { id: session.user.id } },
     });

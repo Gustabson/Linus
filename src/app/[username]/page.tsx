@@ -10,6 +10,7 @@ import { EditProfileButton }  from "@/components/profile/EditProfileButton";
 import { FollowButton }       from "@/components/profile/FollowButton";
 import { ProfileFeed }        from "@/components/profile/ProfileFeed";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
+import { safeUrl }            from "@/lib/utils";
 import type { PostData }      from "@/components/social/PostCard";
 
 export const revalidate = 60;
@@ -163,7 +164,7 @@ export default async function UserProfilePage({
                 </span>
               )}
               {user.website && (
-                <a href={user.website} target="_blank" rel="noopener noreferrer"
+                <a href={safeUrl(user.website)} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1 text-primary hover:underline">
                   <Globe className="w-4 h-4" />
                   {user.website.replace(/^https?:\/\//, "")}

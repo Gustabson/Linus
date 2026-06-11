@@ -14,6 +14,15 @@ export function slugify(text: string) {
     .replace(/(^-|-$)/g, "");
 }
 
+export function safeUrl(url: string): string {
+  try {
+    const parsed = new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`);
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.href : "#";
+  } catch {
+    return "#";
+  }
+}
+
 export function formatDate(date: Date | string) {
   return new Intl.DateTimeFormat("es", {
     year: "numeric",

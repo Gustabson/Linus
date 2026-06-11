@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { Plus, X, Link, Smartphone, ImageIcon, Video, Wrench, FileText, ExternalLink, Upload, Loader2 } from "lucide-react";
+import { safeUrl } from "@/lib/utils";
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   LINK: <Link className="w-4 h-4" />,
@@ -222,7 +223,7 @@ export function ExtensionsPanel({
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {ext.url && (
-                      <a href={ext.url} target="_blank" rel="noopener noreferrer"
+                      <a href={safeUrl(ext.url)} target="_blank" rel="noopener noreferrer"
                         className="p-1 text-text-subtle hover:text-primary">
                         <ExternalLink className="w-4 h-4" />
                       </a>

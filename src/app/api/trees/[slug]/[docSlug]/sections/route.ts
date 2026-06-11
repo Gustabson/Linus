@@ -77,13 +77,13 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const tree = await prisma.documentTree.findUnique({
     where:  { slug },
-    select: { id: true, visibility: true },
+    select: { id: true, visibility: true, ownerId: true },
   });
   if (!tree) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   if (tree.visibility === "PRIVATE") {
     const session = await getSession();
-    if (!session) return unauthorized();
+    if (!session || session.user.id !== tree.ownerId) return unauthorized();
   }
 
   const doc = await prisma.document.findUnique({
@@ -246,9 +246,8 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (!delBody) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
   const { sectionId } = delBody;
 
-  // Verify the sectionId belongs to this version — prevents IDOR
-  if (!latestVersion.sections.some((s) => s.id === sectionId))
-    return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
+  const target = latestVersion.sections.find((s) => s.id === sectionId);
+  if (!target) return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
 
   // ── Case 1: DRAFT → delete section directly ───────────────────────────────
   if (latestVersion.status === "DRAFT") {

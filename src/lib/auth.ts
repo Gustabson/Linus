@@ -30,11 +30,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...(process.env.RESEND_API_KEY
       ? [ResendProvider({
           apiKey: process.env.RESEND_API_KEY,
-          from:   "EduHub <onboarding@resend.dev>",
+          from:   process.env.RESEND_FROM_EMAIL ?? "EduHub <onboarding@resend.dev>",
           async sendVerificationRequest({ identifier: email, url }) {
             const resend = new Resend(process.env.RESEND_API_KEY);
             await resend.emails.send({
-              from:    "EduHub <onboarding@resend.dev>",
+              from:    process.env.RESEND_FROM_EMAIL ?? "EduHub <onboarding@resend.dev>",
               to:      email,
               subject: "Tu link de acceso a EduHub",
               html:    buildMagicLinkEmail(url),

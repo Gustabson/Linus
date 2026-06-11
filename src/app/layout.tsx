@@ -14,7 +14,7 @@ import { ThemeScript }    from "@/components/layout/ThemeScript";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://eduhub.vercel.app"
+    process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://linus-jet.vercel.app"
   ),
   title: {
     default:  "EduHub — Conocimiento Educativo Abierto",
