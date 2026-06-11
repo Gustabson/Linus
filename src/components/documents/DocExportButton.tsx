@@ -7,8 +7,8 @@ import {
   isExportable,
   buildBodyHTML,
   wrapForPrint,
-  wrapForWord,
 } from "@/lib/export-templates";
+import { exportToDocx } from "@/lib/docx-export";
 
 export type { ExportSection };
 
@@ -56,15 +56,11 @@ export function DocExportButton({ title, sections: initialSections, treeSlug, do
     setTimeout(() => { win.print(); }, 350);
   }
 
-  function doWord(sects: ExportSection[]) {
-    const html = wrapForWord(title, buildBodyHTML(sects));
-    const blob = new Blob(["\ufeff", html], { type: "application/msword;charset=utf-8" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href     = url;
-    a.download = `${title.replace(/[^a-z0-9áéíóúüñ\s]/gi, "").trim().replace(/\s+/g, "_")}.doc`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  async function doWord(sects: ExportSection[]) {
+    await exportToDocx(
+      sects.map(s => ({ title: s.sectionType, content: s.richTextContent as object | null })),
+      title,
+    );
   }
 
   async function triggerAction(act: "print" | "word") {
@@ -78,7 +74,7 @@ export function DocExportButton({ title, sections: initialSections, treeSlug, do
     if (freshExp.length === 0) return;
 
     if (freshExp.length === 1) {
-      act === "print" ? doPrint(freshExp) : doWord(freshExp);
+      if (act === "print") doPrint(freshExp); else await doWord(freshExp);
     } else {
       setExportableSects(freshExp);
       setSelected(new Set(freshExp.map((s) => s.id)));
@@ -87,10 +83,10 @@ export function DocExportButton({ title, sections: initialSections, treeSlug, do
     }
   }
 
-  function confirmModal() {
+  async function confirmModal() {
     const sects = exportableSects.filter((s) => selected.has(s.id));
     if (sects.length === 0) return;
-    action === "print" ? doPrint(sects) : doWord(sects);
+    if (action === "print") doPrint(sects); else await doWord(sects);
     setShowModal(false);
     setAction(null);
   }

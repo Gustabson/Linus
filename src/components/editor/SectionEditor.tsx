@@ -7,16 +7,21 @@ interface SectionEditorProps {
   placeholder?: string;
   onChange?:    (json: object) => void;
   editable?:    boolean;
+  pageLayout?:  boolean;
 }
 
 export function SectionEditor({
   content,
-  placeholder = "Empezá a escribir aquí...",
+  placeholder  = "Empezá a escribir aquí...",
   onChange,
-  editable = true,
+  editable     = true,
+  pageLayout   = false,
 }: SectionEditorProps) {
   return (
-    <div className="border border-border rounded-xl bg-surface overflow-hidden">
+    <div className={pageLayout
+      ? "overflow-hidden rounded-xl"
+      : "border border-border rounded-xl bg-surface overflow-hidden"
+    }>
       <RichEditor
         initialContentJson={content}
         onChangeJson={onChange}
@@ -27,6 +32,7 @@ export function SectionEditor({
         showCode
         showUndoRedo
         showCharCount
+        pageLayout={pageLayout}
       />
     </div>
   );

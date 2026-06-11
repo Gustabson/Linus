@@ -50,6 +50,7 @@ export interface RichEditorProps {
   showCode?:      boolean;   // Code inline + CodeBlock + HorizontalRule
   showUndoRedo?:  boolean;
   showCharCount?: boolean;
+  pageLayout?:    boolean;   // A4 page canvas — Word-like editing surface
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -70,6 +71,7 @@ export function RichEditor({
   showCode         = false,
   showUndoRedo     = false,
   showCharCount    = false,
+  pageLayout       = false,
 }: RichEditorProps) {
 
   // ── UI state ──────────────────────────────────────────────────────────────
@@ -313,9 +315,20 @@ export function RichEditor({
       )}
 
       {/* ── Content area ────────────────────────────────────────────── */}
-      <div className={cn(scrollable && "flex-1 overflow-y-auto", contentCls)}>
-        <EditorContent editor={editor} className="tiptap" style={{ minHeight }} />
-      </div>
+      {pageLayout ? (
+        <div className="bg-gray-100 overflow-y-auto">
+          <div
+            className="bg-white mx-auto my-6 shadow-[0_2px_14px_rgba(0,0,0,0.10)]"
+            style={{ maxWidth: "794px", minHeight: "1054px", padding: "96px 120px" }}
+          >
+            <EditorContent editor={editor} className="tiptap" />
+          </div>
+        </div>
+      ) : (
+        <div className={cn(scrollable && "flex-1 overflow-y-auto", contentCls)}>
+          <EditorContent editor={editor} className="tiptap" style={{ minHeight }} />
+        </div>
+      )}
 
       {/* ── Emoji picker (fixed — escapes overflow-hidden) ───────────── */}
       {showEmoji && showEmojis && (

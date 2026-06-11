@@ -293,6 +293,7 @@ export function SectionCard({
               placeholder={`Escribí el contenido de "${titleValue}"…`}
               editable={isOwner}
               onChange={handleEditorChange}
+              pageLayout={isOwner}
             />
           )}
 
