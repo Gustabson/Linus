@@ -59,6 +59,55 @@ const CONTENT_TYPE_FIELDS: { key: keyof ContentTypeColors; label: string; desc: 
 const DEFAULT_SIDEBAR_BG   = "#15803d"; // same as PRESET_LIGHT primary
 const DEFAULT_SIDEBAR_TEXT = "#ffffff";
 
+const CORE_CSS_VARS = [
+  "--bg",
+  "--surface",
+  "--border",
+  "--border-subtle",
+  "--text",
+  "--text-muted",
+  "--text-subtle",
+  "--primary",
+  "--primary-h",
+] as const;
+
+interface ThemeSnapshot {
+  mode:          Mode;
+  colors:        CustomColors;
+  sidebarColors: SidebarColors;
+  ctColors:      ContentTypeColors;
+}
+
+function applyThemeVars({ mode, colors, sidebarColors, ctColors }: ThemeSnapshot) {
+  const r = document.documentElement;
+  const set = (k: string, v: string) => r.style.setProperty(k, v);
+
+  r.classList.toggle("dark", mode === "dark");
+
+  if (mode === "custom") {
+    set("--bg",            colors.themeBg);
+    set("--surface",       colors.themeSurface);
+    set("--border",        colors.themeBorder);
+    set("--border-subtle", colors.themeBorder);
+    set("--text",          colors.themeText);
+    set("--text-muted",    colors.themeText + "cc");
+    set("--text-subtle",   colors.themeText + "88");
+    set("--primary",       colors.themePrimary);
+    set("--primary-h",     colors.themePrimary);
+  } else {
+    CORE_CSS_VARS.forEach((key) => r.style.removeProperty(key));
+  }
+
+  set("--sidebar-bg",   sidebarColors.themeSidebarBg);
+  set("--sidebar-text", sidebarColors.themeSidebarText);
+  set("--kernel",      ctColors.themeKernel);
+  set("--kernel-h",    ctColors.themeKernel);
+  set("--module",      ctColors.themeModule);
+  set("--module-h",    ctColors.themeModule);
+  set("--resource",    ctColors.themeResource);
+  set("--resource-h",  ctColors.themeResource);
+}
+
 export function ConfigApariencia({
   initialMode,
   initialColors,
@@ -84,37 +133,21 @@ export function ConfigApariencia({
   const [saved,   setSaved]        = useState(false);
   const [error,   setError]        = useState("");
 
-  // Apply theme CSS vars to <html> from raw values (no cookie round-trip)
-  function applyVars() {
-    const r = document.documentElement;
-    const set = (k: string, v: string) => r.style.setProperty(k, v);
-    if (mode === "custom") {
-      set("--bg",       colors.themeBg);
-      set("--surface",  colors.themeSurface);
-      set("--border",   colors.themeBorder);
-      set("--border-subtle", colors.themeBorder);
-      set("--text",     colors.themeText);
-      set("--text-muted", colors.themeText + "cc");
-      set("--text-subtle", colors.themeText + "88");
-      set("--primary",  colors.themePrimary);
-      set("--primary-h", colors.themePrimary);
-    }
-    set("--sidebar-bg",   sidebarColors.themeSidebarBg);
-    set("--sidebar-text", sidebarColors.themeSidebarText);
-    set("--kernel",     ctColors.themeKernel);   set("--kernel-h",   ctColors.themeKernel);
-    set("--module",     ctColors.themeModule);   set("--module-h",   ctColors.themeModule);
-    set("--resource",   ctColors.themeResource); set("--resource-h", ctColors.themeResource);
-  }
+  useEffect(() => {
+    if (!mounted) return;
+    applyThemeVars({ mode, colors, sidebarColors, ctColors });
+  }, [mounted, mode, colors, sidebarColors, ctColors]);
 
   function handleSave() {
     setSaved(false); setError("");
+    const snapshot: ThemeSnapshot = { mode, colors, sidebarColors, ctColors };
     startTransition(async () => {
       const body: Record<string, unknown> = {
-        themeMode: mode,
-        ...sidebarColors,
-        ...ctColors,
+        themeMode: snapshot.mode,
+        ...snapshot.sidebarColors,
+        ...snapshot.ctColors,
       };
-      if (mode === "custom") Object.assign(body, colors);
+      if (snapshot.mode === "custom") Object.assign(body, snapshot.colors);
 
       const res = await fetch("/api/configuracion", {
         method:  "PATCH",
@@ -124,25 +157,24 @@ export function ConfigApariencia({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error ?? "Error al guardar."); return; }
 
-      if (mode === "light") setTheme("light");
-      if (mode === "dark")  setTheme("dark");
+      setTheme(snapshot.mode === "dark" ? "dark" : "light");
 
       // Save theme to cookie so layout can apply CSS vars before paint
       // Core colors ONLY in custom mode (otherwise they override .dark class)
       const themeCookie = buildThemeCookie({
-        ...(mode === "custom" ? colors : {}),
-        ...sidebarColors,
-        ...ctColors,
+        ...(snapshot.mode === "custom" ? snapshot.colors : {}),
+        ...snapshot.sidebarColors,
+        ...snapshot.ctColors,
       });
-      if (mode) themeCookie["mode"] = mode;
+      themeCookie["mode"] = snapshot.mode;
       document.cookie = `eduhub_theme=${encodeURIComponent(JSON.stringify(themeCookie))};path=/;max-age=31536000;SameSite=Lax`;
 
-      applyVars();
+      applyThemeVars(snapshot);
 
       setSaved(true);
       router.refresh();
       // router.refresh() overwrites <html style> → re-apply after reconcile
-      setTimeout(applyVars, 100);
+      setTimeout(() => applyThemeVars(snapshot), 100);
       setTimeout(() => setSaved(false), 3000);
     });
   }

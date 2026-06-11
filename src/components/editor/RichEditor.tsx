@@ -330,16 +330,16 @@ export function RichEditor({
 
       {/* ── Content area ────────────────────────────────────────────── */}
       {pageLayout ? (
-        <div className={cn("overflow-y-auto", pageDark ? "bg-bg" : "bg-gray-200")}>
+        <div className={cn("overflow-y-auto", pageDark ? "bg-slate-950" : "bg-gray-200")}>
           <div
             className="mx-auto my-6 shadow-[0_2px_14px_rgba(0,0,0,0.12)]"
             style={{
               maxWidth:    "794px",
               minHeight:   "1054px",
               padding:     "96px 120px",
-              background:  pageDark ? "var(--surface)" : "white",
-              color:       pageDark ? undefined : "#111827",
-              colorScheme: pageDark ? undefined : "light",
+              background:  pageDark ? "#111827" : "white",
+              color:       pageDark ? "#f8fafc" : "#111827",
+              colorScheme: pageDark ? "dark" : "light",
             }}
           >
             <EditorContent editor={editor} className="tiptap" />
