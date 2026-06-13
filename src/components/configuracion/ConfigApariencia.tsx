@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Sun, Moon, Palette, RotateCcw, Loader2, Check } from "lucide-react";
 import { SectionCard } from "@/components/ui/Card";
 import { Button }      from "@/components/ui/Button";
@@ -143,6 +143,36 @@ function readThemeCookie(): ThemeSnapshot | null {
   }
 }
 
+function writeThemeCookie(snapshot: ThemeSnapshot) {
+  const themeCookie = buildThemeCookie({
+    ...(snapshot.mode === "custom" ? snapshot.colors : {}),
+    ...snapshot.sidebarColors,
+    ...snapshot.ctColors,
+  });
+  themeCookie.mode = snapshot.mode;
+
+  document.cookie = "eduhub_theme=;path=/configuracion;max-age=0;SameSite=Lax";
+  document.cookie = `eduhub_theme=${encodeURIComponent(JSON.stringify(themeCookie))};path=/;max-age=31536000;SameSite=Lax`;
+}
+
+async function persistTheme(snapshot: ThemeSnapshot, keepalive = false) {
+  const body: Record<string, unknown> = {
+    themeMode: snapshot.mode,
+    ...snapshot.sidebarColors,
+    ...snapshot.ctColors,
+  };
+  if (snapshot.mode === "custom") Object.assign(body, snapshot.colors);
+
+  const res = await fetch("/api/configuracion", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    keepalive,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error ?? "Error al guardar.");
+}
+
 export function ConfigApariencia({
   initialMode,
   initialColors,
@@ -162,13 +192,19 @@ export function ConfigApariencia({
   });
   const [ctColors, setCtColors] = useState<ContentTypeColors>(initialContentColors);
 
-  const [pending, startTransition] = useTransition();
+  const [saving,  setSaving]       = useState(false);
   const [saved,   setSaved]        = useState(false);
   const [error,   setError]        = useState("");
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSnapshotRef = useRef<ThemeSnapshot | null>(null);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const saveVersionRef = useRef(0);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
     const cookieTheme = readThemeCookie();
     if (!cookieTheme) {
+      mountedRef.current = true;
       setMounted(true);
       return;
     }
@@ -201,6 +237,7 @@ export function ConfigApariencia({
       sidebarColors: nextSidebarColors,
       ctColors: nextCtColors,
     });
+    mountedRef.current = true;
     setMounted(true);
     // Run once on mount; initial props/state are the server fallback.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -208,48 +245,83 @@ export function ConfigApariencia({
 
   useEffect(() => {
     if (!mounted) return;
-    setSaved(false);
     applyThemeVars({ mode, colors, sidebarColors, ctColors });
   }, [mounted, mode, colors, sidebarColors, ctColors]);
 
-  function handleSave() {
-    setSaved(false); setError("");
-    const snapshot: ThemeSnapshot = { mode, colors, sidebarColors, ctColors };
-    startTransition(async () => {
-      const body: Record<string, unknown> = {
-        themeMode: snapshot.mode,
-        ...snapshot.sidebarColors,
-        ...snapshot.ctColors,
-      };
-      if (snapshot.mode === "custom") Object.assign(body, snapshot.colors);
+  function enqueueSave(snapshot: ThemeSnapshot, version: number, keepalive = true) {
+    const task = saveQueueRef.current
+      .catch(() => undefined)
+      .then(() => persistTheme(snapshot, keepalive));
 
-      const res = await fetch("/api/configuracion", {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(body),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) { setError(data.error ?? "Error al guardar."); return; }
-
-      setTheme(snapshot.mode === "dark" ? "dark" : "light");
-
-      // Save theme to cookie so layout can apply CSS vars before paint
-      // Core colors ONLY in custom mode (otherwise they override .dark class)
-      const themeCookie = buildThemeCookie({
-        ...(snapshot.mode === "custom" ? snapshot.colors : {}),
-        ...snapshot.sidebarColors,
-        ...snapshot.ctColors,
-      });
-      themeCookie["mode"] = snapshot.mode;
-      document.cookie = "eduhub_theme=;path=/configuracion;max-age=0;SameSite=Lax";
-      document.cookie = `eduhub_theme=${encodeURIComponent(JSON.stringify(themeCookie))};path=/;max-age=31536000;SameSite=Lax`;
-
-      applyThemeVars(snapshot);
-
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    });
+    saveQueueRef.current = task.catch(() => undefined);
+    void task.then(
+      () => {
+        if (!mountedRef.current || version !== saveVersionRef.current) return;
+        setSaving(false);
+        setSaved(true);
+        setTimeout(() => {
+          if (mountedRef.current && version === saveVersionRef.current) setSaved(false);
+        }, 3000);
+      },
+      (cause: unknown) => {
+        if (!mountedRef.current || version !== saveVersionRef.current) return;
+        setSaving(false);
+        setError(cause instanceof Error ? cause.message : "Error al guardar.");
+      },
+    );
   }
+
+  function scheduleSave(snapshot: ThemeSnapshot) {
+    const version = ++saveVersionRef.current;
+    pendingSnapshotRef.current = snapshot;
+    setSaving(true);
+    setSaved(false);
+    setError("");
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
+      pendingSnapshotRef.current = null;
+      enqueueSave(snapshot, version);
+    }, 350);
+  }
+
+  function updateTheme(snapshot: ThemeSnapshot) {
+    setMode(snapshot.mode);
+    setColors(snapshot.colors);
+    setSidebarColors(snapshot.sidebarColors);
+    setCtColors(snapshot.ctColors);
+    setTheme(snapshot.mode === "dark" ? "dark" : "light");
+    writeThemeCookie(snapshot);
+    applyThemeVars(snapshot);
+    scheduleSave(snapshot);
+  }
+
+  function handleSave() {
+    const snapshot: ThemeSnapshot = { mode, colors, sidebarColors, ctColors };
+    const version = ++saveVersionRef.current;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = null;
+    pendingSnapshotRef.current = null;
+    setSaving(true);
+    setSaved(false);
+    setError("");
+    writeThemeCookie(snapshot);
+    applyThemeVars(snapshot);
+    enqueueSave(snapshot, version);
+  }
+
+  useEffect(() => () => {
+    mountedRef.current = false;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    const pendingSnapshot = pendingSnapshotRef.current;
+    if (pendingSnapshot) {
+      void saveQueueRef.current
+        .catch(() => undefined)
+        .then(() => persistTheme(pendingSnapshot, true))
+        .catch(() => undefined);
+    }
+  }, []);
 
   if (!mounted) return null;
 
@@ -264,7 +336,7 @@ export function ConfigApariencia({
             { value: "dark",   icon: Moon,    label: "Oscuro",        cls: "" },
             { value: "custom", icon: Palette, label: "Personalizado", cls: "col-span-2 sm:flex-none" },
           ] as { value: Mode; icon: React.ElementType; label: string; cls: string }[]).map(({ value, icon: Icon, label, cls }) => (
-            <button key={value} onClick={() => setMode(value)}
+            <button key={value} onClick={() => updateTheme({ mode: value, colors, sidebarColors, ctColors })}
               className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all ${cls} ${
                 mode === value
                   ? "bg-surface shadow-sm text-text"
@@ -283,11 +355,11 @@ export function ConfigApariencia({
         <div className="space-y-4 pt-1">
           <div className="flex items-center gap-2">
             <span className="text-xs text-text-subtle">Empezar desde:</span>
-            <button onClick={() => setColors({ ...PRESET_LIGHT })}
+            <button onClick={() => updateTheme({ mode, colors: { ...PRESET_LIGHT }, sidebarColors, ctColors })}
               className="text-xs px-3 py-1.5 rounded-lg border border-border text-text-muted hover:text-text hover:bg-bg transition-colors">
               Preset claro
             </button>
-            <button onClick={() => setColors({ ...PRESET_DARK })}
+            <button onClick={() => updateTheme({ mode, colors: { ...PRESET_DARK }, sidebarColors, ctColors })}
               className="text-xs px-3 py-1.5 rounded-lg border border-border text-text-muted hover:text-text hover:bg-bg transition-colors">
               Preset oscuro
             </button>
@@ -300,7 +372,12 @@ export function ConfigApariencia({
                   <div className="w-10 h-10 rounded-lg border border-border shadow-sm"
                     style={{ backgroundColor: colors[key] }} />
                   <input type="color" value={colors[key]}
-                    onChange={e => setColors(c => ({ ...c, [key]: e.target.value }))}
+                    onChange={e => updateTheme({
+                      mode,
+                      colors: { ...colors, [key]: e.target.value },
+                      sidebarColors,
+                      ctColors,
+                    })}
                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
                 </label>
                 <div className="min-w-0">
@@ -318,7 +395,7 @@ export function ConfigApariencia({
             {" "}en la barra de dirección para restablecer el tema.
           </p>
 
-          <button onClick={() => setColors({ ...PRESET_LIGHT })}
+          <button onClick={() => updateTheme({ mode, colors: { ...PRESET_LIGHT }, sidebarColors, ctColors })}
             className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors">
             <RotateCcw className="w-3.5 h-3.5" />
             Restablecer colores predeterminados
@@ -342,7 +419,12 @@ export function ConfigApariencia({
                 <div className="w-10 h-10 rounded-lg border border-border shadow-sm"
                   style={{ backgroundColor: sidebarColors[key] }} />
                 <input type="color" value={sidebarColors[key]}
-                  onChange={e => setSidebarColors(c => ({ ...c, [key]: e.target.value }))}
+                  onChange={e => updateTheme({
+                    mode,
+                    colors,
+                    sidebarColors: { ...sidebarColors, [key]: e.target.value },
+                    ctColors,
+                  })}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
               </label>
               <div className="min-w-0">
@@ -355,7 +437,12 @@ export function ConfigApariencia({
         </div>
 
         <button
-          onClick={() => setSidebarColors({ themeSidebarBg: DEFAULT_SIDEBAR_BG, themeSidebarText: DEFAULT_SIDEBAR_TEXT })}
+          onClick={() => updateTheme({
+            mode,
+            colors,
+            sidebarColors: { themeSidebarBg: DEFAULT_SIDEBAR_BG, themeSidebarText: DEFAULT_SIDEBAR_TEXT },
+            ctColors,
+          })}
           className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -379,7 +466,12 @@ export function ConfigApariencia({
                 <div className="w-10 h-10 rounded-lg border border-border shadow-sm"
                   style={{ backgroundColor: ctColors[key] || def }} />
                 <input type="color" value={ctColors[key] || def}
-                  onChange={e => setCtColors(c => ({ ...c, [key]: e.target.value }))}
+                  onChange={e => updateTheme({
+                    mode,
+                    colors,
+                    sidebarColors,
+                    ctColors: { ...ctColors, [key]: e.target.value },
+                  })}
                   className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
               </label>
               <div className="min-w-0">
@@ -392,7 +484,12 @@ export function ConfigApariencia({
         </div>
 
         <button
-          onClick={() => setCtColors({ themeKernel: "#15803d", themeModule: "#1d4ed8", themeResource: "#b45309" })}
+          onClick={() => updateTheme({
+            mode,
+            colors,
+            sidebarColors,
+            ctColors: { themeKernel: "#15803d", themeModule: "#1d4ed8", themeResource: "#b45309" },
+          })}
           className="flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors"
         >
           <RotateCcw className="w-3.5 h-3.5" />
@@ -412,8 +509,8 @@ export function ConfigApariencia({
             <Check className="w-4 h-4" /> Guardado
           </span>
         )}
-        <Button onClick={handleSave} disabled={pending}>
-          {pending ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : "Guardar"}
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : "Guardar"}
         </Button>
       </div>
     </SectionCard>
