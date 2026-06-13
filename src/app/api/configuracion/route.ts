@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { isValidHex } from "@/lib/theme";
+import { buildThemeCookie } from "@/lib/theme-config";
 
 // Length caps for text fields — protects DB from megabyte-string spam.
 const LIMITS = {
@@ -66,6 +67,10 @@ export async function PATCH(req: NextRequest) {
     themeKernel, themeModule, themeResource,
     notifCorreos, notifComentarios, notifLikes, notifSeguidores, notifPropuestas,
   } = body;
+  const themeChanged = [
+    themeMode, themeBg, themeSurface, themeBorder, themeText, themePrimary,
+    themeSidebarBg, themeSidebarText, themeKernel, themeModule, themeResource,
+  ].some((value) => value !== undefined);
 
   // Validate username
   if (username !== undefined && username !== null && String(username).trim() !== "") {
@@ -153,12 +158,55 @@ export async function PATCH(req: NextRequest) {
   const updated = await prisma.user.update({
     where:  { id: session.user.id },
     data,
-    select: { id: true, name: true, username: true, themeMode: true },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      themeMode: true,
+      themeBg: true,
+      themeSurface: true,
+      themeBorder: true,
+      themeText: true,
+      themePrimary: true,
+      themeSidebarBg: true,
+      themeSidebarText: true,
+      themeKernel: true,
+      themeModule: true,
+      themeResource: true,
+    },
   });
 
   // Purgar caché ISR de la página de configuración y layout raíz
   revalidatePath("/configuracion");
   revalidatePath("/", "layout");
 
-  return NextResponse.json(updated);
+  const response = NextResponse.json(updated);
+
+  if (themeChanged) {
+    const payload = buildThemeCookie({
+      themeBg:          updated.themeBg          ?? "",
+      themeSurface:     updated.themeSurface     ?? "",
+      themeBorder:      updated.themeBorder      ?? "",
+      themeText:        updated.themeText        ?? "",
+      themePrimary:     updated.themePrimary     ?? "",
+      themeSidebarBg:   updated.themeSidebarBg   ?? "",
+      themeSidebarText: updated.themeSidebarText ?? "",
+      themeKernel:      updated.themeKernel      ?? "",
+      themeModule:      updated.themeModule      ?? "",
+      themeResource:    updated.themeResource    ?? "",
+    });
+    payload.mode = updated.themeMode;
+
+    response.cookies.set("eduhub_theme", JSON.stringify(payload), {
+      path: "/",
+      maxAge: 31536000,
+      sameSite: "lax",
+    });
+    response.headers.append(
+      "Set-Cookie",
+      "eduhub_theme=; Path=/configuracion; Max-Age=0; SameSite=Lax"
+    );
+  }
+
+  return response;
 }

@@ -47,7 +47,8 @@ export default async function RootLayout({
   if (isLoggedIn) {
     try {
       const jar = await cookies();
-      const raw = jar.get("eduhub_theme")?.value;
+      const themeCookies = jar.getAll("eduhub_theme");
+      const raw = themeCookies.at(-1)?.value;
 
       if (raw) {
         // ── Fast path: cookie already present ─────────────────────────

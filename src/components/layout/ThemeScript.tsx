@@ -7,7 +7,8 @@
 const SCRIPT = `
 (function(){
   try{
-    var c=document.cookie.split('; ').find(function(r){return r.startsWith('eduhub_theme=')});
+    var cs=document.cookie.split('; ').filter(function(r){return r.startsWith('eduhub_theme=')});
+    var c=cs[cs.length-1];
     if(!c)return;
     var t=JSON.parse(decodeURIComponent(c.split('=')[1]));
     var r=document.documentElement;

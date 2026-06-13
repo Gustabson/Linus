@@ -2,7 +2,6 @@
 
 import { useTheme } from "next-themes";
 import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Sun, Moon, Palette, RotateCcw, Loader2, Check } from "lucide-react";
 import { SectionCard } from "@/components/ui/Card";
 import { Button }      from "@/components/ui/Button";
@@ -111,7 +110,8 @@ function applyThemeVars({ mode, colors, sidebarColors, ctColors }: ThemeSnapshot
 function readThemeCookie(): ThemeSnapshot | null {
   const raw = document.cookie
     .split("; ")
-    .find((row) => row.startsWith("eduhub_theme="))
+    .filter((row) => row.startsWith("eduhub_theme="))
+    .at(-1)
     ?.split("=")[1];
   if (!raw) return null;
 
@@ -150,7 +150,6 @@ export function ConfigApariencia({
   initialContentColors,
 }: Props) {
   const { setTheme } = useTheme();
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   const [mode,   setMode]   = useState<Mode>(initialMode);
@@ -209,6 +208,7 @@ export function ConfigApariencia({
 
   useEffect(() => {
     if (!mounted) return;
+    setSaved(false);
     applyThemeVars({ mode, colors, sidebarColors, ctColors });
   }, [mounted, mode, colors, sidebarColors, ctColors]);
 
@@ -241,14 +241,12 @@ export function ConfigApariencia({
         ...snapshot.ctColors,
       });
       themeCookie["mode"] = snapshot.mode;
+      document.cookie = "eduhub_theme=;path=/configuracion;max-age=0;SameSite=Lax";
       document.cookie = `eduhub_theme=${encodeURIComponent(JSON.stringify(themeCookie))};path=/;max-age=31536000;SameSite=Lax`;
 
       applyThemeVars(snapshot);
 
       setSaved(true);
-      router.refresh();
-      // router.refresh() overwrites <html style> → re-apply after reconcile
-      setTimeout(() => applyThemeVars(snapshot), 100);
       setTimeout(() => setSaved(false), 3000);
     });
   }
