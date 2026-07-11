@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import { GitPullRequest, Loader2, X } from "lucide-react";
 
 interface Props {

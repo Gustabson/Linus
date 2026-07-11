@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import { Pencil, X, Save, Camera, Loader2 } from "lucide-react";
 import Image from "next/image";
 

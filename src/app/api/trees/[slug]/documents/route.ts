@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, getOwnedTree, unauthorized, forbidden, uniqueSlug, parseBody } from "@/lib/api-helpers";
+import { getSession, getOwnedTree, unauthorized, forbidden, uniqueSlug, parseBody, safeString } from "@/lib/api-helpers";
+
+const DOCUMENT_TITLE_MAX = 200;
 
 export async function POST(
   req: NextRequest,
@@ -15,8 +17,8 @@ export async function POST(
 
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { title } = body;
-  if (!(title as string)?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 });
+  const title = safeString(body.title, DOCUMENT_TITLE_MAX);
+  if (!title) return NextResponse.json({ error: `Título requerido (máximo ${DOCUMENT_TITLE_MAX} caracteres)` }, { status: 400 });
 
   const docSlug = await uniqueSlug(title, (s) =>
     prisma.document
@@ -26,7 +28,7 @@ export async function POST(
 
   const doc = await prisma.$transaction(async (tx) => {
     const newDoc = await tx.document.create({
-      data: { treeId: tree.id, slug: docSlug, title: title.trim() },
+      data: { treeId: tree.id, slug: docSlug, title },
     });
     const version = await tx.documentVersion.create({
       data: {

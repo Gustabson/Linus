@@ -2,6 +2,7 @@ import { auth } from "./auth";
 import { prisma } from "./prisma";
 import { NextResponse } from "next/server";
 import { slugify } from "./utils";
+export { parseBody, safeHttpUrl, safeString } from "./request-validation";
 
 /** Returns the authenticated session, or null if not authenticated. */
 export async function getSession() {
@@ -58,25 +59,11 @@ export function isUniqueViolation(err: unknown): boolean {
   );
 }
 
-/** Parses the JSON body of a request. Returns null on malformed JSON. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function parseBody(req: Request): Promise<Record<string, any> | null> {
-  return req.json().catch(() => null);
-}
-
 export const unauthorized = () =>
   NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
 export const forbidden = () =>
   NextResponse.json({ error: "Sin permiso" }, { status: 403 });
-
-/** Trims, returns null if empty, returns null if longer than max. */
-export function safeString(v: unknown, max: number): string | null {
-  if (typeof v !== "string") return null;
-  const t = v.trim();
-  if (!t || t.length > max) return null;
-  return t;
-}
 
 /** Escapes HTML special chars — use before interpolating user content into HTML. */
 export function escapeHtml(s: string): string {

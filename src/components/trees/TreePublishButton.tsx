@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Loader2, X, ExternalLink } from "lucide-react";
+import { Upload, Loader2, X, ExternalLink, Check, Send } from "lucide-react";
 import Link from "next/link";
 import type { ContentType } from "@prisma/client";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
@@ -11,6 +11,9 @@ interface Props {
   contentType:    ContentType;
   initialPublicId: string | null;
   hasChanges:     boolean;
+  workspace?:     boolean;
+  onPublished?:   () => void;
+  disabled?:      boolean;
 }
 
 export function TreePublishButton({
@@ -18,6 +21,9 @@ export function TreePublishButton({
   contentType,
   initialPublicId,
   hasChanges: initialHasChanges,
+  workspace = false,
+  onPublished,
+  disabled = false,
 }: Props) {
   const style = CONTENT_TYPE_STYLE[contentType];
 
@@ -45,6 +51,7 @@ export function TreePublishButton({
       setHasChanges(false);
       setShowModal(false);
       setCommitMsg("");
+      onPublished?.();
     } else {
       setError(data.error ?? "Error al publicar");
     }
@@ -53,6 +60,17 @@ export function TreePublishButton({
 
   return (
     <>
+      {workspace ? (
+        <button
+          type="button"
+          onClick={() => hasChanges && setShowModal(true)}
+          disabled={disabled}
+          className="flex h-[34px] min-w-[94px] items-center justify-center gap-1.5 rounded-md border border-[#167b43] bg-[#167b43] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#116637] disabled:cursor-wait disabled:opacity-55"
+        >
+          {hasChanges ? <Send className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+          {hasChanges ? "Publicar" : "Publicado"}
+        </button>
+      ) : (
       <div className="flex items-center gap-2 flex-wrap">
         {/* Public ID chip */}
         {publicId ? (
@@ -71,7 +89,8 @@ export function TreePublishButton({
         {hasChanges && (
           <button
             onClick={() => setShowModal(true)}
-            className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl transition-colors ${style.btnCls}`}
+            disabled={disabled}
+            className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-xl transition-colors disabled:opacity-50 ${style.btnCls}`}
           >
             <Upload className="w-3.5 h-3.5" />
             Publicar
@@ -81,6 +100,7 @@ export function TreePublishButton({
           <span className={`text-xs font-medium ${style.textCls}`}>✓ Publicado</span>
         )}
       </div>
+      )}
 
       {/* Publish modal */}
       {showModal && (
@@ -97,8 +117,8 @@ export function TreePublishButton({
             </div>
 
             <p className="text-sm text-text-muted">
-              Se genera un ID único para esta versión. Cualquiera puede usarlo para
-              verificar exactamente qué contenido estaba publicado en este momento.
+              Se genera un ID único que registra esta publicación, su fecha y la
+              descripción del cambio.
             </p>
 
             <form onSubmit={handlePublish} className="space-y-3">
@@ -108,6 +128,7 @@ export function TreePublishButton({
                 </label>
                 <textarea
                   value={commitMsg}
+                  maxLength={500}
                   onChange={(e) => setCommitMsg(e.target.value)}
                   placeholder="Ej: Actualicé los objetivos de la unidad 2"
                   rows={2}

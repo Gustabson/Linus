@@ -1,16 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
-import { formatDate } from "@/lib/utils";
-import Link from "next/link";
-import { Clock, Users, Eye, GitBranch } from "lucide-react";
-import { DocumentCommentsWrapper } from "@/components/documents/DocumentCommentsWrapper";
-import { CONTENT_TYPE_STYLE } from "@/lib/constants";
-import { TreePublishButton } from "@/components/trees/TreePublishButton";
-import { DocActionBar } from "@/components/documents/DocActionBar";
-import { DocExportButton } from "@/components/documents/DocExportButton";
-import { TreeTitleEditor } from "@/components/documents/TreeTitleEditor";
-import { BackButton } from "@/components/shared/BackButton";
+import { DocumentWorkspace } from "@/components/documents/DocumentWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +43,7 @@ export default async function DocumentPage({
       id: true, title: true, slug: true, ownerId: true,
       visibility: true, contentType: true,
       owner: { select: { username: true } },
+      documents: { orderBy: { createdAt: "asc" }, select: { id: true } },
     },
   });
 
@@ -64,6 +56,7 @@ export default async function DocumentPage({
     where: { treeId_slug: { treeId: tree.id, slug: docSlug } },
     include: {
       versions: {
+        where: isOwner ? undefined : { status: "PUBLISHED" },
         orderBy: { createdAt: "desc" },
         take: 1,
         include: {
@@ -77,14 +70,11 @@ export default async function DocumentPage({
   if (!doc) notFound();
 
   const latestVersion = doc.versions[0];
+  if (!isOwner && !latestVersion) notFound();
   const sections      = latestVersion?.sections ?? [];
-  const style         = CONTENT_TYPE_STYLE[tree.contentType];
-  const isKernel      = tree.contentType === "KERNEL";
+  const hasChanges    = latestVersion?.status === "DRAFT";
 
-  // For module/resource: is there a DRAFT (unpublished edits since last tree-publish)?
-  const hasChanges = !isKernel && latestVersion?.status === "DRAFT";
-
-  const latestPublication = isOwner && !isKernel
+  const latestPublication = isOwner
     ? await prisma.treePublication.findFirst({
         where:   { treeId: tree.id },
         orderBy: { publishedAt: "desc" },
@@ -93,92 +83,25 @@ export default async function DocumentPage({
     : null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-surface rounded-2xl border border-border p-6 space-y-4">
-        {isKernel && isOwner ? (
-          /* Kernel doc: DocActionBar handles breadcrumb + title + actions */
-          <DocActionBar
-            treeSlug={tree.slug}
-            treeTitle={tree.title}
-            docSlug={docSlug}
-            docTitle={doc.title}
-            ownerUsername={username}
-            exportSections={sections}
-          />
-        ) : (
-          /* Module / resource: keep the full header with title + actions */
-          <>
-            <BackButton />
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium mb-2 ${style.badgeCls}`}>
-                {style.icon}
-                {style.label}
-              </span>
-              <TreeTitleEditor
-                treeSlug={tree.slug}
-                ownerUsername={username}
-                docSlug={docSlug}
-                initialTitle={tree.title}
-                isOwner={isOwner}
-              />
-              {latestVersion && (
-                <div className="flex items-center gap-4 mt-2 text-sm text-text-muted flex-wrap">
-                  <span className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    {latestVersion.author.name}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {formatDate(latestVersion.createdAt)}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
-              <DocExportButton title={tree.title} sections={sections} treeSlug={tree.slug} docSlug={docSlug} />
-              {isOwner && (
-                <TreePublishButton
-                  treeSlug={tree.slug}
-                  contentType={tree.contentType}
-                  initialPublicId={latestPublication?.publicId ?? null}
-                  hasChanges={hasChanges}
-                />
-              )}
-              <Link
-                href={`/${username}/${slug}/${docSlug}/historial`}
-                className={`flex items-center gap-1.5 text-sm text-text-muted ${style.hoverTextCls} transition-colors`}
-                title="Ver historial de publicaciones"
-              >
-                <GitBranch className="w-4 h-4" />
-                <span className="hidden sm:inline">Historial</span>
-              </Link>
-              <Link
-                href={`/${username}/${slug}/${docSlug}/preview`}
-                className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-lg hover:bg-bg transition-colors"
-              >
-                <Eye className="w-4 h-4" />
-                Preview
-              </Link>
-            </div>
-          </div>
-          </>
-        )}
-      </div>
-
-      {/* Sections + Comments (client wrapper handles quote state) */}
-      <DocumentCommentsWrapper
-        treeSlug={tree.slug}
-        docSlug={docSlug}
-        docId={doc.id}
-        versionId={latestVersion?.id ?? null}
-        sections={sections}
-        isOwner={isOwner}
-        isAuthenticated={!!session}
-        currentUserId={session?.user?.id}
-      />
-    </div>
+    <DocumentWorkspace
+      treeSlug={tree.slug}
+      treeTitle={tree.title}
+      contentType={tree.contentType}
+      docSlug={docSlug}
+      docTitle={doc.title}
+      docId={doc.id}
+      documentIndex={Math.max(1, tree.documents.findIndex((item) => item.id === doc.id) + 1)}
+      documentCount={Math.max(1, tree.documents.length)}
+      ownerUsername={username}
+      authorName={latestVersion?.author.name ?? username}
+      versionStatus={latestVersion?.status ?? null}
+      visibility={tree.visibility}
+      sections={sections}
+      isOwner={isOwner}
+      isAuthenticated={!!session}
+      currentUserId={session?.user?.id}
+      initialPublicId={latestPublication?.publicId ?? null}
+      hasChanges={hasChanges}
+    />
   );
 }

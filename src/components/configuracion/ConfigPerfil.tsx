@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import { Loader2, Check, AlertCircle } from "lucide-react";
 import { SectionCard } from "@/components/ui/Card";
 import { Button }      from "@/components/ui/Button";

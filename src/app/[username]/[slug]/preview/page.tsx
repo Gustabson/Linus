@@ -17,6 +17,14 @@ export default async function KernelPreviewPage({
   const { username, slug } = await params;
   const session = await auth();
 
+  const access = await prisma.documentTree.findUnique({
+    where: { slug },
+    select: { ownerId: true, visibility: true, owner: { select: { username: true } } },
+  });
+  if (!access || access.owner.username !== username) notFound();
+  const isOwner = session?.user?.id === access.ownerId;
+  if (access.visibility === "PRIVATE" && !isOwner) notFound();
+
   const tree = await prisma.documentTree.findUnique({
     where: { slug },
     select: {
@@ -27,6 +35,7 @@ export default async function KernelPreviewPage({
         orderBy: { createdAt: "asc" },
         include: {
           versions: {
+            where: isOwner ? undefined : { status: "PUBLISHED" },
             orderBy: { createdAt: "desc" },
             take: 1,
             include: {
@@ -37,6 +46,7 @@ export default async function KernelPreviewPage({
         },
       },
       attachments: {
+        where: isOwner ? undefined : { content: { visibility: { not: "PRIVATE" } } },
         orderBy: { addedAt: "asc" },
         include: {
           content: {
@@ -48,6 +58,7 @@ export default async function KernelPreviewPage({
                 take: 1,
                 include: {
                   versions: {
+                    where: isOwner ? undefined : { status: "PUBLISHED" },
                     orderBy: { createdAt: "desc" },
                     take: 1,
                     include: { sections: { orderBy: { sectionOrder: "asc" } } },
@@ -61,10 +72,8 @@ export default async function KernelPreviewPage({
     },
   });
 
-  if (!tree || tree.owner.username !== username) notFound();
-
-  const isOwner = session?.user?.id === tree.ownerId;
-  if (tree.visibility === "PRIVATE" && !isOwner) notFound();
+  if (!tree) notFound();
+  if (!isOwner) tree.documents = tree.documents.filter((document) => document.versions.length > 0);
 
   const style = CONTENT_TYPE_STYLE[tree.contentType];
 
@@ -156,8 +165,6 @@ export default async function KernelPreviewPage({
               </div>
             ) : (
               completeSections.map((section, si) => {
-                const content = section.richTextContent as Record<string, unknown>;
-                const isPdfEmbed = content?.__type === "pdf_embed";
                 return (
                   <div key={section.id} id={`section-${section.id}`}
                     className="bg-surface rounded-2xl border border-border overflow-hidden">
@@ -171,16 +178,7 @@ export default async function KernelPreviewPage({
 
                     {/* Content */}
                     <div className="px-6 py-5">
-                      {isPdfEmbed ? (
-                        <iframe
-                          src={content.url as string}
-                          className="w-full rounded-lg border border-border"
-                          style={{ height: "600px" }}
-                          title={section.sectionType}
-                        />
-                      ) : (
-                        <PreviewContent content={section.richTextContent as object} />
-                      )}
+                      <PreviewContent content={section.richTextContent as object} />
                     </div>
                   </div>
                 );

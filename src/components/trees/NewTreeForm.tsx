@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import { useSession } from "next-auth/react";
 import { BookOpen } from "lucide-react";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";

@@ -18,8 +18,10 @@ function VerifyBanner() {
 
 export default async function LoginPage({
   searchParams,
+  redirectTo = "/dashboard",
 }: {
   searchParams: Promise<{ verify?: string; error?: string }>;
+  redirectTo?: string;
 }) {
   const { verify, error } = await searchParams;
 
@@ -71,7 +73,7 @@ export default async function LoginPage({
         {/* Magic link form */}
         {showResend && !verify && (
           <>
-            <MagicLinkForm />
+            <MagicLinkForm callbackUrl={redirectTo} />
             {(showGoogle || showGitHub) && (
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px bg-border" />
@@ -88,7 +90,7 @@ export default async function LoginPage({
             <form
               action={async () => {
                 "use server";
-                await signIn("google", { redirectTo: "/dashboard" });
+                await signIn("google", { redirectTo });
               }}
             >
               <button
@@ -105,7 +107,7 @@ export default async function LoginPage({
             <form
               action={async () => {
                 "use server";
-                await signIn("github", { redirectTo: "/dashboard" });
+                await signIn("github", { redirectTo });
               }}
             >
               <button

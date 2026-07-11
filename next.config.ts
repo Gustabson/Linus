@@ -22,6 +22,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://*.public.blob.vercel-storage.com",
       "font-src 'self'",
       "connect-src 'self'",
+      "frame-src 'self' https://*.public.blob.vercel-storage.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

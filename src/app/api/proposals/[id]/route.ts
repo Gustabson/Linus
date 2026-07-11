@@ -5,6 +5,7 @@ import { createNotification } from "@/lib/notifications";
 import { copySectionFields } from "@/lib/sections";
 
 type Params = { params: Promise<{ id: string }> };
+class ProposalConflict extends Error {}
 
 // GET /api/proposals/[id] — full detail with docs from both trees
 export async function GET(_req: NextRequest, { params }: Params) {
@@ -62,7 +63,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { id } = await params;
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { action } = body; // "accept" | "reject" | "withdraw"
+  const action = body.action;
+  if (action !== "accept" && action !== "reject" && action !== "withdraw")
+    return NextResponse.json({ error: "Acción inválida" }, { status: 400 });
 
   const proposal = await prisma.changeProposal.findUnique({
     where:   { id },
@@ -81,23 +84,29 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   if (action === "withdraw") {
     if (!isAuthor) return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
-    await prisma.changeProposal.update({
-      where: { id },
+    const updated = await prisma.changeProposal.updateMany({
+      where: { id, status: "OPEN" },
       data:  { status: "WITHDRAWN", reviewedAt: new Date(), reviewerId: userId },
     });
+    if (updated.count !== 1) return NextResponse.json({ error: "La propuesta ya fue resuelta" }, { status: 409 });
     return NextResponse.json({ ok: true, status: "WITHDRAWN" });
   }
 
   if (action === "reject") {
     if (!isTargetOwner) return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
-    await prisma.changeProposal.update({
-      where: { id },
+    const updated = await prisma.changeProposal.updateMany({
+      where: { id, status: "OPEN" },
       data:  { status: "REJECTED", reviewedAt: new Date(), reviewerId: userId },
     });
-    await createNotification({
-      type: "PROPOSAL_REVIEWED", recipientId: proposal.authorId,
-      actorId: userId, link: `/propuestas/${id}`,
-    });
+    if (updated.count !== 1) return NextResponse.json({ error: "La propuesta ya fue resuelta" }, { status: 409 });
+    try {
+      await createNotification({
+        type: "PROPOSAL_REVIEWED", recipientId: proposal.authorId,
+        actorId: userId, link: `/propuestas/${id}`,
+      });
+    } catch (error) {
+      console.error("Failed to create proposal review notification", error);
+    }
     return NextResponse.json({ ok: true, status: "REJECTED" });
   }
 
@@ -120,7 +129,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     ]);
 
     // Merge: for each source doc, find matching target doc by slug and commit new version
-    await prisma.$transaction(async (tx) => {
+    try {
+      await prisma.$transaction(async (tx) => {
+      const claimed = await tx.changeProposal.updateMany({
+        where: { id, status: "OPEN" },
+        data: { status: "ACCEPTED", reviewedAt: new Date(), reviewerId: userId },
+      });
+      if (claimed.count !== 1) throw new ProposalConflict();
       for (const sourceDoc of sourceDocs) {
         const sourceVersion = sourceDoc.versions[0];
         if (!sourceVersion) continue;
@@ -146,16 +161,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         });
       }
 
-      await tx.changeProposal.update({
-        where: { id },
-        data:  { status: "ACCEPTED", reviewedAt: new Date(), reviewerId: userId },
       });
-    });
+    } catch (error) {
+      if (error instanceof ProposalConflict)
+        return NextResponse.json({ error: "La propuesta ya fue resuelta" }, { status: 409 });
+      throw error;
+    }
 
-    await createNotification({
-      type: "PROPOSAL_REVIEWED", recipientId: proposal.authorId,
-      actorId: userId, link: `/propuestas/${id}`,
-    });
+    try {
+      await createNotification({
+        type: "PROPOSAL_REVIEWED", recipientId: proposal.authorId,
+        actorId: userId, link: `/propuestas/${id}`,
+      });
+    } catch (error) {
+      console.error("Failed to create proposal review notification", error);
+    }
     return NextResponse.json({ ok: true, status: "ACCEPTED" });
   }
 

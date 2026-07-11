@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, getOwnedTree, unauthorized, forbidden, parseBody } from "@/lib/api-helpers";
+import { getSession, getOwnedTree, unauthorized, forbidden, parseBody, safeHttpUrl, safeString } from "@/lib/api-helpers";
+import type { ExtensionType } from "@prisma/client";
+
+const EXTENSION_TYPES: ExtensionType[] = ["LINK", "APP", "IMAGE", "VIDEO", "FILE", "TOOL"];
 
 export async function POST(
   req: NextRequest,
@@ -15,18 +18,28 @@ export async function POST(
 
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { type, title, description, url, imageUrl } = body;
-  if (!(title as string)?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 });
+  const type = EXTENSION_TYPES.includes(body.type as ExtensionType) ? body.type as ExtensionType : "LINK";
+  const title = safeString(body.title, 200);
+  const description = body.description == null || body.description === "" ? null : safeString(body.description, 2_000);
+  const url = body.url == null || body.url === "" ? null : safeHttpUrl(body.url);
+  const imageUrl = body.imageUrl == null || body.imageUrl === "" ? null : safeHttpUrl(body.imageUrl);
+  if (!title) return NextResponse.json({ error: "Título requerido (máximo 200 caracteres)" }, { status: 400 });
+  if (body.description != null && body.description !== "" && !description)
+    return NextResponse.json({ error: "Descripción inválida" }, { status: 400 });
+  if (body.url != null && body.url !== "" && !url)
+    return NextResponse.json({ error: "URL inválida" }, { status: 400 });
+  if (body.imageUrl != null && body.imageUrl !== "" && !imageUrl)
+    return NextResponse.json({ error: "URL de imagen inválida" }, { status: 400 });
 
   const ext = await prisma.treeExtension.create({
     data: {
       treeId:      tree.id,
       authorId:    session.user.id,
       type:        type ?? "LINK",
-      title:       title.trim(),
-      description: description?.trim() || null,
-      url:         url?.trim()         || null,
-      imageUrl:    imageUrl?.trim()    || null,
+      title,
+      description,
+      url,
+      imageUrl,
     },
     include: { author: { select: { name: true, image: true } } },
   });
@@ -44,7 +57,8 @@ export async function DELETE(
   const { slug }        = await params;
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { extensionId } = body;
+  const extensionId = safeString(body.extensionId, 100);
+  if (!extensionId) return NextResponse.json({ error: "extensionId requerido" }, { status: 400 });
 
   const ext = await prisma.treeExtension.findUnique({
     where:  { id: extensionId },

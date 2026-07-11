@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function ResetPage() {
+export default async function ResetPage({ routePrefix = "" }: { routePrefix?: string } = {}) {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect(`${routePrefix}/login`);
 
   await prisma.user.update({
     where: { id: session.user.id },
@@ -20,5 +20,5 @@ export default async function ResetPage() {
     },
   });
 
-  redirect("/configuracion");
+  redirect(`${routePrefix}/configuracion`);
 }

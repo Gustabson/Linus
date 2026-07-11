@@ -20,12 +20,17 @@ describe("sanitizeHtml", () => {
     const input = '<img src="x" onerror="alert(1)" />';
     const result = sanitizeHtml(input);
     expect(result).not.toContain("onerror");
+    expect(result).not.toContain("<img");
   });
 
   it("strips javascript: hrefs", () => {
     const input = '<a href="javascript:alert(1)">click</a>';
     const result = sanitizeHtml(input);
     expect(result).not.toContain("javascript:");
+  });
+
+  it("rejects protocol-relative links", () => {
+    expect(sanitizeHtml('<a href="//evil.example/path">click</a>')).not.toContain("href");
   });
 
   it("forces external links to open safely", () => {

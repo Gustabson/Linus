@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import { ArrowLeft, Trash2, Reply, Send, Loader2 } from "lucide-react";
 import { RichEditor } from "@/components/editor/RichEditor";
 import { formatDate } from "@/lib/utils";

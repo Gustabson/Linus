@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { GitFork, X, Cpu, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import { useSession } from "next-auth/react";
 
 interface UserKernel { id: string; slug: string; title: string; }

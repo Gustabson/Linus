@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { USER_BASIC_SELECT } from "@/lib/data";
 import { createNotification } from "@/lib/notifications";
-import { getSession, unauthorized, forbidden, parseBody } from "@/lib/api-helpers";
+import { getSession, unauthorized, forbidden, parseBody, safeString } from "@/lib/api-helpers";
+
+const COMMENT_MAX = 5_000;
+const QUOTE_MAX = 1_000;
+const SECTION_NAME_MAX = 200;
 
 // ── shared helper ─────────────────────────────────────────────────────────────
 
@@ -13,6 +17,7 @@ async function getVisibleDoc(docId: string, userId?: string) {
     select: {
       id:   true,
       slug: true,
+      versions: { where: { status: "PUBLISHED" }, take: 1, select: { id: true } },
       tree: { select: { slug: true, ownerId: true, visibility: true, owner: { select: { username: true } } } },
     },
   });
@@ -20,6 +25,7 @@ async function getVisibleDoc(docId: string, userId?: string) {
 
   // PRIVATE trees are only visible to the owner
   if (doc.tree.visibility === "PRIVATE" && doc.tree.ownerId !== userId) return null;
+  if (doc.tree.ownerId !== userId && doc.versions.length === 0) return null;
 
   return doc;
 }
@@ -70,18 +76,24 @@ export async function POST(
 
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { content, quotedText, sectionType, isPrivate } = body;
-  if (!(content as string)?.trim())
-    return NextResponse.json({ error: "El comentario no puede estar vacío" }, { status: 400 });
+  const content = safeString(body.content, COMMENT_MAX);
+  if (!content)
+    return NextResponse.json({ error: `El comentario debe tener entre 1 y ${COMMENT_MAX} caracteres` }, { status: 400 });
+  const quotedText = body.quotedText == null ? null : safeString(body.quotedText, QUOTE_MAX);
+  const sectionType = body.sectionType == null ? null : safeString(body.sectionType, SECTION_NAME_MAX);
+  if (body.quotedText != null && !quotedText)
+    return NextResponse.json({ error: `La cita supera ${QUOTE_MAX} caracteres` }, { status: 400 });
+  if (body.sectionType != null && !sectionType)
+    return NextResponse.json({ error: "Sección inválida" }, { status: 400 });
 
   const comment = await prisma.documentComment.create({
     data: {
       documentId:  docId,
       authorId:    session.user.id,
-      content:     content.trim(),
-      quotedText:  quotedText?.trim()  || null,
-      sectionType: sectionType         || null,
-      isPrivate:   isPrivate === true,
+      content,
+      quotedText,
+      sectionType,
+      isPrivate:   body.isPrivate === true,
     },
     include: {
       author: { select: USER_BASIC_SELECT },
@@ -90,15 +102,19 @@ export async function POST(
 
   // Notify tree owner of public comments (not for own comments)
   if (!comment.isPrivate && doc.tree.visibility === "PUBLIC" && doc.tree.ownerId !== session.user.id) {
-    await createNotification({
-      type:        "NEW_COMMENT",
-      recipientId: doc.tree.ownerId,
-      actorId:     session.user.id,
-      link:        `/${doc.tree.owner.username ?? doc.tree.ownerId}/${doc.tree.slug}/${doc.slug}`,
-    });
+    try {
+      await createNotification({
+        type:        "NEW_COMMENT",
+        recipientId: doc.tree.ownerId,
+        actorId:     session.user.id,
+        link:        `/${doc.tree.owner.username ?? doc.tree.ownerId}/${doc.tree.slug}/${doc.slug}`,
+      });
+    } catch (error) {
+      console.error("Failed to create comment notification", error);
+    }
   }
 
-  return NextResponse.json(comment);
+  return NextResponse.json(comment, { status: 201 });
 }
 
 // ── DELETE — remove own comment ───────────────────────────────────────────────
@@ -113,7 +129,8 @@ export async function DELETE(
   const { docId }     = await params;
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { commentId } = body;
+  const commentId = safeString(body.commentId, 100);
+  if (!commentId) return NextResponse.json({ error: "commentId inválido" }, { status: 400 });
 
   const comment = await prisma.documentComment.findUnique({ where: { id: commentId } });
   if (!comment || comment.documentId !== docId)

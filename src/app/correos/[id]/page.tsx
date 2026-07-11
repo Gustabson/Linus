@@ -8,11 +8,13 @@ export const dynamic = "force-dynamic";
 
 export default async function CorreoDetallePage({
   params,
+  routePrefix = "",
 }: {
   params: Promise<{ id: string }>;
+  routePrefix?: string;
 }) {
   const session = await auth();
-  if (!session?.user?.id) redirect("/");
+  if (!session?.user?.id) redirect(routePrefix || "/");
 
   const { id } = await params;
 
@@ -54,7 +56,7 @@ export default async function CorreoDetallePage({
     })),
   };
 
-  const backHref  = isRecipient ? "/correos" : "/correos/enviados";
+  const backHref  = isRecipient ? `${routePrefix}/correos` : `${routePrefix}/correos/enviados`;
   const backLabel = isRecipient ? "Bandeja de entrada" : "Enviados";
 
   return (

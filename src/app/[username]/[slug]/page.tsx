@@ -66,11 +66,21 @@ async function fetchForkSubtree(treeId: string, depth: number): Promise<{
 
 export default async function TreePage({
   params,
+  routePrefix = "",
 }: {
   params: Promise<{ username: string; slug: string }>;
+  routePrefix?: string;
 }) {
   const { username, slug } = await params;
   const session = await auth();
+
+  const access = await prisma.documentTree.findUnique({
+    where: { slug },
+    select: { ownerId: true, visibility: true, owner: { select: { username: true } } },
+  });
+  if (!access || access.owner.username !== username) notFound();
+  const isOwner = session?.user?.id === access.ownerId;
+  if (access.visibility === "PRIVATE" && !isOwner) notFound();
 
   const tree = await prisma.documentTree.findUnique({
     where: { slug },
@@ -81,6 +91,7 @@ export default async function TreePage({
         orderBy: { createdAt: "asc" },
         include: {
           versions: {
+            where: isOwner ? undefined : { status: "PUBLISHED" },
             orderBy: { createdAt: "desc" },
             take: 1,
             select: {
@@ -110,10 +121,8 @@ export default async function TreePage({
     },
   });
 
-  if (!tree || tree.owner.username !== username) notFound();
-
-  const isOwner = session?.user?.id === tree.ownerId;
-  if (tree.visibility === "PRIVATE" && !isOwner) notFound();
+  if (!tree) notFound();
+  if (!isOwner) tree.documents = tree.documents.filter((document) => document.versions.length > 0);
 
   // Whether the tree has at least one document with a DRAFT (unpublished changes)
   const hasChanges = tree.documents.some((doc) => doc.versions[0]?.status === "DRAFT");
@@ -127,7 +136,7 @@ export default async function TreePage({
   // MODULE / RESOURCE are single-document entities — the tree page is invisible to users.
   // Redirect straight to the document editor (auto-created on tree creation).
   if (tree.contentType !== "KERNEL" && tree.documents.length > 0) {
-    redirect(`/${tree.owner.username}/${slug}/${tree.documents[0].slug}`);
+    redirect(`${routePrefix}/${tree.owner.username}/${slug}/${tree.documents[0].slug}`);
   }
 
   const style = CONTENT_TYPE_STYLE[tree.contentType];

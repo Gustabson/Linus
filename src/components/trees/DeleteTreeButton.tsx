@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import { Trash2, Loader2 } from "lucide-react";
 
 export function DeleteTreeButton({

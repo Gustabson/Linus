@@ -18,6 +18,8 @@ interface Props {
 export function LayoutShell({ children, isLoggedIn, cookieToHydrate }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const isLinus2 = pathname === "/linus-2" || pathname.startsWith("/linus-2/");
+  const isDocumentEditor = pathname.split("/").filter(Boolean).length === 3;
 
   // Guests must never inherit theme state from a previous logged-in user.
   // next-themes persists the chosen theme in localStorage under key "theme".
@@ -44,6 +46,8 @@ export function LayoutShell({ children, isLoggedIn, cookieToHydrate }: Props) {
 
   // Guests only see the sidebar after leaving the landing page
   const showSidebar = isLoggedIn || pathname !== "/";
+
+  if (isLinus2) return <>{children}</>;
 
   return (
     <div className="min-h-screen bg-bg">
@@ -73,7 +77,7 @@ export function LayoutShell({ children, isLoggedIn, cookieToHydrate }: Props) {
       )}
 
       {/* ── Main content ────────────────────────────────────────────────── */}
-      <main className={`${showSidebar ? "lg:ml-64" : ""} min-h-screen pb-16 md:pb-0 ${mobilePt} md:pt-14 lg:pt-6 px-4 sm:px-6 overflow-x-hidden`}>
+      <main className={`${showSidebar ? "lg:ml-64" : ""} min-h-screen ${isDocumentEditor ? "overflow-x-hidden" : `pb-16 md:pb-0 ${mobilePt} md:pt-14 lg:pt-6 px-4 sm:px-6 overflow-x-hidden`}`}>
         {children}
       </main>
 

@@ -3,20 +3,23 @@ import { prisma } from "@/lib/prisma";
 import { splitTextIntoSections, pdfEmbedContent, textToTipTapDoc } from "@/lib/importUtils";
 import { ensureDraft } from "@/lib/sections";
 import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSafePdfUrl } from "@/lib/pdf";
+import { createHmac, timingSafeEqual } from "crypto";
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
 
 const MAX_IMPORT_SIZE = 10 * 1024 * 1024; // 10 MB — same as /api/upload
 const TITLE_MAX       = 200;
 
-/** Validates a Vercel Blob URL — prevents arbitrary URLs from being embedded. */
-function isValidBlobUrl(url: string): boolean {
-  try {
-    const u = new URL(url);
-    return u.protocol === "https:" && u.hostname.endsWith(".public.blob.vercel-storage.com");
-  } catch {
-    return false;
-  }
+function pendingBlobToken(url: string, userId: string) {
+  const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+  return secret ? createHmac("sha256", secret).update(`${userId}\0${url}`).digest("hex") : null;
+}
+
+function validPendingBlobToken(url: string, userId: string, token: unknown) {
+  const expected = pendingBlobToken(url, userId);
+  if (!expected || typeof token !== "string" || !/^[a-f0-9]{64}$/i.test(token)) return false;
+  return timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(token, "hex"));
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -76,14 +79,19 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!doc)
     return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
 
+  const announcedSize = Number(req.headers.get("content-length") ?? 0);
+  if (Number.isFinite(announcedSize) && announcedSize > MAX_IMPORT_SIZE + 1_000_000)
+    return NextResponse.json({ error: "El archivo supera el límite permitido" }, { status: 413 });
+
   const formData = await req.formData();
 
   // ── Case A: finalise a pending PDF embed (client sends title + blobUrl) ──
   const pendingBlobUrl = formData.get("blobUrl") as string | null;
   const pendingTitle   = formData.get("sectionTitle") as string | null;
+  const uploadToken    = formData.get("uploadToken");
 
   if (pendingBlobUrl && pendingTitle) {
-    if (!isValidBlobUrl(pendingBlobUrl))
+    if (!getSafePdfUrl(pendingBlobUrl) || !validPendingBlobToken(pendingBlobUrl, session.user.id, uploadToken))
       return NextResponse.json({ error: "blobUrl inválida" }, { status: 400 });
     const trimmedTitle = pendingTitle.trim();
     if (!trimmedTitle || trimmedTitle.length > TITLE_MAX)
@@ -103,10 +111,12 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (file.size > MAX_IMPORT_SIZE)
     return NextResponse.json(
       { error: `El archivo supera el límite de ${MAX_IMPORT_SIZE / (1024 * 1024)} MB` },
-      { status: 400 },
+      { status: 413 },
     );
 
   const mode     = (formData.get("mode") as string | null) ?? "split";
+  if (mode !== "split" && mode !== "single")
+    return NextResponse.json({ error: "Modo de importación inválido" }, { status: 400 });
   const filename = file.name.toLowerCase();
   const buffer   = Buffer.from(await file.arrayBuffer());
 
@@ -114,6 +124,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   // ── PDF ──────────────────────────────────────────────────────────────────
   if (filename.endsWith(".pdf")) {
+    if (buffer.subarray(0, 5).toString("ascii") !== "%PDF-")
+      return NextResponse.json({ error: "El archivo no es un PDF válido" }, { status: 400 });
     let text = "";
     try {
       // pdf-parse is CJS; import dynamically to avoid ESM issues
@@ -128,13 +140,18 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     if (!text.trim()) {
       // Non-extractable PDF: upload to Vercel Blob for embedding
+      if (!process.env.AUTH_SECRET && !process.env.NEXTAUTH_SECRET)
+        return NextResponse.json({ error: "Falta configurar AUTH_SECRET para completar la importación." }, { status: 500 });
       try {
         const { put } = await import("@vercel/blob");
-        const blob    = await put(`imports/${Date.now()}-${file.name}`, buffer, {
+        const safeFilename = file.name.replace(/[^a-z0-9._ -]/gi, "_").slice(-180) || "documento.pdf";
+        const blob    = await put(`imports/${Date.now()}-${safeFilename}`, buffer, {
           access:      "public",
           contentType: "application/pdf",
         });
-        return NextResponse.json({ needsTitle: true, blobUrl: blob.url });
+        const uploadToken = pendingBlobToken(blob.url, session.user.id);
+        if (!uploadToken) throw new Error("Could not sign pending blob");
+        return NextResponse.json({ needsTitle: true, blobUrl: blob.url, uploadToken });
       } catch {
         return NextResponse.json(
           { error: "El PDF no tiene texto extraíble y no se pudo subir para mostrar. Intentá con un PDF con texto seleccionable." },
@@ -150,6 +167,14 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   // ── DOCX ─────────────────────────────────────────────────────────────────
   } else if (filename.endsWith(".docx")) {
+    const zipSignature = buffer.subarray(0, 4);
+    const validZipSignature = zipSignature[0] === 0x50 && zipSignature[1] === 0x4b && (
+      (zipSignature[2] === 0x03 && zipSignature[3] === 0x04) ||
+      (zipSignature[2] === 0x05 && zipSignature[3] === 0x06) ||
+      (zipSignature[2] === 0x07 && zipSignature[3] === 0x08)
+    );
+    if (!validZipSignature)
+      return NextResponse.json({ error: "El archivo no es un Word válido" }, { status: 400 });
     try {
       const mammoth = await import("mammoth");
       const result  = await mammoth.extractRawText({ buffer });
@@ -177,7 +202,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   // Cap at 20 sections to avoid creating hundreds of tiny ones
-  sections = sections.slice(0, 20);
+  sections = sections.slice(0, 20).map((section) => ({
+    ...section,
+    title: section.title.trim().slice(0, TITLE_MAX) || "Contenido",
+  }));
 
   const draft      = await ensureDraft(doc.id, session.user.id);
   const startOrder = draft.sections.length;

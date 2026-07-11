@@ -15,11 +15,9 @@ export function sanitizeHtml(html: string): string {
       "blockquote",
       "pre", "code",
       "hr",
-      "img",
     ],
     allowedAttributes: {
       "a":   ["href", "target", "rel"],
-      "img": ["src", "alt", "width", "height"],
       // Allow style only for text-align (Tiptap text-align extension)
       "*":   ["style"],
     },
@@ -28,6 +26,9 @@ export function sanitizeHtml(html: string): string {
         "text-align": [/^(left|center|right|justify)$/],
       },
     },
+    allowedSchemes: ["http", "https", "mailto"],
+    allowedSchemesByTag: { a: ["http", "https", "mailto"] },
+    allowProtocolRelative: false,
     // Force all external links to open safely
     transformTags: {
       "a": sanitizeHtmlLib.simpleTransform("a", {

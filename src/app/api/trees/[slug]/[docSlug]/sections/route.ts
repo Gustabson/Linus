@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { copySectionFields } from "@/lib/sections";
-import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
-import type { DocumentSection, VersionStatus } from "@prisma/client";
+import { copySectionFields, forkPublishedVersionToDraft, sanitizeRichTextDocument, SECTION_TITLE_MAX } from "@/lib/sections";
+import { getSession, unauthorized, parseBody, safeString } from "@/lib/api-helpers";
+import type { VersionStatus } from "@prisma/client";
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
 
@@ -28,52 +28,10 @@ async function getOwnerDoc(slug: string, docSlug: string, userId: string) {
   return doc ? { tree, doc } : null;
 }
 
-/**
- * Forks a PUBLISHED version into a new DRAFT, optionally overriding specific
- * section fields (used when the first edit happens after a publish).
- *
- * Returns the new draft and a map of old section IDs → new draft section IDs,
- * so the client can update its local state without a full page reload.
- */
-async function forkToDraft(
-  docId:     string,
-  authorId:  string,
-  published: { id: string; sections: DocumentSection[] },
-  overrides: Record<string, Partial<ReturnType<typeof copySectionFields>>> = {},
-) {
-  const draft = await prisma.$transaction(async (tx) => {
-    const newDraft = await tx.documentVersion.create({
-      data: {
-        documentId:      docId,
-        authorId,
-        status:          "DRAFT" as VersionStatus,
-        parentVersionId: published.id,
-        sections: {
-          create: published.sections.map((s) => ({
-            ...copySectionFields(s),
-            ...(overrides[s.id] ?? {}),
-          })),
-        },
-      },
-      include: { sections: { orderBy: { sectionOrder: "asc" } } },
-    });
-    await tx.document.update({ where: { id: docId }, data: { currentVersionId: newDraft.id } });
-    return newDraft;
-  });
-
-  // Map old section IDs to new draft section IDs by matching sectionOrder
-  const sectionIdMap: Record<string, string> = {};
-  for (const old of published.sections) {
-    const fresh = draft.sections.find((s) => s.sectionOrder === old.sectionOrder);
-    if (fresh) sectionIdMap[old.id] = fresh.id;
-  }
-
-  return { draft, sectionIdMap };
-}
-
 // ── GET — fetch current sections (used by DocExportButton for fresh data) ─────
 export async function GET(_req: NextRequest, { params }: Params) {
   const { slug, docSlug } = await params;
+  const session = await getSession();
 
   const tree = await prisma.documentTree.findUnique({
     where:  { slug },
@@ -81,15 +39,15 @@ export async function GET(_req: NextRequest, { params }: Params) {
   });
   if (!tree) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  if (tree.visibility === "PRIVATE") {
-    const session = await getSession();
-    if (!session || session.user.id !== tree.ownerId) return unauthorized();
-  }
+  const isOwner = session?.user.id === tree.ownerId;
+  if (tree.visibility === "PRIVATE" && !isOwner)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const doc = await prisma.document.findUnique({
     where: { treeId_slug: { treeId: tree.id, slug: docSlug } },
     include: {
       versions: {
+        where: isOwner ? undefined : { status: "PUBLISHED" },
         orderBy: { createdAt: "desc" },
         take:    1,
         include: { sections: { orderBy: { sectionOrder: "asc" } } },
@@ -97,8 +55,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
     },
   });
   if (!doc) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!isOwner && !doc.versions[0]) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  return NextResponse.json({ sections: doc.versions[0]?.sections ?? [] });
+  return NextResponse.json(
+    { sections: doc.versions[0]?.sections ?? [] },
+    { headers: { "Cache-Control": "private, no-store" } },
+  );
 }
 
 // ── POST — add a new section ──────────────────────────────────────────────────
@@ -112,8 +74,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { title } = body;
-  if (!(title as string)?.trim()) return NextResponse.json({ error: "Título requerido" }, { status: 400 });
+  const title = safeString(body.title, SECTION_TITLE_MAX);
+  if (!title) return NextResponse.json({ error: `Título requerido (máximo ${SECTION_TITLE_MAX} caracteres)` }, { status: 400 });
 
   const { doc } = result;
   const latestVersion = doc.versions[0];
@@ -121,7 +83,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const newOrder      = existing.length > 0 ? Math.max(...existing.map((s) => s.sectionOrder)) + 1 : 0;
 
   const newSectionData = {
-    sectionType:     title.trim(),
+    sectionType:     title,
     sectionOrder:    newOrder,
     isComplete:      false,
     richTextContent: { type: "doc", content: [] },
@@ -151,7 +113,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   // ── Case 3: Current version is PUBLISHED → fork first, then add section ──
-  const { draft, sectionIdMap } = await forkToDraft(doc.id, session.user.id, latestVersion);
+  const { draft, sectionIdMap } = await forkPublishedVersionToDraft(doc.id, session.user.id, latestVersion);
 
   const newSection = await prisma.documentSection.create({
     data: { versionId: draft.id, ...newSectionData },
@@ -175,14 +137,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const patchBody = await parseBody(req);
   if (!patchBody) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { sectionId, richTextContent, sectionTitle } = patchBody;
+  const sectionId = safeString(patchBody.sectionId, 100);
+  if (!sectionId) return NextResponse.json({ error: "sectionId inválido" }, { status: 400 });
+  const hasContent = Object.prototype.hasOwnProperty.call(patchBody, "richTextContent");
+  const richTextContent = hasContent ? sanitizeRichTextDocument(patchBody.richTextContent) : undefined;
+  if (hasContent && !richTextContent)
+    return NextResponse.json({ error: "Contenido enriquecido inválido o demasiado grande" }, { status: 400 });
+  const hasTitle = Object.prototype.hasOwnProperty.call(patchBody, "sectionTitle");
+  const sectionTitle = hasTitle ? safeString(patchBody.sectionTitle, SECTION_TITLE_MAX) : undefined;
+  if (hasTitle && !sectionTitle)
+    return NextResponse.json({ error: `Título inválido (máximo ${SECTION_TITLE_MAX} caracteres)` }, { status: 400 });
+  const validatedTitle = sectionTitle ?? undefined;
 
   const target = latestVersion.sections.find((s) => s.id === sectionId);
   if (!target) return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
 
   const sectionUpdates = {
-    sectionType:     sectionTitle    ?? undefined,
-    isComplete:      richTextContent != null ? true : undefined,
+    sectionType:     validatedTitle,
+    isComplete:      richTextContent ? true : undefined,
     richTextContent: richTextContent ?? undefined,
   };
 
@@ -203,17 +175,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   // ── Case 2: PUBLISHED → fork to DRAFT with target section overridden ──────
   const overrides: Record<string, Partial<ReturnType<typeof copySectionFields>>> = {
     [sectionId]: {
-      sectionType:     sectionTitle    ?? target.sectionType,
+      sectionType:     validatedTitle  ?? target.sectionType,
       richTextContent: richTextContent ?? (target.richTextContent as object),
-      isComplete:      richTextContent != null ? true : target.isComplete,
+      isComplete:      richTextContent ? true : target.isComplete,
     },
   };
 
-  const { sectionIdMap } = await forkToDraft(doc.id, session.user.id, latestVersion, overrides);
+  const { sectionIdMap } = await forkPublishedVersionToDraft(doc.id, session.user.id, latestVersion, overrides);
 
   return NextResponse.json({
     sectionId:    sectionIdMap[sectionId] ?? sectionId,
-    isComplete:   richTextContent != null ? true : target.isComplete,
+    isComplete:   richTextContent ? true : target.isComplete,
     draftCreated: true,
     sectionIdMap,
   });
@@ -234,7 +206,8 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   const delBody = await parseBody(req);
   if (!delBody) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { sectionId } = delBody;
+  const sectionId = safeString(delBody.sectionId, 100);
+  if (!sectionId) return NextResponse.json({ error: "sectionId inválido" }, { status: 400 });
 
   const target = latestVersion.sections.find((s) => s.id === sectionId);
   if (!target) return NextResponse.json({ error: "Sección no encontrada" }, { status: 404 });
@@ -247,7 +220,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
   // ── Case 2: PUBLISHED → fork without the deleted section ─────────────────
   const remaining = { ...latestVersion, sections: latestVersion.sections.filter((s) => s.id !== sectionId) };
-  const { sectionIdMap } = await forkToDraft(doc.id, session.user.id, remaining);
+  const { sectionIdMap } = await forkPublishedVersionToDraft(doc.id, session.user.id, remaining);
 
   return NextResponse.json({ ok: true, draftCreated: true, sectionIdMap });
 }

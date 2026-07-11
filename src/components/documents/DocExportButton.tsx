@@ -17,9 +17,10 @@ interface Props {
   sections: ExportSection[];   // initial sections (may be stale — fresh fetch on export)
   treeSlug: string;
   docSlug:  string;
+  workspace?: boolean;
 }
 
-export function DocExportButton({ title, sections: initialSections, treeSlug, docSlug }: Props) {
+export function DocExportButton({ title, sections: initialSections, treeSlug, docSlug, workspace = false }: Props) {
   const [open,            setOpen]            = useState(false);
   const [loading,         setLoading]         = useState(false);
   const [showModal,       setShowModal]       = useState(false);
@@ -104,14 +105,17 @@ export function DocExportButton({ title, sections: initialSections, treeSlug, do
         <button
           onClick={() => !loading && setOpen((v) => !v)}
           disabled={loading}
-          className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-xl hover:bg-bg hover:border-gray-300 disabled:opacity-60 transition-colors"
+          className={workspace
+            ? "flex h-[34px] items-center gap-1.5 rounded-md border border-[#d8dfd9] bg-white px-3 text-[13px] font-semibold text-[#3b483f] transition-colors hover:bg-[#f5f7f5] disabled:opacity-60"
+            : "flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-xl hover:bg-bg hover:border-gray-300 disabled:opacity-60 transition-colors"
+          }
         >
           {loading
             ? <Loader2  className="w-4 h-4 animate-spin" />
             : <FileDown className="w-4 h-4" />
           }
           <span className="hidden sm:inline">{loading ? "Cargando…" : "Exportar"}</span>
-          {!loading && <ChevronDown className="w-3.5 h-3.5 opacity-70" />}
+          {!loading && !workspace && <ChevronDown className="w-3.5 h-3.5 opacity-70" />}
         </button>
 
         {open && (

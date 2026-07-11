@@ -84,7 +84,7 @@ export default async function PublicVersionPage({
       </div>
 
       <p className="text-center text-xs text-text-subtle">
-        Este ID identifica de forma permanente el estado de este contenido en el momento de su publicación.
+        Este ID identifica de forma permanente este evento de publicación.
       </p>
     </div>
   );

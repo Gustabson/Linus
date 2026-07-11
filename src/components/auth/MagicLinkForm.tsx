@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Mail, Loader2, Check, ArrowRight } from "lucide-react";
 import { signIn } from "next-auth/react";
 
-export function MagicLinkForm() {
+export function MagicLinkForm({ callbackUrl = "/dashboard" }: { callbackUrl?: string }) {
   const [email, setEmail]   = useState("");
   const [sent, setSent]     = useState(false);
   const [error, setError]   = useState("");
@@ -19,7 +19,7 @@ export function MagicLinkForm() {
       const result = await signIn("resend", {
         email:      email.trim().toLowerCase(),
         redirect:   false,
-        callbackUrl: "/dashboard",
+        callbackUrl,
       });
 
       if (result?.error) {

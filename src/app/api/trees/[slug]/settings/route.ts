@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, uniqueSlug, parseBody } from "@/lib/api-helpers";
+import { getSession, unauthorized, uniqueSlug, parseBody, safeString } from "@/lib/api-helpers";
 import type { TreeVisibility, ContentType } from "@prisma/client";
 
 const VALID_TYPES:        ContentType[]    = ["KERNEL", "MODULE", "RESOURCE"];
@@ -55,18 +55,27 @@ export async function PATCH(
 
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { title, description, visibility, contentType, archived } = body;
+  const title = body.title === undefined ? undefined : safeString(body.title, TITLE_MAX);
+  const description = body.description === undefined
+    ? undefined
+    : body.description === null || body.description === ""
+      ? null
+      : safeString(body.description, DESCRIPTION_MAX);
+  const visibility = body.visibility as TreeVisibility | undefined;
+  const contentType = body.contentType as ContentType | undefined;
 
-  if (title != null && String(title).length > TITLE_MAX)
-    return NextResponse.json({ error: `Título demasiado largo (máximo ${TITLE_MAX})` }, { status: 400 });
-  if (description != null && String(description).length > DESCRIPTION_MAX)
-    return NextResponse.json({ error: `Descripción demasiado larga (máximo ${DESCRIPTION_MAX})` }, { status: 400 });
-  if (visibility != null && !VALID_VISIBILITIES.includes(visibility as TreeVisibility))
+  if (body.title !== undefined && !title)
+    return NextResponse.json({ error: `Título inválido (máximo ${TITLE_MAX})` }, { status: 400 });
+  if (body.description !== undefined && body.description !== null && body.description !== "" && !description)
+    return NextResponse.json({ error: `Descripción inválida (máximo ${DESCRIPTION_MAX})` }, { status: 400 });
+  if (visibility != null && !VALID_VISIBILITIES.includes(visibility))
     return NextResponse.json({ error: "Visibilidad inválida" }, { status: 400 });
-  if (contentType != null && !VALID_TYPES.includes(contentType as ContentType))
+  if (contentType != null && !VALID_TYPES.includes(contentType))
     return NextResponse.json({ error: "Tipo de contenido inválido" }, { status: 400 });
+  if (body.archived !== undefined && typeof body.archived !== "boolean")
+    return NextResponse.json({ error: "Valor de archivo inválido" }, { status: 400 });
 
-  if (archived) {
+  if (body.archived === true) {
     await prisma.documentTree.update({
       where: { id: tree.id },
       data:  { visibility: "PRIVATE" },
@@ -76,7 +85,7 @@ export async function PATCH(
 
   // Regenerate slug only if title changed
   let newSlug = tree.slug;
-  if (title && title.trim() !== tree.title) {
+  if (title && title !== tree.title) {
     newSlug = await uniqueSlug(title, async (s) => {
       const existing = await prisma.documentTree.findUnique({ where: { slug: s }, select: { id: true } });
       return existing !== null && existing.id !== tree.id;
@@ -86,10 +95,10 @@ export async function PATCH(
   const updated = await prisma.documentTree.update({
     where: { id: tree.id },
     data: {
-      title:       title?.trim()                        ?? tree.title,
-      description: description !== undefined ? (description?.trim() || null) : tree.description,
-      visibility:  (visibility  as TreeVisibility)      ?? tree.visibility,
-      contentType: (contentType as ContentType)         ?? tree.contentType,
+      title:       title ?? tree.title,
+      description: description !== undefined ? description : tree.description,
+      visibility:  visibility  ?? tree.visibility,
+      contentType: contentType ?? tree.contentType,
       slug:        newSlug,
     },
   });

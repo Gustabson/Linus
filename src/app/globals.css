@@ -152,6 +152,21 @@
   height: 0;
   pointer-events: none;
 }
+.paged-editor .ProseMirror {
+  box-sizing: content-box;
+  width: 554px;
+  height: 862px;
+  min-height: 862px;
+  padding: 96px 120px;
+  outline: none;
+  overflow: visible;
+  column-width: 554px;
+  column-gap: 272px;
+  column-fill: auto;
+}
+.paged-editor .ProseMirror > * {
+  break-inside: avoid;
+}
 .tiptap h1 { font-size: 1.875rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; }
 .tiptap h2 { font-size: 1.5rem;   font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
 .tiptap h3 { font-size: 1.25rem;  font-weight: 600; margin-top: 1rem;    margin-bottom: 0.5rem; }

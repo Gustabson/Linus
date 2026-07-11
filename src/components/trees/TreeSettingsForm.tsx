@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import { Save, Trash2, Eye, EyeOff, Link } from "lucide-react";
 
 interface TreeData {

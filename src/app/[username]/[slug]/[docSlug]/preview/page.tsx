@@ -34,6 +34,7 @@ export default async function DocumentPreviewPage({
     where: { treeId_slug: { treeId: tree.id, slug: docSlug } },
     include: {
       versions: {
+        where: isOwner ? undefined : { status: "PUBLISHED" },
         orderBy: { createdAt: "desc" },
         take: 1,
         include: {
@@ -47,6 +48,7 @@ export default async function DocumentPreviewPage({
   if (!doc) notFound();
 
   const latestVersion = doc.versions[0];
+  if (!isOwner && !latestVersion) notFound();
   const sections = latestVersion?.sections ?? [];
 
   return (

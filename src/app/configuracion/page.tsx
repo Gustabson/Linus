@@ -10,11 +10,11 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Configuración" };
 
-export default async function ConfiguracionPage() {
+export default async function ConfiguracionPage({ routePrefix = "" }: { routePrefix?: string } = {}) {
   const session = await auth();
 
   // Configuration requires an account — theme is stored in the DB, not the browser.
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect(`${routePrefix}/login`);
 
   const user = await prisma.user.findUnique({
     where:  { id: session.user.id },
@@ -42,7 +42,7 @@ export default async function ConfiguracionPage() {
     },
   });
 
-  if (!user) redirect("/login");
+  if (!user) redirect(`${routePrefix}/login`);
 
   const providers = [...new Set(user.accounts.map((a) => a.provider))];
 

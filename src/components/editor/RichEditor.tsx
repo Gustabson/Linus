@@ -14,13 +14,17 @@ import {
   List, ListOrdered, AlignLeft, AlignCenter, AlignRight,
   Heading1, Heading2, Heading3, Highlighter, Quote,
   Code, CodeXml, Minus, Link as LinkIcon, Undo, Redo, Smile,
-  Sun, Moon,
+  Sun, Moon, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Static data ───────────────────────────────────────────────────────────────
 
 const HIGHLIGHT_COLORS = ["#fef08a", "#bbf7d0", "#bfdbfe", "#fecdd3", "#fed7aa"];
+const PAGE_WIDTH = 794;
+const PAGE_HEIGHT = 1054;
+const PAGE_GAP = 32;
+const PAGE_PITCH = PAGE_WIDTH + PAGE_GAP;
 
 const EMOJI_GROUPS = [
   { label: "Frecuentes",  emojis: ["😊","👍","❤️","🎉","🙏","😂","🔥","✅","⭐","💡","📚","✏️","🧠","🎓","💪"] },
@@ -52,6 +56,8 @@ export interface RichEditorProps {
   showUndoRedo?:  boolean;
   showCharCount?: boolean;
   pageLayout?:    boolean;   // A4 page canvas — Word-like editing surface
+  workspaceLayout?: boolean; // compact paper canvas used by the document workspace
+  documentTitle?: string;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -73,6 +79,8 @@ export function RichEditor({
   showUndoRedo     = false,
   showCharCount    = false,
   pageLayout       = false,
+  workspaceLayout  = false,
+  documentTitle,
 }: RichEditorProps) {
 
   // ── UI state ──────────────────────────────────────────────────────────────
@@ -84,9 +92,36 @@ export function RichEditor({
   const [emojiStyle,    setEmojiStyle]    = useState<CSSProperties>({});
   const emojiBtnRef  = useRef<HTMLButtonElement>(null);
   const emojiDropRef = useRef<HTMLDivElement>(null);
+  const pageScrollRef = useRef<HTMLDivElement>(null);
+  const pagedEditorRef = useRef<HTMLDivElement>(null);
+  const [pageCount, setPageCount] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  function measurePages() {
+    if (!pageLayout) return;
+    const prosemirror = pagedEditorRef.current?.querySelector(".ProseMirror") as HTMLElement | null;
+    if (!prosemirror) return;
+
+    const nextCount = Math.max(1, Math.round((prosemirror.scrollWidth + PAGE_GAP) / PAGE_PITCH));
+    setPageCount(nextCount);
+
+    const left = pageScrollRef.current?.scrollLeft ?? 0;
+    setCurrentPage(Math.min(nextCount, Math.max(1, Math.round(left / PAGE_PITCH) + 1)));
+  }
+
+  function queuePageMeasure() {
+    if (pageLayout) requestAnimationFrame(measurePages);
+  }
+
+  function goToPage(page: number) {
+    const nextPage = Math.min(pageCount, Math.max(1, page));
+    pageScrollRef.current?.scrollTo({ left: (nextPage - 1) * PAGE_PITCH, behavior: "smooth" });
+    setCurrentPage(nextPage);
+  }
 
   // ── Editor ────────────────────────────────────────────────────────────────
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Underline,
@@ -104,6 +139,7 @@ export function RichEditor({
     onUpdate({ editor }) {
       onChange?.(editor.getHTML());
       onChangeJson?.(editor.getJSON());
+      queuePageMeasure();
     },
   });
 
@@ -151,7 +187,20 @@ export function RichEditor({
     return () => document.removeEventListener("mousedown", onDown);
   }, [showEmojis]);
 
-  if (!editor) return null;
+  useEffect(() => {
+    if (!pageLayout || !editor) return;
+    queuePageMeasure();
+
+    const prosemirror = pagedEditorRef.current?.querySelector(".ProseMirror") as HTMLElement | null;
+    if (!prosemirror || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver(queuePageMeasure);
+    observer.observe(prosemirror);
+    return () => observer.disconnect();
+  }, [editor, pageLayout, initialContentJson, initialContent]);
+
+  if (!editor || !is) return null;
+  const commandEditor = editor;
 
   // ── Style helpers ────────────────────────────────────────────────────────
   const iconCls = compact ? "w-3.5 h-3.5" : "w-4 h-4";
@@ -179,17 +228,17 @@ export function RichEditor({
 
   // ── Link handlers ────────────────────────────────────────────────────────
   function openLinkModal() {
-    setLinkUrl(editor.getAttributes("link").href ?? "");
+    setLinkUrl(commandEditor.getAttributes("link").href ?? "");
     setLinkOpen(true);
   }
 
   function applyLink() {
     const raw = linkUrl.trim();
     if (!raw) {
-      editor.chain().focus().unsetLink().run();
+      commandEditor.chain().focus().unsetLink().run();
     } else {
       const href = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
-      editor.chain().focus().setLink({ href }).run();
+      commandEditor.chain().focus().setLink({ href }).run();
     }
     setLinkOpen(false);
   }
@@ -213,9 +262,28 @@ export function RichEditor({
       {/* ── Toolbar ─────────────────────────────────────────────────── */}
       {editable && (
         <div className={cn(
-          "flex flex-wrap items-center gap-0.5 border-b border-border-subtle bg-bg",
-          compact ? "px-3 py-1.5" : "p-2",
+          "flex items-center gap-0.5 border-b border-border-subtle",
+          workspaceLayout ? "h-12 flex-nowrap overflow-x-auto bg-white px-2.5" : "flex-wrap bg-bg",
+          !workspaceLayout && (compact ? "px-3 py-1.5" : "p-2"),
         )}>
+
+          {workspaceLayout && (
+            <select
+              aria-label="Estilo de texto"
+              value={is.h1 ? "h1" : is.h2 ? "h2" : is.h3 ? "h3" : "p"}
+              onChange={(event) => {
+                const value = event.target.value;
+                if (value === "p") editor.chain().focus().setParagraph().run();
+                else editor.chain().focus().setHeading({ level: Number(value.slice(1)) as 1 | 2 | 3 }).run();
+              }}
+              className="mr-1 h-[30px] rounded-md border-0 bg-[#f4f6f4] px-2 text-xs text-[#4d5a51] outline-none"
+            >
+              <option value="p">Párrafo</option>
+              <option value="h1">Título 1</option>
+              <option value="h2">Título 2</option>
+              <option value="h3">Título 3</option>
+            </select>
+          )}
 
           {/* Format */}
           {btn(is.bold,      () => editor.chain().focus().toggleBold().run(),      "Negrita",   <Bold          className={iconCls} />)}
@@ -224,6 +292,7 @@ export function RichEditor({
           {showStrike && btn(is.strike, () => editor.chain().focus().toggleStrike().run(), "Tachado", <Strikethrough className={iconCls} />)}
 
           {/* Highlight */}
+          {!workspaceLayout && <>
           <button type="button" title="Resaltado"
             onMouseDown={(e) => { e.preventDefault(); setShowHighlight(v => !v); }}
             className={cn(btnBase, "transition-colors shrink-0",
@@ -247,9 +316,12 @@ export function RichEditor({
             </>
           )}
 
+          </>}
+
           <Sep />
 
           {/* Headings: P → H3 → H2 → H1 */}
+          {!workspaceLayout && <>
           {btn(is.paragraph, () => editor.chain().focus().setParagraph().run(), "Párrafo",
             <span className={cn("font-bold leading-none", compact ? "text-[11px]" : "text-xs")}>P</span>
           )}
@@ -257,7 +329,9 @@ export function RichEditor({
           {btn(is.h2, () => editor.chain().focus().toggleHeading({ level: 2 }).run(), "Título H2", <Heading2 className={iconCls} />)}
           {btn(is.h1, () => editor.chain().focus().toggleHeading({ level: 1 }).run(), "Título H1", <Heading1 className={iconCls} />)}
 
-          <Sep />
+          </>}
+
+          {!workspaceLayout && <Sep />}
 
           {/* Lists & quote */}
           {btn(is.bulletList,  () => editor.chain().focus().toggleBulletList().run(),  "Lista",          <List        className={iconCls} />)}
@@ -316,33 +390,84 @@ export function RichEditor({
 
           {/* Page theme toggle — only in page layout mode */}
           {pageLayout && (
-            <button
-              type="button"
-              title={pageDark ? "Cambiar a página blanca" : "Cambiar a página oscura"}
-              onMouseDown={(e) => { e.preventDefault(); setPageDark(v => !v); }}
-              className={cn(btnBase, "ml-auto transition-colors shrink-0 text-text-muted hover:bg-border-subtle hover:text-text")}
-            >
-              {pageDark ? <Sun className={iconCls} /> : <Moon className={iconCls} />}
-            </button>
+            <div className="ml-auto flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                title="Página anterior"
+                onMouseDown={(e) => { e.preventDefault(); goToPage(currentPage - 1); }}
+                disabled={currentPage <= 1}
+                className={cn(btnBase, "transition-colors text-text-muted hover:bg-border-subtle hover:text-text disabled:opacity-40")}
+              >
+                <ChevronLeft className={iconCls} />
+              </button>
+              <span className="min-w-[5.75rem] text-center text-xs tabular-nums text-text-subtle">
+                Página {currentPage} de {pageCount}
+              </span>
+              <button
+                type="button"
+                title="Página siguiente"
+                onMouseDown={(e) => { e.preventDefault(); goToPage(currentPage + 1); }}
+                disabled={currentPage >= pageCount}
+                className={cn(btnBase, "transition-colors text-text-muted hover:bg-border-subtle hover:text-text disabled:opacity-40")}
+              >
+                <ChevronRight className={iconCls} />
+              </button>
+              <button
+                type="button"
+                title={pageDark ? "Cambiar a página blanca" : "Cambiar a página oscura"}
+                onMouseDown={(e) => { e.preventDefault(); setPageDark(v => !v); }}
+                className={cn(btnBase, "transition-colors text-text-muted hover:bg-border-subtle hover:text-text")}
+              >
+                {pageDark ? <Sun className={iconCls} /> : <Moon className={iconCls} />}
+              </button>
+            </div>
           )}
         </div>
       )}
 
       {/* ── Content area ────────────────────────────────────────────── */}
-      {pageLayout ? (
-        <div className={cn("overflow-y-auto", pageDark ? "bg-slate-950" : "bg-gray-200")}>
+      {workspaceLayout ? (
+        <div className="bg-[#e8ece8] px-0 pb-5 pt-9 sm:px-5">
+          <div className="mx-auto min-h-[760px] w-full max-w-[680px] bg-white px-8 py-14 shadow-[0_2px_14px_rgba(24,40,29,0.10)] sm:px-14 sm:py-16">
+            {documentTitle && <h1 className="mb-6 text-[25px] font-bold leading-tight text-[#1d2620]">{documentTitle}</h1>}
+            <EditorContent editor={editor} className="tiptap workspace-tiptap" style={{ minHeight: "570px" }} />
+          </div>
+        </div>
+      ) : pageLayout ? (
+        <div
+          ref={pageScrollRef}
+          onScroll={measurePages}
+          className={cn("overflow-x-auto overflow-y-hidden", pageDark ? "bg-slate-950" : "bg-gray-200")}
+        >
           <div
-            className="mx-auto my-6 shadow-[0_2px_14px_rgba(0,0,0,0.12)]"
+            className="relative mx-auto my-6"
             style={{
-              maxWidth:    "794px",
-              minHeight:   "1054px",
-              padding:     "96px 120px",
-              background:  pageDark ? "#111827" : "white",
-              color:       pageDark ? "#f8fafc" : "#111827",
-              colorScheme: pageDark ? "dark" : "light",
+              width: `${pageCount * PAGE_WIDTH + Math.max(0, pageCount - 1) * PAGE_GAP}px`,
+              height: `${PAGE_HEIGHT}px`,
             }}
           >
-            <EditorContent editor={editor} className="tiptap" />
+            {Array.from({ length: pageCount }).map((_, pageIndex) => (
+              <div
+                key={pageIndex}
+                className="absolute top-0 shadow-[0_2px_14px_rgba(0,0,0,0.12)]"
+                style={{
+                  left: `${pageIndex * PAGE_PITCH}px`,
+                  width: `${PAGE_WIDTH}px`,
+                  height: `${PAGE_HEIGHT}px`,
+                  background: pageDark ? "#111827" : "white",
+                }}
+              />
+            ))}
+            <div
+              ref={pagedEditorRef}
+              className="paged-editor relative z-10"
+              style={{
+                color: pageDark ? "#f8fafc" : "#111827",
+                colorScheme: pageDark ? "dark" : "light",
+              }}
+            >
+              <EditorContent editor={editor} className="tiptap" />
+            </div>
           </div>
         </div>
       ) : (

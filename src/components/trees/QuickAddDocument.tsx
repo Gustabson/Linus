@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import { Plus, Loader2, ChevronRight, BookOpen } from "lucide-react";
 import Link from "next/link";
 import type { ContentTypeStyle } from "@/lib/constants";

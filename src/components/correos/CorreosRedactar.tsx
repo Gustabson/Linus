@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useTransition, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import { Send, Save, Loader2, Trash2, Check } from "lucide-react";
 import { RichEditor } from "@/components/editor/RichEditor";
 import { UserSearchInput } from "./UserSearchInput";

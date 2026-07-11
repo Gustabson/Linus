@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SectionEditor } from "./SectionEditor";
+import { EmbeddedPdf } from "@/components/documents/EmbeddedPdf";
 import type { DocumentSection } from "@prisma/client";
 
 // ── Word counter (works on TipTap JSON tree) ─────────────────────────────────
@@ -254,11 +255,10 @@ export function SectionCard({
           {/* Content */}
           {isPdfEmbed ? (
             <div className="space-y-2">
-              <iframe
-                src={(section.richTextContent as Record<string, unknown>).url as string}
-                className="w-full rounded-xl border border-border"
-                style={{ height: "600px" }}
+              <EmbeddedPdf
+                url={(section.richTextContent as Record<string, unknown>).url}
                 title={section.sectionType}
+                className="w-full rounded-xl border border-border"
               />
               {isOwner && (
                 <p className="text-xs text-text-subtle text-center">

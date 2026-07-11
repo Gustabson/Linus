@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import {
   ArrowLeft, Trash2, Upload, Loader2, X,
   FileText, AlertTriangle, Pencil, Check,
@@ -21,7 +21,7 @@ type ImportState =
   | { step: "idle" }
   | { step: "choosingMode"; file: File }
   | { step: "uploading" }
-  | { step: "needsTitle"; blobUrl: string }
+  | { step: "needsTitle"; blobUrl: string; uploadToken: string }
   | { step: "done"; count: number }
   | { step: "error"; message: string };
 
@@ -108,7 +108,7 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
 
     if (!res.ok) { setImportState({ step: "error", message: data.error ?? "Error al importar." }); return; }
 
-    if (data.needsTitle) { setImportState({ step: "needsTitle", blobUrl: data.blobUrl }); return; }
+    if (data.needsTitle) { setImportState({ step: "needsTitle", blobUrl: data.blobUrl, uploadToken: data.uploadToken }); return; }
 
     setImportState({ step: "done", count: data.count });
     setTimeout(() => { router.refresh(); setImportState({ step: "idle" }); }, 1500);
@@ -123,6 +123,7 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
 
     const formData = new FormData();
     formData.append("blobUrl",      importState.blobUrl);
+    formData.append("uploadToken",  importState.uploadToken);
     formData.append("sectionTitle", embedTitle.trim());
 
     const res  = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, { method: "POST", body: formData });

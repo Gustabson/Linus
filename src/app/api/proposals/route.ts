@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
+import { getSession, unauthorized, parseBody, safeString } from "@/lib/api-helpers";
 import { createNotification } from "@/lib/notifications";
 
 // GET /api/proposals — list received (owner of target) + sent (author)
@@ -42,17 +42,17 @@ export async function POST(req: NextRequest) {
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
 
-  const { sourceTreeId, title, description } = body;
-  if (!sourceTreeId || !(title as string)?.trim())
+  const sourceTreeId = safeString(body.sourceTreeId, 100);
+  const title = safeString(body.title, 120);
+  const description = body.description == null || body.description === "" ? null : safeString(body.description, 2_000);
+  if (!sourceTreeId || !title)
     return NextResponse.json({ error: "sourceTreeId y título son requeridos" }, { status: 400 });
-  if (String(title).length > 120)
-    return NextResponse.json({ error: "Título demasiado largo (máximo 120)" }, { status: 400 });
-  if (description != null && String(description).length > 2000)
+  if (body.description != null && body.description !== "" && !description)
     return NextResponse.json({ error: "Descripción demasiado larga (máximo 2000)" }, { status: 400 });
 
   // Source must be owned by current user and be a fork
   const source = await prisma.documentTree.findUnique({
-    where:  { id: sourceTreeId as string },
+    where:  { id: sourceTreeId },
     select: { id: true, slug: true, title: true, ownerId: true, parentTreeId: true },
   });
   if (!source || source.ownerId !== session.user.id)
@@ -76,20 +76,24 @@ export async function POST(req: NextRequest) {
 
   const proposal = await prisma.changeProposal.create({
     data: {
-      title:        title.trim(),
-      description:  description?.trim() || null,
+      title,
+      description,
       sourceTreeId: source.id,
       targetTreeId: source.parentTreeId,
       authorId:     session.user.id,
     },
   });
 
-  await createNotification({
-    type:        "NEW_PROPOSAL",
-    recipientId: target.ownerId,
-    actorId:     session.user.id,
-    link:        `/propuestas/${proposal.id}`,
-  });
+  try {
+    await createNotification({
+      type:        "NEW_PROPOSAL",
+      recipientId: target.ownerId,
+      actorId:     session.user.id,
+      link:        `/propuestas/${proposal.id}`,
+    });
+  } catch (error) {
+    console.error("Failed to create proposal notification", error);
+  }
 
   return NextResponse.json({ id: proposal.id });
 }

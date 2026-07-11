@@ -7,12 +7,14 @@ export const dynamic = "force-dynamic";
 
 export default async function TreeSettingsPage({
   params,
+  routePrefix = "",
 }: {
   params: Promise<{ username: string; slug: string }>;
+  routePrefix?: string;
 }) {
   const { username, slug } = await params;
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect(`${routePrefix}/login`);
 
   const tree = await prisma.documentTree.findUnique({
     where: { slug },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 

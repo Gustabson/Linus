@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
       documents: {
         include: {
           versions: {
+            where: { status: "PUBLISHED" },
             orderBy: { createdAt: "desc" },
             take: 1,
             include: { sections: true },
@@ -77,37 +78,37 @@ export async function POST(req: NextRequest) {
           data: { treeId: tree.id, userId: session.user.id, role: "OWNER" },
         });
 
-        if (source.contentType === "KERNEL") {
-          for (const doc of source.documents) {
-            const latest = doc.versions[0];
-            if (!latest) continue;
+        for (const doc of source.documents) {
+          const latest = doc.versions[0];
+          if (!latest) continue;
 
-            const newDoc = await tx.document.create({
-              data: { treeId: tree.id, slug: doc.slug, title: doc.title },
-            });
+          const newDoc = await tx.document.create({
+            data: { treeId: tree.id, slug: doc.slug, title: doc.title },
+          });
 
-            const newVersion = await tx.documentVersion.create({
-              data: {
-                documentId:      newDoc.id,
-                authorId:        session.user.id,
-                status:          "DRAFT",
-                commitMessage:   `Fork desde "${source.title}"`,
-                parentVersionId: latest.id,
-                sections: {
-                  create: latest.sections.map((s) => ({
-                    ...copySectionFields(s),
-                    richTextContent: s.richTextContent ?? {},
-                  })),
-                },
+          const newVersion = await tx.documentVersion.create({
+            data: {
+              documentId:      newDoc.id,
+              authorId:        session.user.id,
+              status:          "DRAFT",
+              commitMessage:   `Fork desde "${source.title}"`,
+              parentVersionId: latest.id,
+              sections: {
+                create: latest.sections.map((s) => ({
+                  ...copySectionFields(s),
+                  richTextContent: s.richTextContent ?? {},
+                })),
               },
-            });
+            },
+          });
 
-            await tx.document.update({
-              where: { id: newDoc.id },
-              data:  { currentVersionId: newVersion.id },
-            });
-          }
+          await tx.document.update({
+            where: { id: newDoc.id },
+            data:  { currentVersionId: newVersion.id },
+          });
+        }
 
+        if (source.contentType === "KERNEL") {
           // Copy module/resource attachments from source kernel
           for (const att of source.attachments) {
             await tx.treeAttachment.create({
@@ -129,13 +130,19 @@ export async function POST(req: NextRequest) {
       });
 
       // Notify original tree owner (outside transaction — failure is non-critical)
-      const forkOwnerUsername = session.user.username ?? session.user.name ?? session.user.id;
-      await createNotification({
-        type:        "NEW_FORK",
-        recipientId: source.ownerId,
-        actorId:     session.user.id,
-        link:        `/${forkOwnerUsername}/${newTree.slug}`,
-      });
+      if (source.ownerId !== session.user.id) {
+        const forkOwnerUsername = session.user.username ?? session.user.name ?? session.user.id;
+        try {
+          await createNotification({
+            type:        "NEW_FORK",
+            recipientId: source.ownerId,
+            actorId:     session.user.id,
+            link:        `/${forkOwnerUsername}/${newTree.slug}`,
+          });
+        } catch (error) {
+          console.error("Failed to create fork notification", error);
+        }
+      }
 
       return NextResponse.json({ slug: newTree.slug });
     } catch (err) {

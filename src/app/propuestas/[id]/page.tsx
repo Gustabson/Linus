@@ -22,12 +22,14 @@ const STATUS_META: Record<ProposalStatus, { label: string; cls: string; icon: Re
 
 export default async function ProposalDetailPage({
   params,
+  routePrefix = "",
 }: {
   params: Promise<{ id: string }>;
+  routePrefix?: string;
 }) {
   const { id } = await params;
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect(`${routePrefix}/login`);
 
   const proposal = await prisma.changeProposal.findUnique({
     where:   { id },

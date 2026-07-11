@@ -4,8 +4,17 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
+import { EmbeddedPdf } from "./EmbeddedPdf";
 
 export function PreviewContent({ content }: { content: object | null }) {
+  const embedded = content as Record<string, unknown> | null;
+  if (embedded?.__type === "pdf_embed")
+    return <EmbeddedPdf url={embedded.url} title="PDF incrustado" />;
+
+  return <TiptapPreview content={content} />;
+}
+
+function TiptapPreview({ content }: { content: object | null }) {
   const editor = useEditor({
     extensions: [
       StarterKit,

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
+import { getSession, unauthorized, parseBody, safeString } from "@/lib/api-helpers";
+
+const DOCUMENT_TITLE_MAX = 200;
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
 
@@ -31,11 +33,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const { title } = body;
-  if (!(title as string)?.trim())
-    return NextResponse.json({ error: "El título no puede estar vacío" }, { status: 400 });
+  const title = safeString(body.title, DOCUMENT_TITLE_MAX);
+  if (!title)
+    return NextResponse.json({ error: `El título debe tener entre 1 y ${DOCUMENT_TITLE_MAX} caracteres` }, { status: 400 });
 
-  await prisma.document.update({ where: { id: doc.id }, data: { title: title.trim() } });
+  await prisma.document.update({ where: { id: doc.id }, data: { title } });
 
   return NextResponse.json({ ok: true });
 }
@@ -53,10 +55,12 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   const tree = await prisma.documentTree.findUnique({
     where:  { slug },
-    select: { id: true, ownerId: true },
+    select: { id: true, ownerId: true, contentType: true },
   });
   if (!tree || tree.ownerId !== session.user.id)
     return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
+  if (tree.contentType !== "KERNEL")
+    return NextResponse.json({ error: "El documento principal de un módulo o recurso no se puede eliminar" }, { status: 400 });
 
   const doc = await prisma.document.findUnique({
     where: { treeId_slug: { treeId: tree.id, slug: docSlug } },

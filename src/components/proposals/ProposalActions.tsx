@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/hooks/useAppRouter";
 import { CheckCircle, XCircle, MinusCircle, Loader2 } from "lucide-react";
 
 interface Props {

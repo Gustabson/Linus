@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma }       from "@/lib/prisma";
-import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
+import { getSession, unauthorized, parseBody, safeString } from "@/lib/api-helpers";
 
 const VALID_REASONS = ["spam", "inappropriate", "misinformation", "other"] as const;
 type Reason = (typeof VALID_REASONS)[number];
@@ -17,14 +17,16 @@ export async function POST(
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
 
-  const reason: string = String(body.reason ?? "").trim();
-  const detail: string = String(body.detail ?? "").trim().slice(0, 500);
+  const reason = safeString(body.reason, 30) ?? "";
+  const detail = body.detail == null || body.detail === "" ? null : safeString(body.detail, 500);
 
   if (!VALID_REASONS.includes(reason as Reason))
     return NextResponse.json(
       { error: "Motivo inválido. Usá: spam, inappropriate, misinformation, other" },
       { status: 400 },
     );
+  if (body.detail != null && body.detail !== "" && !detail)
+    return NextResponse.json({ error: "El detalle supera 500 caracteres" }, { status: 400 });
 
   const post = await prisma.post.findUnique({
     where:  { id },
@@ -44,7 +46,7 @@ export async function POST(
         postId:     id,
         reporterId: session.user.id,
         reason,
-        detail:     detail || null,
+        detail,
       },
     });
   } catch (err: unknown) {
