@@ -65,7 +65,7 @@ export function TreePublishButton({
           type="button"
           onClick={() => hasChanges && setShowModal(true)}
           disabled={disabled}
-          className="flex h-[34px] min-w-[94px] items-center justify-center gap-1.5 rounded-md border border-[#167b43] bg-[#167b43] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#116637] disabled:cursor-wait disabled:opacity-55"
+          className="flex h-[34px] min-w-[94px] items-center justify-center gap-1.5 rounded-md border border-[var(--workspace-accent)] bg-[var(--workspace-accent)] px-3 text-[13px] font-semibold text-primary-fg transition-colors hover:border-[var(--workspace-accent-hover)] hover:bg-[var(--workspace-accent-hover)] disabled:cursor-wait disabled:opacity-55"
         >
           {hasChanges ? <Send className="h-4 w-4" /> : <Check className="h-4 w-4" />}
           {hasChanges ? "Publicar" : "Publicado"}
@@ -104,7 +104,7 @@ export function TreePublishButton({
 
       {/* Publish modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-text/40">
           <div className="bg-surface rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-text flex items-center gap-2">

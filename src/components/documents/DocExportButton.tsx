@@ -106,7 +106,7 @@ export function DocExportButton({ title, sections: initialSections, treeSlug, do
           onClick={() => !loading && setOpen((v) => !v)}
           disabled={loading}
           className={workspace
-            ? "flex h-[34px] items-center gap-1.5 rounded-md border border-[#d8dfd9] bg-white px-3 text-[13px] font-semibold text-[#3b483f] transition-colors hover:bg-[#f5f7f5] disabled:opacity-60"
+            ? "flex h-[34px] items-center gap-1.5 rounded-md border border-border bg-surface px-3 text-[13px] font-semibold text-text-muted transition-colors hover:bg-bg hover:text-text disabled:opacity-60"
             : "flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-xl hover:bg-bg hover:border-gray-300 disabled:opacity-60 transition-colors"
           }
         >
@@ -143,7 +143,7 @@ export function DocExportButton({ title, sections: initialSections, treeSlug, do
 
       {/* Section-selection modal (multi-section docs) */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-text/40">
           <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
 
             <div className="flex items-center justify-between gap-2">
@@ -192,7 +192,7 @@ export function DocExportButton({ title, sections: initialSections, treeSlug, do
               <button
                 onClick={confirmModal}
                 disabled={selected.size === 0}
-                className="flex items-center gap-2 text-sm font-medium bg-gray-900 text-white px-4 py-2.5 rounded-xl hover:bg-gray-800 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 text-sm font-medium bg-primary text-primary-fg px-4 py-2.5 rounded-xl hover:bg-primary-h disabled:opacity-50 transition-colors"
               >
                 {action === "print"
                   ? <><Printer  className="w-4 h-4" /> Imprimir</>

@@ -26,11 +26,11 @@ function InspectorComment({ comment, canDelete, onDelete }: {
     .toUpperCase();
 
   return (
-    <div className="group relative mt-2 grid grid-cols-[28px_minmax(0,1fr)] gap-2 border-l-[3px] border-primary bg-[#f5f7f5] p-2.5">
+    <div className="group relative mt-2 grid grid-cols-[28px_minmax(0,1fr)] gap-2 border-l-[3px] border-[var(--workspace-accent,var(--primary))] bg-bg p-2.5">
       <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-[9px] font-bold text-white">{initials}</span>
       <div className="min-w-0">
-        <strong className="block truncate text-[11px] text-[#28342c]">{comment.author.name ?? comment.author.username ?? "Usuario"}</strong>
-        <p className="mt-1 text-[11px] leading-[1.45] text-[#59665d]">{comment.content}</p>
+        <strong className="block truncate text-[11px] text-text">{comment.author.name ?? comment.author.username ?? "Usuario"}</strong>
+        <p className="mt-1 text-[11px] leading-[1.45] text-text-muted">{comment.content}</p>
       </div>
       {canDelete && (
         <button type="button" onClick={() => onDelete(comment.id)} className="absolute right-1 top-1 opacity-0 text-text-subtle transition-opacity group-hover:opacity-100" aria-label="Eliminar comentario">
@@ -133,7 +133,7 @@ export function DocumentComments({
   return (
     <div className={inspector ? "space-y-3" : "space-y-4"}>
       <div className="flex items-center justify-between">
-        <h3 className={inspector ? "text-[10px] font-bold uppercase text-[#849087]" : "font-semibold text-text flex items-center gap-2"}>
+        <h3 className={inspector ? "text-[10px] font-bold uppercase text-text-subtle" : "font-semibold text-text flex items-center gap-2"}>
           {!inspector && <MessageSquare className="w-5 h-5 text-text-subtle" />}
           Comentarios
           {!inspector && publicComments.length > 0 && (
@@ -147,7 +147,7 @@ export function DocumentComments({
             aria-label={inspector ? "Agregar comentario" : undefined}
             onClick={() => { setShowForm(!showForm); onQuoteUsed?.(); }}
             className={inspector
-              ? "grid h-7 w-7 place-items-center rounded-md text-lg text-[#627067] transition-colors hover:bg-[#eef2ee]"
+              ? "grid h-7 w-7 place-items-center rounded-md text-lg text-text-muted transition-colors hover:bg-bg hover:text-text"
               : "text-sm text-primary hover:text-primary border border-primary/20 px-3 py-1.5 rounded-lg hover:bg-primary/5 transition-colors"
             }
           >

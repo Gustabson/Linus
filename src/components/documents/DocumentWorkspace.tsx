@@ -123,6 +123,8 @@ export function DocumentWorkspace({
   const [titleValue, setTitleValue] = useState(initialDisplayTitle);
   const [editingTitle, setEditingTitle] = useState(false);
   const [savingTitle, setSavingTitle] = useState(false);
+  const [editorPage, setEditorPage] = useState(1);
+  const [editorPageCount, setEditorPageCount] = useState(1);
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const pendingSaves = useRef<Record<string, object>>({});
   const saveInFlight = useRef<string | null>(null);
@@ -138,11 +140,15 @@ export function DocumentWorkspace({
   );
   const completed = sections.filter((section) => section.isComplete).length;
   const wordCount = activeSection ? countWords(activeSection.richTextContent as object) : 0;
-  const pageCount = Math.max(1, Math.ceil(wordCount / 450));
   const progress = sections.length ? Math.round((completed / sections.length) * 100) : 0;
   const typeLabel = contentType === "KERNEL" ? "Kernel" : contentType === "MODULE" ? "Módulo" : "Recurso";
   const basePath = `/${ownerUsername}/${treeSlug}/${docSlug}`;
   const isPdfEmbed = (activeSection?.richTextContent as Record<string, unknown> | undefined)?.__type === "pdf_embed";
+
+  useEffect(() => {
+    setEditorPage(1);
+    setEditorPageCount(1);
+  }, [activeId]);
 
   const flushSection = useCallback(async (requestedId: string) => {
     const sectionId = sectionAliases.current[requestedId] ?? requestedId;
@@ -429,7 +435,7 @@ export function DocumentWorkspace({
   }
 
   return (
-    <div className={styles.documentWorkspaceRoot}>
+    <div className={styles.documentWorkspaceRoot} data-content-type={contentType}>
       <header className={styles.commandBar}>
         <nav className={styles.breadcrumb} aria-label="Ruta del documento">
           <Link href="/">Mi espacio</Link><span>/</span>
@@ -536,10 +542,20 @@ export function DocumentWorkspace({
                   </div>
                 </div>
               ) : (
-                <RichEditor key={activeSection.id} initialContentJson={workspaceContent(activeSection.richTextContent as object, activeSection.sectionType)} onChangeJson={(content) => handleEditorChange(activeSection.id, content)} placeholder={`Escribí el contenido de "${activeSection.sectionType}"…`} editable={isOwner} showUndoRedo workspaceLayout documentTitle={activeSection.sectionType} />
+                <RichEditor
+                  key={activeSection.id}
+                  initialContentJson={workspaceContent(activeSection.richTextContent as object, activeSection.sectionType)}
+                  onChangeJson={(content) => handleEditorChange(activeSection.id, content)}
+                  onPageChange={(current, total) => { setEditorPage(current); setEditorPageCount(total); }}
+                  placeholder={`Escribí el contenido de "${activeSection.sectionType}"…`}
+                  editable={isOwner}
+                  showUndoRedo
+                  workspaceLayout
+                  documentTitle={activeSection.sectionType}
+                />
               )}
               <footer className={styles.editorFooter}>
-                <span>100%</span><span>A4</span><span>{wordCount.toLocaleString("es-AR")} palabras</span><span>Página 1 de {pageCount}</span>
+                <span>100%</span><span>A4</span><span>{wordCount.toLocaleString("es-AR")} palabras</span><span>Página {editorPage} de {editorPageCount}</span>
               </footer>
             </>
           ) : (
@@ -569,7 +585,7 @@ export function DocumentWorkspace({
             <p>Progreso</p><strong>{completed} de {sections.length} secciones</strong>
             <div className={styles.progressTrack}><span style={{ width: `${progress}%` }} /></div>
           </section>
-          <section className={styles.inspectorSection}><p>Contenido</p><strong>{wordCount.toLocaleString("es-AR")} palabras · {pageCount} {pageCount === 1 ? "página" : "páginas"}</strong></section>
+          <section className={styles.inspectorSection}><p>Contenido</p><strong>{wordCount.toLocaleString("es-AR")} palabras · {editorPageCount} {editorPageCount === 1 ? "página" : "páginas"}</strong></section>
           <section className={styles.inspectorSection}><p>Estado</p><strong className={styles.statusLine}><CheckCircle2 size={16} /> {!isPublished || visibility === "PRIVATE" ? "Borrador privado" : "Publicado"}</strong></section>
           <section className={`${styles.inspectorSection} ${styles.commentsInspector}`}>
             <DocumentComments docId={docId} isAuthenticated={isAuthenticated} currentUserId={currentUserId} inspector />

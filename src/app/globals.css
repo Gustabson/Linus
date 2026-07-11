@@ -154,18 +154,41 @@
 }
 .paged-editor .ProseMirror {
   box-sizing: content-box;
-  width: 554px;
-  height: 862px;
-  min-height: 862px;
-  padding: 96px 120px;
+  width: var(--editor-page-content-width, 554px);
+  height: var(--editor-page-content-height, 931px);
+  min-height: var(--editor-page-content-height, 931px);
+  padding: var(--editor-page-padding-y, 96px) var(--editor-page-padding-x, 120px);
   outline: none;
   overflow: visible;
-  column-width: 554px;
-  column-gap: 272px;
+  column-width: var(--editor-page-content-width, 554px);
+  column-gap: var(--editor-page-column-gap, 272px);
   column-fill: auto;
 }
 .paged-editor .ProseMirror > * {
   break-inside: avoid;
+}
+.workspace-page-scroll {
+  background: color-mix(in srgb, var(--bg) 84%, var(--border));
+  scrollbar-color: var(--border) transparent;
+}
+.workspace-page-sheet {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 14px color-mix(in srgb, var(--text) 12%, transparent);
+}
+.workspace-document-title {
+  width: var(--editor-page-content-width);
+  position: absolute;
+  top: var(--editor-page-padding-y);
+  left: var(--editor-page-padding-x);
+  margin: 0;
+  color: var(--text);
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.workspace-paged-editor .ProseMirror > :first-child {
+  margin-top: 62px;
 }
 .tiptap h1 { font-size: 1.875rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; }
 .tiptap h2 { font-size: 1.5rem;   font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }

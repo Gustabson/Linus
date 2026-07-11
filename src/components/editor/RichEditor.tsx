@@ -21,10 +21,9 @@ import { cn } from "@/lib/utils";
 // ── Static data ───────────────────────────────────────────────────────────────
 
 const HIGHLIGHT_COLORS = ["#fef08a", "#bbf7d0", "#bfdbfe", "#fecdd3", "#fed7aa"];
-const PAGE_WIDTH = 794;
-const PAGE_HEIGHT = 1054;
-const PAGE_GAP = 32;
-const PAGE_PITCH = PAGE_WIDTH + PAGE_GAP;
+const A4_PAGE = { width: 794, height: 1123, gap: 32, paddingX: 120, paddingY: 96 } as const;
+// Same A4 ratio, rendered at a fit-to-window zoom inside the three-panel workspace.
+const WORKSPACE_A4_PAGE = { width: 650, height: 919, gap: 24, paddingX: 70, paddingY: 64 } as const;
 
 const EMOJI_GROUPS = [
   { label: "Frecuentes",  emojis: ["😊","👍","❤️","🎉","🙏","😂","🔥","✅","⭐","💡","📚","✏️","🧠","🎓","💪"] },
@@ -58,6 +57,7 @@ export interface RichEditorProps {
   pageLayout?:    boolean;   // A4 page canvas — Word-like editing surface
   workspaceLayout?: boolean; // compact paper canvas used by the document workspace
   documentTitle?: string;
+  onPageChange?: (currentPage: number, pageCount: number) => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -81,7 +81,14 @@ export function RichEditor({
   pageLayout       = false,
   workspaceLayout  = false,
   documentTitle,
+  onPageChange,
 }: RichEditorProps) {
+
+  const pagedLayout = pageLayout || workspaceLayout;
+  const pageMetrics = workspaceLayout ? WORKSPACE_A4_PAGE : A4_PAGE;
+  const pagePitch = pageMetrics.width + pageMetrics.gap;
+  const pageContentWidth = pageMetrics.width - pageMetrics.paddingX * 2;
+  const pageContentHeight = pageMetrics.height - pageMetrics.paddingY * 2;
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [pageDark,      setPageDark]      = useState(false);
@@ -98,25 +105,28 @@ export function RichEditor({
   const [currentPage, setCurrentPage] = useState(1);
 
   function measurePages() {
-    if (!pageLayout) return;
+    if (!pagedLayout) return;
     const prosemirror = pagedEditorRef.current?.querySelector(".ProseMirror") as HTMLElement | null;
     if (!prosemirror) return;
 
-    const nextCount = Math.max(1, Math.round((prosemirror.scrollWidth + PAGE_GAP) / PAGE_PITCH));
+    const nextCount = Math.max(1, Math.ceil((prosemirror.scrollWidth + pageMetrics.gap) / pagePitch));
     setPageCount(nextCount);
 
     const left = pageScrollRef.current?.scrollLeft ?? 0;
-    setCurrentPage(Math.min(nextCount, Math.max(1, Math.round(left / PAGE_PITCH) + 1)));
+    const nextPage = Math.min(nextCount, Math.max(1, Math.round(left / pagePitch) + 1));
+    setCurrentPage(nextPage);
+    onPageChange?.(nextPage, nextCount);
   }
 
   function queuePageMeasure() {
-    if (pageLayout) requestAnimationFrame(measurePages);
+    if (pagedLayout) requestAnimationFrame(measurePages);
   }
 
   function goToPage(page: number) {
     const nextPage = Math.min(pageCount, Math.max(1, page));
-    pageScrollRef.current?.scrollTo({ left: (nextPage - 1) * PAGE_PITCH, behavior: "smooth" });
+    pageScrollRef.current?.scrollTo({ left: (nextPage - 1) * pagePitch, behavior: "smooth" });
     setCurrentPage(nextPage);
+    onPageChange?.(nextPage, pageCount);
   }
 
   // ── Editor ────────────────────────────────────────────────────────────────
@@ -188,7 +198,7 @@ export function RichEditor({
   }, [showEmojis]);
 
   useEffect(() => {
-    if (!pageLayout || !editor) return;
+    if (!pagedLayout || !editor) return;
     queuePageMeasure();
 
     const prosemirror = pagedEditorRef.current?.querySelector(".ProseMirror") as HTMLElement | null;
@@ -197,7 +207,7 @@ export function RichEditor({
     const observer = new ResizeObserver(queuePageMeasure);
     observer.observe(prosemirror);
     return () => observer.disconnect();
-  }, [editor, pageLayout, initialContentJson, initialContent]);
+  }, [editor, pagedLayout, initialContentJson, initialContent]);
 
   if (!editor || !is) return null;
   const commandEditor = editor;
@@ -263,7 +273,7 @@ export function RichEditor({
       {editable && (
         <div className={cn(
           "flex items-center gap-0.5 border-b border-border-subtle",
-          workspaceLayout ? "h-12 flex-nowrap overflow-x-auto bg-white px-2.5" : "flex-wrap bg-bg",
+          workspaceLayout ? "h-12 flex-nowrap overflow-x-auto bg-surface px-2.5" : "flex-wrap bg-bg",
           !workspaceLayout && (compact ? "px-3 py-1.5" : "p-2"),
         )}>
 
@@ -276,7 +286,7 @@ export function RichEditor({
                 if (value === "p") editor.chain().focus().setParagraph().run();
                 else editor.chain().focus().setHeading({ level: Number(value.slice(1)) as 1 | 2 | 3 }).run();
               }}
-              className="mr-1 h-[30px] rounded-md border-0 bg-[#f4f6f4] px-2 text-xs text-[#4d5a51] outline-none"
+              className="mr-1 h-[30px] rounded-md border-0 bg-bg px-2 text-xs text-text-muted outline-none"
             >
               <option value="p">Párrafo</option>
               <option value="h1">Título 1</option>
@@ -383,13 +393,13 @@ export function RichEditor({
 
           {/* Character count */}
           {showCharCount && (
-            <span className={cn("text-xs text-text-subtle shrink-0", pageLayout ? "" : "ml-auto")}>
+            <span className={cn("text-xs text-text-subtle shrink-0", pagedLayout ? "" : "ml-auto")}>
               {editor.storage.characterCount?.characters() ?? 0} caracteres
             </span>
           )}
 
           {/* Page theme toggle — only in page layout mode */}
-          {pageLayout && (
+          {pagedLayout && (
             <div className="ml-auto flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
@@ -412,61 +422,63 @@ export function RichEditor({
               >
                 <ChevronRight className={iconCls} />
               </button>
-              <button
+              {!workspaceLayout && <button
                 type="button"
                 title={pageDark ? "Cambiar a página blanca" : "Cambiar a página oscura"}
                 onMouseDown={(e) => { e.preventDefault(); setPageDark(v => !v); }}
                 className={cn(btnBase, "transition-colors text-text-muted hover:bg-border-subtle hover:text-text")}
               >
                 {pageDark ? <Sun className={iconCls} /> : <Moon className={iconCls} />}
-              </button>
+              </button>}
             </div>
           )}
         </div>
       )}
 
       {/* ── Content area ────────────────────────────────────────────── */}
-      {workspaceLayout ? (
-        <div className="bg-[#e8ece8] px-0 pb-5 pt-9 sm:px-5">
-          <div className="mx-auto min-h-[760px] w-full max-w-[680px] bg-white px-8 py-14 shadow-[0_2px_14px_rgba(24,40,29,0.10)] sm:px-14 sm:py-16">
-            {documentTitle && <h1 className="mb-6 text-[25px] font-bold leading-tight text-[#1d2620]">{documentTitle}</h1>}
-            <EditorContent editor={editor} className="tiptap workspace-tiptap" style={{ minHeight: "570px" }} />
-          </div>
-        </div>
-      ) : pageLayout ? (
+      {pagedLayout ? (
         <div
           ref={pageScrollRef}
           onScroll={measurePages}
-          className={cn("overflow-x-auto overflow-y-hidden", pageDark ? "bg-slate-950" : "bg-gray-200")}
+          className={cn(
+            "overflow-x-auto overflow-y-hidden",
+            workspaceLayout ? "workspace-page-scroll" : pageDark ? "bg-slate-950" : "bg-gray-200",
+          )}
         >
           <div
             className="relative mx-auto my-6"
             style={{
-              width: `${pageCount * PAGE_WIDTH + Math.max(0, pageCount - 1) * PAGE_GAP}px`,
-              height: `${PAGE_HEIGHT}px`,
+              width: `${pageCount * pageMetrics.width + Math.max(0, pageCount - 1) * pageMetrics.gap}px`,
+              height: `${pageMetrics.height}px`,
             }}
           >
             {Array.from({ length: pageCount }).map((_, pageIndex) => (
               <div
                 key={pageIndex}
-                className="absolute top-0 shadow-[0_2px_14px_rgba(0,0,0,0.12)]"
+                className={cn("absolute top-0", workspaceLayout ? "workspace-page-sheet" : "shadow-[0_2px_14px_rgba(0,0,0,0.12)]")}
                 style={{
-                  left: `${pageIndex * PAGE_PITCH}px`,
-                  width: `${PAGE_WIDTH}px`,
-                  height: `${PAGE_HEIGHT}px`,
-                  background: pageDark ? "#111827" : "white",
+                  left: `${pageIndex * pagePitch}px`,
+                  width: `${pageMetrics.width}px`,
+                  height: `${pageMetrics.height}px`,
+                  background: workspaceLayout ? "var(--surface)" : pageDark ? "#111827" : "white",
                 }}
               />
             ))}
             <div
               ref={pagedEditorRef}
-              className="paged-editor relative z-10"
+              className={cn("paged-editor relative z-10", workspaceLayout && "workspace-paged-editor")}
               style={{
-                color: pageDark ? "#f8fafc" : "#111827",
-                colorScheme: pageDark ? "dark" : "light",
-              }}
+                color: workspaceLayout ? "var(--text)" : pageDark ? "#f8fafc" : "#111827",
+                colorScheme: workspaceLayout ? undefined : pageDark ? "dark" : "light",
+                "--editor-page-content-width": `${pageContentWidth}px`,
+                "--editor-page-content-height": `${pageContentHeight}px`,
+                "--editor-page-padding-x": `${pageMetrics.paddingX}px`,
+                "--editor-page-padding-y": `${pageMetrics.paddingY}px`,
+                "--editor-page-column-gap": `${pageMetrics.paddingX * 2 + pageMetrics.gap}px`,
+              } as CSSProperties}
             >
-              <EditorContent editor={editor} className="tiptap" />
+              {workspaceLayout && documentTitle && <h1 className="workspace-document-title">{documentTitle}</h1>}
+              <EditorContent editor={editor} className={cn("tiptap", workspaceLayout && "workspace-tiptap")} />
             </div>
           </div>
         </div>
