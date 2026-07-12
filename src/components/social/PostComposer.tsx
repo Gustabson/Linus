@@ -39,6 +39,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
   const [treeQuery, setTreeQuery]     = useState("");
   const [treeResults, setTreeResults] = useState<TreeResult[]>([]);
   const [searching, setSearching]     = useState(false);
+  const [expanded, setExpanded]       = useState(false);
   const [submitting, startSubmit]     = useTransition();
   const [error, setError]             = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -72,6 +73,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
   const charCount  = content.length;
   const overLimit  = charCount > MAX_CHARS;
   const canSubmit  = content.trim().length > 0 && !overLimit && !submitting;
+  const isExpanded = expanded || content.length > 0 || !!attachedTree || showTreeSearch;
 
   function autoResize() {
     const ta = textareaRef.current;
@@ -120,13 +122,14 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
       setShowTreeSearch(false);
       setTreeQuery("");
       setTreeResults([]);
+      setExpanded(false);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
     });
   }
 
   return (
-    <div className="bg-surface rounded-2xl border border-border p-5 space-y-3">
-      <div className="flex gap-3">
+    <div className="overflow-visible rounded-2xl border border-border bg-surface shadow-sm transition-shadow focus-within:shadow-md">
+      <div className="flex gap-3 p-4 sm:p-5">
         {/* Avatar */}
         <div className="shrink-0">
           {currentUser.image ? (
@@ -149,13 +152,14 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
           <textarea
             ref={textareaRef}
             value={content}
+            onFocus={() => setExpanded(true)}
             onChange={(e) => { setContent(e.target.value); autoResize(); }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleSubmit();
             }}
-            placeholder="¿Qué querés compartir con la comunidad?"
-            rows={2}
-            className="w-full resize-none text-[15px] leading-relaxed placeholder:text-text-subtle focus:outline-none text-text"
+            placeholder="Compartí algo con la comunidad…"
+            rows={isExpanded ? 2 : 1}
+            className="min-h-7 w-full resize-none overflow-hidden bg-transparent text-[15px] leading-relaxed text-text placeholder:text-text-subtle focus:outline-none"
           />
 
           {/* Attached tree preview */}
@@ -190,15 +194,14 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-border-subtle" />
-
+      {isExpanded && (
+      <div className="space-y-3 border-t border-border-subtle px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
       {/* Tree search toggle */}
       <div className="space-y-2">
         <button
           type="button"
           onClick={() => setShowTreeSearch(!showTreeSearch)}
-          className="flex items-center gap-1.5 text-sm text-text-muted hover:text-primary transition-colors"
+          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-text-muted transition-colors hover:bg-bg hover:text-primary"
         >
           <BookOpen className="w-4 h-4" />
           {attachedTree ? "Cambiar contenido adjunto" : "Adjuntar kernel / módulo / recurso"}
@@ -212,7 +215,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
               value={treeQuery}
               onChange={(e) => searchTrees(e.target.value)}
               placeholder="Buscar por título..."
-              className="w-full border border-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary/40"
+              className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-primary/40 focus:outline-none"
             />
             {searching && (
               <p className="text-xs text-text-subtle flex items-center gap-1.5 px-1">
@@ -233,7 +236,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
                         setTreeQuery("");
                         setTreeResults([]);
                       }}
-                      className="w-full text-left px-3 py-2.5 hover:bg-primary/5 transition-colors"
+                      className="w-full px-3 py-2.5 text-left transition-colors hover:bg-primary/5"
                     >
                       <div className="flex items-center gap-2">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${badge.badgeCls}`}>
@@ -255,7 +258,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
       </div>
 
       {/* Footer: emoji + char count + submit */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           {/* Emoji picker */}
           <div className="relative" ref={emojiRef}>
@@ -263,7 +266,7 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
               type="button"
               onClick={() => setShowEmoji((v) => !v)}
               title="Emojis"
-              className={`p-1.5 rounded-lg transition-colors ${showEmoji ? "bg-primary/10 text-primary" : "text-text-subtle hover:text-primary hover:bg-primary/5"}`}
+              className={`grid h-9 w-9 place-items-center rounded-lg transition-colors ${showEmoji ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-bg hover:text-primary"}`}
             >
               <Smile className="w-4 h-4" />
             </button>
@@ -282,17 +285,17 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
             )}
           </div>
 
-          <span className={`text-xs ${overLimit ? "text-red-500 font-medium" : "text-text-subtle"}`}>
+          <span className={`text-xs ${overLimit ? "font-medium text-danger" : "text-text-subtle"}`}>
             {charCount}/{MAX_CHARS}
           </span>
         </div>
 
         <div className="flex items-center gap-3">
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p className="text-xs text-danger">{error}</p>}
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="flex items-center gap-1.5 bg-primary text-primary-fg text-sm font-semibold px-4 py-2 rounded-xl hover:bg-primary-h disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary-h disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submitting
               ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Publicando...</>
@@ -301,6 +304,8 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
           </button>
         </div>
       </div>
+      </div>
+      )}
     </div>
   );
 }

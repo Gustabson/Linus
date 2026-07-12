@@ -103,7 +103,7 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
   }, [loading, hasMore, cursor, tab]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Composer only for authenticated users */}
       {currentUser && <PostComposer currentUser={currentUser} onPostCreated={handlePostCreated} />}
 
@@ -120,8 +120,8 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
 
       {/* Feed */}
       {posts.length === 0 ? (
-        <div className="bg-surface rounded-2xl border-2 border-dashed border-border p-12 text-center space-y-3">
-          <RefreshCw className="w-8 h-8 mx-auto text-gray-200" />
+        <div className="space-y-4 rounded-2xl border-2 border-dashed border-border bg-surface p-12 text-center">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary/10 text-primary"><RefreshCw className="h-6 w-6" /></span>
           <p className="text-text-muted font-medium">
             {tab === "siguiendo"
               ? "Seguí a otras personas para ver sus publicaciones acá."
@@ -143,7 +143,7 @@ export function PostFeed({ initialPosts, initialCursor, tab, currentUser }: Prop
             <button
               onClick={loadMore}
               disabled={loading}
-              className="w-full py-3 text-sm text-text-muted hover:text-primary transition-colors flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-surface py-3 text-sm font-semibold text-text-muted transition-colors hover:bg-bg hover:text-primary"
             >
               {loading
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> Cargando...</>

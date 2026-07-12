@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { USER_BASIC_SELECT } from "@/lib/data";
 import Link from "next/link";
 import Image from "next/image";
-import { Flame, Rss, Users, Compass, Star, GitFork, Heart } from "lucide-react";
+import { Flame, Rss, Users, Compass, Star, GitFork, Heart, ArrowUpRight } from "lucide-react";
 import { FollowButton } from "@/components/profile/FollowButton";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import { PostFeed } from "./PostFeed";
@@ -66,7 +66,7 @@ export async function SocialFeed({ userId = null, tab = "tendencias" }: Props) {
           },
           include: { _count: { select: { followers: true, ownedTrees: true } } },
           orderBy: { followers: { _count: "desc" } },
-          take: 4,
+          take: 3,
         })
       : Promise.resolve([]),
 
@@ -100,7 +100,7 @@ export async function SocialFeed({ userId = null, tab = "tendencias" }: Props) {
       return { ...tree, _score: score };
     })
     .sort((a, b) => b._score - a._score)
-    .slice(0, 5);
+    .slice(0, 3);
 
   const POSTS_PER_PAGE = 70;
   const hasMore      = postsRaw.length > POSTS_PER_PAGE;
@@ -118,11 +118,11 @@ export async function SocialFeed({ userId = null, tab = "tendencias" }: Props) {
   const hasSidebar = suggested.length > 0 || featured.length > 0;
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="mx-auto w-full max-w-[1060px]">
 
       {/* ── Guest banner ─────────────────────────────────────────── */}
       {isGuest && (
-        <div className="mb-4 flex items-center justify-between gap-4 bg-primary/5 border border-primary/20 rounded-2xl px-5 py-3.5 flex-wrap">
+        <div className="mb-5 flex items-center justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 px-5 py-3.5 flex-wrap">
           <p className="text-sm text-text-muted">
             Iniciá sesión para dar likes, comentar y seguir a otros.
           </p>
@@ -131,16 +131,26 @@ export async function SocialFeed({ userId = null, tab = "tendencias" }: Props) {
               Iniciar sesión
             </Link>
             <span className="text-border">|</span>
-            <Link href="/login" className="text-sm font-semibold bg-primary text-white px-4 py-1.5 rounded-lg hover:bg-primary-h transition-colors">
+            <Link href="/login" className="rounded-lg bg-primary px-4 py-1.5 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary-h">
               Crear cuenta
             </Link>
           </div>
         </div>
       )}
 
-      {/* ── Sticky tab bar — centrada en todos los dispositivos ── */}
-      <div className="sticky top-0 z-20 bg-bg border-b border-border mb-6 -mx-4 sm:-mx-6 px-4 sm:px-6">
-        <div className="flex justify-center">
+      <header className="mb-1 flex items-end justify-between gap-5">
+        <div>
+          <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Comunidad</p>
+          <h1 className="text-2xl font-bold tracking-tight text-text sm:text-[28px]">Inicio</h1>
+          <p className="mt-1 max-w-xl text-sm leading-relaxed text-text-muted">
+            Ideas, recursos y conversaciones de la comunidad educativa.
+          </p>
+        </div>
+      </header>
+
+      {/* Sticky tab switcher */}
+      <div className="sticky top-0 z-20 mb-5 bg-bg/95 py-3 backdrop-blur-sm">
+        <div className="inline-flex rounded-xl border border-border bg-surface p-1 shadow-sm">
           <TabLink href="/?tab=tendencias" active={isTendencias}  icon={<Flame className="w-4 h-4" />} label="Tendencias" />
           {!isGuest && (
             <TabLink href="/?tab=siguiendo" active={!isTendencias} icon={<Rss className="w-4 h-4" />} label="Siguiendo" />
@@ -148,11 +158,13 @@ export async function SocialFeed({ userId = null, tab = "tendencias" }: Props) {
         </div>
       </div>
 
-      {/* xl+ → flex row (sidebar visible); por debajo → columna, feed centered */}
-      <div className={hasSidebar ? "xl:flex xl:items-start xl:gap-10" : ""}>
+      <div className={hasSidebar
+        ? "grid items-start gap-6 xl:grid-cols-[minmax(0,680px)_260px] xl:justify-center"
+        : "mx-auto w-full max-w-[700px]"
+      }>
 
         {/* ── Feed — full width hasta xl, luego flex-1 ── */}
-        <div className={`min-w-0 ${hasSidebar ? "xl:flex-1" : "max-w-2xl mx-auto w-full"}`}>
+        <div className="min-w-0 w-full">
           <PostFeed
             initialPosts={serializedPosts}
             initialCursor={nextCursor}
@@ -168,23 +180,23 @@ export async function SocialFeed({ userId = null, tab = "tendencias" }: Props) {
 
         {/* ── Right sidebar ───────────────────────────────────────── */}
         {hasSidebar && (
-        <div className="hidden xl:block xl:sticky xl:top-20 w-[260px] shrink-0 space-y-4">
+        <aside className="hidden space-y-5 xl:sticky xl:top-20 xl:block">
 
           {/* Personas para seguir */}
           {suggested.length > 0 && (
-            <div className="bg-surface rounded-2xl border border-border p-4">
-              <h3 className="font-semibold text-text text-sm mb-4 flex items-center gap-2">
-                <Users className="w-4 h-4 text-primary" />
+            <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+              <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-text">
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><Users className="h-4 w-4" /></span>
                 Personas para seguir
-              </h3>
-              <div className="space-y-3">
+              </h2>
+              <div className="space-y-4">
                 {suggested.map((user) => (
-                  <div key={user.id} className="flex items-center gap-2.5">
+                  <div key={user.id} className="flex items-center gap-3">
                     <Link href={`/${user.username ?? user.id}`} className="shrink-0">
                       {user.image ? (
-                        <Image src={user.image} alt="" width={34} height={34} className="rounded-xl" />
+                        <Image src={user.image} alt="" width={38} height={38} className="rounded-xl" />
                       ) : (
-                        <div className="w-[34px] h-[34px] rounded-xl bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
+                        <div className="flex h-[38px] w-[38px] items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
                           {(user.name ?? "?")[0]}
                         </div>
                       )}
@@ -212,38 +224,39 @@ export async function SocialFeed({ userId = null, tab = "tendencias" }: Props) {
               </div>
               <Link
                 href="/buscar"
-                className="mt-4 flex items-center gap-1.5 text-sm text-primary hover:underline font-medium"
+                className="mt-5 flex items-center justify-between rounded-lg px-2 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
               >
-                <Compass className="w-4 h-4" />
-                Ver más personas
+                <span className="flex items-center gap-1.5"><Compass className="h-4 w-4" /> Ver más personas</span>
+                <ArrowUpRight className="h-4 w-4" />
               </Link>
-            </div>
+            </section>
           )}
 
           {/* Contenido destacado */}
           {featured.length > 0 && (
-            <div className="bg-surface rounded-2xl border border-border p-4">
-              <h3 className="font-semibold text-text text-sm mb-4 flex items-center gap-2">
-                <Star className="w-4 h-4 text-primary" />
+            <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
+              <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-text">
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary"><Star className="h-4 w-4" /></span>
                 Contenido destacado
-              </h3>
-              <div className="space-y-2">
+              </h2>
+              <div className="space-y-2.5">
                 {featured.map((tree) => {
                   const ts = CONTENT_TYPE_STYLE[tree.contentType];
                   return (
                     <Link
                       key={tree.id}
                       href={`/${tree.owner.username}/${tree.slug}`}
-                      className="block rounded-xl p-2.5 hover:bg-bg transition-colors group"
+                      className="group block rounded-xl border border-transparent p-3 transition-colors hover:border-border hover:bg-bg"
                     >
-                      <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-medium mb-1 ${ts.badgeCls}`}>
-                        {ts.label}
-                      </span>
-                      <p className={`text-sm font-medium ${ts.textCls} group-hover:underline line-clamp-2 leading-snug`}>
-                        {tree.title}
-                      </p>
-                      <p className="text-xs text-text-subtle mt-0.5">{tree.owner.name}</p>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-text-subtle">
+                      <div className="flex items-start gap-3">
+                        <span className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg ${ts.iconBgCls}`}>{ts.iconLg}</span>
+                        <div className="min-w-0 flex-1">
+                          <span className={`mb-1 inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${ts.badgeCls}`}>{ts.label}</span>
+                          <p className="line-clamp-2 text-sm font-semibold leading-snug text-text transition-colors group-hover:text-primary">{tree.title}</p>
+                          <p className="mt-1 truncate text-xs text-text-muted">{tree.owner.name}</p>
+                        </div>
+                      </div>
+                      <div className="mt-2.5 flex items-center gap-3 pl-12 text-xs text-text-subtle">
                         <span className="flex items-center gap-1"><Heart className="w-3 h-3" />{tree._count.likes}</span>
                         <span className="flex items-center gap-1"><GitFork className="w-3 h-3" />{tree._count.forks}</span>
                       </div>
@@ -253,15 +266,15 @@ export async function SocialFeed({ userId = null, tab = "tendencias" }: Props) {
               </div>
               <Link
                 href="/explorar"
-                className="mt-3 flex items-center gap-1.5 text-sm text-primary hover:underline font-medium"
+                className="mt-4 flex items-center justify-between rounded-lg px-2 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/5"
               >
-                <Compass className="w-4 h-4" />
-                Explorar todo
+                <span className="flex items-center gap-1.5"><Compass className="h-4 w-4" /> Explorar todo</span>
+                <ArrowUpRight className="h-4 w-4" />
               </Link>
-            </div>
+            </section>
           )}
 
-        </div>
+        </aside>
         )}
       </div>
     </div>
@@ -276,10 +289,10 @@ function TabLink({ href, active, icon, label }: {
   return (
     <Link
       href={href}
-      className={`flex items-center gap-2 px-6 py-4 text-sm font-semibold border-b-2 transition-colors ${
+      className={`flex min-w-[126px] items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
         active
-          ? "border-primary text-primary"
-          : "border-transparent text-text-muted hover:text-text hover:border-gray-300"
+          ? "bg-primary/10 text-primary"
+          : "text-text-muted hover:bg-bg hover:text-text"
       }`}
     >
       {icon}

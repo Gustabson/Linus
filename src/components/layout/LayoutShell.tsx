@@ -66,7 +66,7 @@ export function LayoutShell({ children, isLoggedIn, cookieToHydrate }: Props) {
       {/* ── Sidebar overlay backdrop — tablet only ──────────────────────── */}
       {showSidebar && sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-40 hidden md:block lg:hidden"
+          className="fixed inset-0 z-40 hidden bg-text/40 md:block lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -77,7 +77,7 @@ export function LayoutShell({ children, isLoggedIn, cookieToHydrate }: Props) {
       )}
 
       {/* ── Main content ────────────────────────────────────────────────── */}
-      <main className={`${showSidebar ? "lg:ml-64" : ""} min-h-screen ${isDocumentEditor ? "overflow-x-hidden" : `pb-16 md:pb-0 ${mobilePt} md:pt-14 lg:pt-6 px-4 sm:px-6 overflow-x-hidden`}`}>
+      <main className={`${showSidebar ? "lg:ml-60" : ""} min-h-screen ${isDocumentEditor ? "overflow-x-hidden" : `pb-16 md:pb-0 ${mobilePt} md:pt-14 lg:pt-7 px-4 sm:px-6 overflow-x-hidden`}`}>
         {children}
       </main>
 

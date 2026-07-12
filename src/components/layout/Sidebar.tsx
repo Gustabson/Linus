@@ -52,7 +52,7 @@ function useSidebarCounts() {
 function NavBadge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <span className="ml-auto min-w-[1.25rem] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+    <span className="ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-primary-fg">
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -78,9 +78,9 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   }
 
   const itemCls = (href: string) =>
-    `flex items-center gap-3.5 px-4 py-3 rounded-xl text-base font-medium transition-all ${
+    `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
       isActive(href)
-        ? "bg-sidebar-text/15 text-sidebar-text"
+        ? "bg-sidebar-text/15 text-sidebar-text shadow-sm ring-1 ring-inset ring-sidebar-text/10"
         : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
     }`;
 
@@ -96,7 +96,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   return (
     <aside
       className={
-        "fixed left-0 top-0 h-screen w-64 bg-sidebar-bg flex-col z-50 transition-transform duration-300 ease-in-out " +
+        "fixed left-0 top-0 h-screen w-60 bg-sidebar-bg flex-col z-50 transition-transform duration-300 ease-in-out " +
         // Mobile (<768px): completely hidden (display:none)
         "hidden md:flex " +
         // Desktop (≥1024px): always visible
@@ -107,7 +107,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     >
 
       {/* ── Logo ─────────────────────────────────────────────── */}
-      <div className="px-5 py-5 border-b border-sidebar-text/20">
+      <div className="border-b border-sidebar-text/20 px-5 py-5">
         <Link href="/" className="flex items-center gap-2.5 text-sidebar-text font-bold text-xl" onClick={onClose}>
           <BookOpen className="w-7 h-7" />
           EduHub
@@ -128,7 +128,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       )}
 
       {/* ── Navigation ───────────────────────────────────────── */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-5">
         {NAV_ITEMS.map(({ href, icon: Icon, label, badge }) => (
           <Link key={href} href={href} prefetch={true} className={itemCls(href)} onClick={onClose}>
             <Icon className="w-5 h-5 shrink-0" />
@@ -146,9 +146,9 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             {/* Notificaciones */}
             <NotificationBell
               href="/notificaciones"
-              triggerClass={`flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium transition-all ${
+              triggerClass={`flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all ${
                 isActive("/notificaciones")
-                  ? "bg-sidebar-text/15 text-sidebar-text"
+                  ? "bg-sidebar-text/15 text-sidebar-text shadow-sm ring-1 ring-inset ring-sidebar-text/10"
                   : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
               }`}
               label="Notificaciones"
@@ -157,7 +157,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             {/* Configuración */}
             <Link
               href="/configuracion"
-              className={itemCls("/configuracion").replace("py-3 text-base", "py-2.5 text-sm")}
+              className={itemCls("/configuracion")}
               onClick={onClose}
             >
               <Settings className="w-5 h-5 shrink-0" />
@@ -198,7 +198,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             {/* Configuración (accesible sin cuenta) */}
             <Link
               href="/configuracion"
-              className={itemCls("/configuracion").replace("py-3 text-base", "py-2.5 text-sm")}
+              className={itemCls("/configuracion")}
               onClick={onClose}
             >
               <Settings className="w-5 h-5 shrink-0" />
@@ -210,7 +210,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               <Link
                 href="/login"
                 onClick={onClose}
-                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary-h transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary-h"
               >
                 Iniciar sesión / Registrarse
               </Link>

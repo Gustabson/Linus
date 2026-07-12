@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, MessageCircle, GitFork, Send, Loader2, Trash2, MoreHorizontal, Flag } from "lucide-react";
+import { Heart, MessageCircle, GitFork, Send, Loader2, Trash2, MoreHorizontal, Flag, ArrowUpRight } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import type { ContentType } from "@prisma/client";
@@ -129,7 +129,7 @@ function PostOptions({
               <button
                 onClick={handleDelete}
                 disabled={loading}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-danger transition-colors hover:bg-danger/10"
               >
                 {loading
                   ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -177,7 +177,7 @@ function PostOptions({
                   className="w-full text-sm bg-bg border border-border rounded-xl px-3 py-2 resize-none text-text placeholder:text-text-subtle focus:outline-none focus:border-primary/40"
                 />
               )}
-              {error && <p className="text-xs text-red-500">{error}</p>}
+              {error && <p className="text-xs text-danger">{error}</p>}
               <div className="flex gap-2 justify-end pt-1">
                 <button
                   onClick={() => { setStep("menu"); setError(""); }}
@@ -205,7 +205,7 @@ function PostOptions({
           )}
 
           {error && step === "menu" && (
-            <p className="px-4 pb-3 text-xs text-red-500">{error}</p>
+            <p className="px-4 pb-3 text-xs text-danger">{error}</p>
           )}
         </div>
       )}
@@ -335,7 +335,7 @@ function CommentSection({
                     {isOwn && (
                       <button
                         onClick={() => handleDelete(c.id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-text-subtle hover:text-red-500 shrink-0"
+                        className="shrink-0 text-text-subtle opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
                         title="Eliminar"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -379,7 +379,7 @@ function CommentSection({
             </div>
           )}
 
-          {error && <p className="text-xs text-red-500 pl-9">{error}</p>}
+          {error && <p className="pl-9 text-xs text-danger">{error}</p>}
         </div>
       )}
     </div>
@@ -429,24 +429,24 @@ export function PostCard({
   const badge      = post.tree ? CONTENT_TYPE_STYLE[post.tree.contentType] : null;
 
   return (
-    <article className="bg-surface rounded-2xl border border-border hover:border-gray-300 transition-colors p-5 space-y-4">
+    <article className="space-y-5 rounded-[20px] border border-border bg-surface p-5 shadow-sm transition-[border-color,box-shadow] hover:border-primary/20 hover:shadow-md sm:p-6">
 
       {/* Header — author */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3.5">
         <Link href={authorHref} className="shrink-0">
           {post.author.image ? (
-            <Image src={post.author.image} alt="" width={40} height={40} className="rounded-full" />
+            <Image src={post.author.image} alt="" width={44} height={44} className="rounded-full" />
           ) : (
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
               {(post.author.name ?? "?")[0]}
             </div>
           )}
         </Link>
         <div className="min-w-0 flex-1">
-          <Link href={authorHref} className="text-sm font-semibold text-text hover:text-primary transition-colors">
+          <Link href={authorHref} className="text-[15px] font-bold text-text transition-colors hover:text-primary">
             {post.author.name ?? "Usuario"}
           </Link>
-          <p className="text-xs text-text-subtle">
+          <p className="mt-0.5 text-xs text-text-muted">
             {post.author.username ? `@${post.author.username} · ` : ""}{formatDate(new Date(post.createdAt))}
           </p>
         </div>
@@ -461,19 +461,19 @@ export function PostCard({
       </div>
 
       {/* Content */}
-      <p className="text-text text-[15px] leading-relaxed whitespace-pre-wrap break-words">
+      <p className="whitespace-pre-wrap break-words text-[16px] leading-7 text-text">
         {post.content}
       </p>
 
       {/* Optional image */}
       {post.imageUrl && (
-        <div className="rounded-xl overflow-hidden border border-border-subtle">
+        <div className="overflow-hidden rounded-2xl border border-border-subtle bg-bg">
           <Image
             src={post.imageUrl}
             alt="Imagen del post"
             width={600}
             height={400}
-            className="w-full object-cover max-h-96"
+            className="max-h-[460px] w-full object-cover"
           />
         </div>
       )}
@@ -482,7 +482,8 @@ export function PostCard({
       {post.tree && (
         <Link
           href={`/${post.tree.owner.username ?? ""}/${post.tree.slug}`}
-          className="block border border-border rounded-xl p-4 hover:border-primary/20 hover:bg-primary/5/40 transition-colors group"
+          className={`group block rounded-2xl border border-l-4 border-border bg-gradient-to-r p-4 transition-colors ${badge?.gradientCls ?? ""} ${badge?.hoverBorderCls ?? ""}`}
+          style={{ borderInlineStartColor: `var(--${post.tree.contentType.toLowerCase()})` }}
         >
           <div className="flex items-start gap-3">
             {badge && (
@@ -503,43 +504,44 @@ export function PostCard({
                   </span>
                 )}
               </div>
-              <p className="text-sm font-semibold text-text group-hover:text-primary transition-colors leading-snug line-clamp-1">
+              <p className={`line-clamp-2 text-[15px] font-bold leading-snug text-text transition-colors ${badge?.groupHoverTextCls ?? "group-hover:text-primary"}`}>
                 {post.tree.title}
               </p>
               {post.tree.description && (
-                <p className="text-xs text-text-muted mt-0.5 line-clamp-1">{post.tree.description}</p>
+                <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-text-muted">{post.tree.description}</p>
               )}
-              <p className="text-xs text-text-subtle mt-1">
+              <p className="mt-2 text-xs text-text-subtle">
                 por {post.tree.owner.name} · {post.tree._count.likes} me gusta · {post.tree._count.forks} forks
               </p>
             </div>
+            <ArrowUpRight className="h-4 w-4 shrink-0 text-text-subtle transition-colors group-hover:text-primary" />
           </div>
         </Link>
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-5 pt-1 border-t border-border-subtle">
+      <div className="grid grid-cols-2 gap-2 border-t border-border-subtle pt-3">
         <button
           onClick={toggleLike}
           disabled={!isAuthenticated}
-          className={`flex items-center gap-1.5 text-sm transition-colors ${
+          className={`flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition-colors ${
             liked
-              ? "text-red-500 hover:text-red-600"
-              : "text-text-subtle hover:text-red-400"
-          } disabled:cursor-default`}
+              ? "bg-primary/10 text-primary hover:bg-primary/15"
+              : "text-text-muted hover:bg-bg hover:text-primary"
+          } disabled:cursor-default disabled:opacity-60`}
         >
           <Heart className={`w-4 h-4 ${liked ? "fill-current" : ""}`} />
-          <span>{likeCount}</span>
+          <span>Me gusta{likeCount > 0 ? ` · ${likeCount}` : ""}</span>
         </button>
 
         <button
           onClick={() => setShowComments((v) => !v)}
-          className={`flex items-center gap-1.5 text-sm transition-colors ${
-            showComments ? "text-primary" : "text-text-subtle hover:text-primary"
+          className={`flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition-colors ${
+            showComments ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-bg hover:text-primary"
           }`}
         >
           <MessageCircle className={`w-4 h-4 ${showComments ? "fill-primary/20" : ""}`} />
-          <span>{post._count.comments}</span>
+          <span>Comentar{post._count.comments > 0 ? ` · ${post._count.comments}` : ""}</span>
         </button>
       </div>
 
