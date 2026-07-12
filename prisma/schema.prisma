@@ -108,6 +108,7 @@ model User {
   posts               Post[]
   postLikes           PostLike[]
   postComments        PostComment[]
+  postCommentLikes    PostCommentLike[]
   postReports         PostReport[]
   sentMessages        Message[] @relation("MessageSender")
   receivedMessages    Message[] @relation("MessageRecipient")
@@ -513,9 +514,30 @@ model PostComment {
   authorId String
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
+  parentId String?
+  parent   PostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  PostComment[] @relation("CommentReplies")
+  likes    PostCommentLike[]
+
   @@index([postId])
   @@index([authorId])
   @@index([linkedTreeId])
+  @@index([parentId])
+}
+
+model PostCommentLike {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  commentId String
+  comment   PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
 }
 
 model PostReport {

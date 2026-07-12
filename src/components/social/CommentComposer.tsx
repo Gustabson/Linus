@@ -14,9 +14,15 @@ import { CommentAttachmentPreview } from "./CommentAttachmentPreview";
 
 export function CommentComposer({
   postId,
+  parentId = null,
+  placeholder = "Escribí un comentario…",
+  autoFocus = true,
   onCreated,
 }: {
   postId: string;
+  parentId?: string | null;
+  placeholder?: string;
+  autoFocus?: boolean;
   onCreated: (comment: SocialCommentData) => void;
 }) {
   const [text, setText] = useState("");
@@ -106,7 +112,7 @@ export function CommentComposer({
       const response = await fetch(`/api/posts/${postId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text.trim(), attachment }),
+        body: JSON.stringify({ content: text.trim(), attachment, parentId }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
@@ -194,7 +200,7 @@ export function CommentComposer({
 
           <textarea
             ref={inputRef}
-            autoFocus
+            autoFocus={autoFocus}
             value={text}
             onChange={(event) => { setText(event.target.value); resize(); }}
             onKeyDown={(event) => {
@@ -203,7 +209,7 @@ export function CommentComposer({
                 void handleSend();
               }
             }}
-            placeholder="Escribí un comentario…"
+            placeholder={placeholder}
             rows={1}
             maxLength={MAX_COMMENT_LENGTH}
             className="min-h-8 min-w-0 flex-1 resize-none bg-transparent py-1 text-sm leading-relaxed text-text placeholder:text-text-subtle focus:outline-none"

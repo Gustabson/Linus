@@ -6,8 +6,9 @@ import Image from "next/image";
 import { Heart, MessageCircle, Loader2, Trash2, MoreHorizontal, Flag } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { COMMENT_PAGE_SIZE, withoutLinkedTreeUrl, type SharedTreeData, type SocialCommentData } from "@/lib/comments";
-import { CommentAttachmentPreview } from "./CommentAttachmentPreview";
 import { CommentComposer } from "./CommentComposer";
+import { CommentItem } from "./CommentItem";
+import { ShareButton } from "./ShareButton";
 import { SharedTreeCard } from "./SharedTreeCard";
 
 export interface PostData {
@@ -200,12 +201,14 @@ function CommentSection({
   currentUserId,
   isAuthenticated,
   totalComments,
+  focusedCommentId,
   onCountChange,
 }: {
   postId:        string;
   currentUserId: string | null;
   isAuthenticated: boolean;
   totalComments: number;
+  focusedCommentId?: string | null;
   onCountChange: (delta: number) => void;
 }) {
   const [comments, setComments] = useState<SocialCommentData[]>([]);
@@ -222,7 +225,9 @@ function CommentSection({
       setLoading(true);
       setLoadError("");
       try {
-        const response = await fetch(`/api/posts/${postId}/comments`, { signal: controller.signal });
+        const params = new URLSearchParams();
+        if (focusedCommentId) params.set("focusId", focusedCommentId);
+        const response = await fetch(`/api/posts/${postId}/comments${params.size ? `?${params}` : ""}`, { signal: controller.signal });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error ?? "No se pudieron cargar los comentarios");
         setComments(data.comments ?? []);
@@ -238,7 +243,7 @@ function CommentSection({
     }
     void loadFirstPage();
     return () => controller.abort();
-  }, [postId, retryKey]);
+  }, [postId, focusedCommentId, retryKey]);
 
   async function loadMore() {
     if (!nextCursor || loadingMore) return;
@@ -261,17 +266,10 @@ function CommentSection({
     }
   }
 
-  async function handleDelete(commentId: string) {
-    const res = await fetch(`/api/posts/${postId}/comments`, {
-      method:  "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ commentId }),
-    });
-    if (res.ok) {
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
-      setTotal((count) => Math.max(0, count - 1));
-      onCountChange(-1);
-    }
+  function handleDeleted(commentId: string) {
+    setComments((previous) => previous.filter((comment) => comment.id !== commentId));
+    setTotal((count) => Math.max(0, count - 1));
+    onCountChange(-1);
   }
 
   return (
@@ -295,7 +293,7 @@ function CommentSection({
 
       {loading && (
         <p className="flex items-center gap-1.5 text-xs text-text-subtle">
-          <Loader2 className="h-3 w-3 animate-spin" /> Cargando hasta {COMMENT_PAGE_SIZE} comentarios recientes…
+          <Loader2 className="h-3 w-3 animate-spin" /> Cargando comentarios…
         </p>
       )}
 
@@ -314,56 +312,17 @@ function CommentSection({
 
       {comments.length > 0 && (
         <div className="space-y-2.5">
-          {comments.map((c) => {
-            const authorHref = c.author.username ? `/${c.author.username}` : "#";
-            const isOwn = c.author.id === currentUserId;
-            const visibleText = c.linkedTree
-              ? withoutLinkedTreeUrl(c.content, c.linkedTree)
-              : c.content;
-            const attachment = c.attachmentUrl && c.attachmentName && c.attachmentType && c.attachmentSize
-              ? { url: c.attachmentUrl, name: c.attachmentName, type: c.attachmentType, size: c.attachmentSize }
-              : null;
-            return (
-              <div key={c.id} className="flex gap-2.5 group">
-                <Link href={authorHref} className="shrink-0">
-                  {c.author.image ? (
-                    <Image src={c.author.image} alt="" width={28} height={28} className="rounded-full" />
-                  ) : (
-                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-                      {(c.author.name ?? "?")[0]}
-                    </div>
-                  )}
-                </Link>
-                <div className="flex-1 min-w-0 bg-bg rounded-xl px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <Link href={authorHref} className="text-xs font-semibold text-text hover:text-primary transition-colors truncate">
-                        {c.author.name ?? "Usuario"}
-                      </Link>
-                      <span className="text-[10px] text-text-subtle shrink-0">
-                        {formatDate(new Date(c.createdAt))}
-                      </span>
-                    </div>
-                    {isOwn && (
-                      <button
-                        onClick={() => handleDelete(c.id)}
-                        className="shrink-0 text-text-subtle opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                  <div className="mt-1.5 space-y-2">
-                    {visibleText && <p className="whitespace-pre-wrap break-words text-sm text-text">{visibleText}</p>}
-                    {c.linkedTree && <SharedTreeCard tree={c.linkedTree} compact />}
-                    {attachment && <CommentAttachmentPreview attachment={attachment} />}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
+          {comments.map((comment) => (
+            <CommentItem
+              key={comment.id}
+              comment={comment}
+              postId={postId}
+              currentUserId={currentUserId}
+              isAuthenticated={isAuthenticated}
+              onDeleted={handleDeleted}
+              onThreadCountChange={onCountChange}
+            />
+          ))}
         </div>
       )}
 
@@ -396,15 +355,19 @@ export function PostCard({
   post,
   isAuthenticated = false,
   currentUserId   = null,
+  initialCommentsOpen = false,
+  focusedCommentId = null,
 }: {
   post:             PostData;
   isAuthenticated?: boolean;
   currentUserId?:   string | null;
+  initialCommentsOpen?: boolean;
+  focusedCommentId?: string | null;
 }) {
   const [likeCount, setLikeCount] = useState(post._count.likes);
   const [liked, setLiked]         = useState(post.likes.length > 0);
   const [liking, setLiking]       = useState(false);
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(initialCommentsOpen);
   const [commentCount, setCommentCount] = useState(post._count.comments);
   const [deleted, setDeleted]     = useState(false);
 
@@ -492,29 +455,37 @@ export function PostCard({
       {post.tree && <SharedTreeCard tree={post.tree} />}
 
       {/* Actions */}
-      <div className="grid grid-cols-2 gap-2 border-t border-border-subtle pt-3">
+      <div className="grid grid-cols-3 gap-2 border-t border-border-subtle pt-3">
         <button
           onClick={toggleLike}
           disabled={!isAuthenticated}
-          className={`flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition-colors ${
+          aria-label={liked ? "Quitar Me gusta" : "Me gusta"}
+          className={`flex min-h-10 items-center justify-center gap-1 rounded-xl px-1 text-xs font-semibold transition-colors sm:gap-2 sm:px-3 sm:text-sm ${
             liked
               ? "bg-primary/10 text-primary hover:bg-primary/15"
               : "text-text-muted hover:bg-bg hover:text-primary"
           } disabled:cursor-default disabled:opacity-60`}
         >
           <Heart className={`w-4 h-4 ${liked ? "fill-current" : ""}`} />
-          <span>Me gusta{likeCount > 0 ? ` · ${likeCount}` : ""}</span>
+          <span className="hidden sm:inline">Me gusta</span>{likeCount > 0 && <span>{likeCount}</span>}
         </button>
 
         <button
           onClick={() => setShowComments((v) => !v)}
-          className={`flex min-h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition-colors ${
+          aria-label={showComments ? "Ocultar comentarios" : "Abrir comentarios"}
+          className={`flex min-h-10 items-center justify-center gap-1 rounded-xl px-1 text-xs font-semibold transition-colors sm:gap-2 sm:px-3 sm:text-sm ${
             showComments ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-bg hover:text-primary"
           }`}
         >
           <MessageCircle className={`w-4 h-4 ${showComments ? "fill-primary/20" : ""}`} />
-          <span>Comentar{commentCount > 0 ? ` · ${commentCount}` : ""}</span>
+          <span className="hidden sm:inline">Comentar</span>{commentCount > 0 && <span>{commentCount}</span>}
         </button>
+
+        <ShareButton
+          path={`/post/${post.id}`}
+          compactOnMobile
+          className="flex min-h-10 items-center justify-center gap-1 rounded-xl px-1 text-xs font-semibold text-text-muted transition-colors hover:bg-bg hover:text-primary sm:gap-2 sm:px-3 sm:text-sm"
+        />
       </div>
 
       {/* Comments section */}
@@ -524,6 +495,7 @@ export function PostCard({
           currentUserId={currentUserId}
           isAuthenticated={isAuthenticated}
           totalComments={commentCount}
+          focusedCommentId={focusedCommentId}
           onCountChange={(delta) => setCommentCount((count) => Math.max(0, count + delta))}
         />
       )}

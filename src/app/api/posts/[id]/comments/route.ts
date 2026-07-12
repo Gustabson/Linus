@@ -35,14 +35,22 @@ const LEGACY_COMMENT_SELECT = {
   author: { select: USER_BASIC_SELECT },
 } as const;
 
-const RICH_COMMENT_SELECT = {
-  ...LEGACY_COMMENT_SELECT,
-  attachmentUrl: true,
-  attachmentName: true,
-  attachmentType: true,
-  attachmentSize: true,
-  linkedTree: { select: LINKED_TREE_SELECT },
-} as const;
+function richCommentSelect(viewerId: string | null) {
+  return {
+    ...LEGACY_COMMENT_SELECT,
+    attachmentUrl: true,
+    attachmentName: true,
+    attachmentType: true,
+    attachmentSize: true,
+    parentId: true,
+    linkedTree: { select: LINKED_TREE_SELECT },
+    _count: { select: { likes: true, replies: true } },
+    likes: {
+      where: { userId: viewerId ?? "__guest__" },
+      select: { id: true },
+    },
+  } as const;
+}
 
 function normalizeAttachment(input: unknown, userId: string): CommentAttachment | null {
   if (!input || typeof input !== "object") return null;
@@ -73,7 +81,9 @@ export async function GET(
 ) {
   const { id: postId } = await params;
   const cursor = req.nextUrl.searchParams.get("cursor");
-  if (cursor && cursor.length > 64)
+  const parentId = req.nextUrl.searchParams.get("parentId");
+  const focusId = req.nextUrl.searchParams.get("focusId");
+  if ([cursor, parentId, focusId].some((value) => value && value.length > 64))
     return NextResponse.json({ error: "Cursor inválido" }, { status: 400 });
   if (cursor) {
     const validCursor = await prisma.postComment.findFirst({
@@ -85,8 +95,18 @@ export async function GET(
   }
 
   const session = await getSession().catch(() => null);
+  if (parentId) {
+    const parent = await prisma.postComment.findFirst({
+      where: { id: parentId, postId },
+      select: { id: true },
+    });
+    if (!parent) return NextResponse.json({ error: "Comentario padre no encontrado" }, { status: 404 });
+  }
+  const richWhere = focusId
+    ? { postId, id: focusId }
+    : { postId, parentId: parentId ?? null };
   const pagination = {
-    where: { postId },
+    where: richWhere,
     orderBy: [{ createdAt: "desc" as const }, { id: "desc" as const }],
     take: COMMENT_PAGE_SIZE + 1,
     ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -94,8 +114,8 @@ export async function GET(
 
   try {
     const [comments, total] = await Promise.all([
-      prisma.postComment.findMany({ ...pagination, select: RICH_COMMENT_SELECT }),
-      prisma.postComment.count({ where: { postId } }),
+      prisma.postComment.findMany({ ...pagination, select: richCommentSelect(session?.user.id ?? null) }),
+      prisma.postComment.count({ where: richWhere }),
     ]);
 
     const safeComments = comments.map((comment) => {
@@ -114,10 +134,24 @@ export async function GET(
       return NextResponse.json({ error: "No se pudieron cargar los comentarios" }, { status: 500 });
     }
 
+    if (parentId) {
+      return NextResponse.json(
+        { error: "Las respuestas todavía se están habilitando. Probá nuevamente en unos minutos." },
+        { status: 503 },
+      );
+    }
+
     // The deployed database may briefly lag behind an additive schema release.
+    const legacyWhere = focusId ? { postId, id: focusId } : { postId };
     const [legacyComments, total] = await Promise.all([
-      prisma.postComment.findMany({ ...pagination, select: LEGACY_COMMENT_SELECT }),
-      prisma.postComment.count({ where: { postId } }),
+      prisma.postComment.findMany({
+        where: legacyWhere,
+        orderBy: pagination.orderBy,
+        take: pagination.take,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        select: LEGACY_COMMENT_SELECT,
+      }),
+      prisma.postComment.count({ where: legacyWhere }),
     ]);
     const normalized = legacyComments.map((comment) => ({
       ...comment,
@@ -125,7 +159,10 @@ export async function GET(
       attachmentName: null,
       attachmentType: null,
       attachmentSize: null,
+      parentId: null,
       linkedTree: null,
+      _count: { likes: 0, replies: 0 },
+      likes: [],
     }));
     return NextResponse.json(buildCommentPage(normalized, total));
   }
@@ -142,6 +179,7 @@ export async function POST(
   const body = await req.json().catch(() => ({}));
   const content = typeof body.content === "string" ? body.content.trim() : "";
   const attachment = normalizeAttachment(body.attachment, session.user.id);
+  const parentId = typeof body.parentId === "string" && body.parentId ? body.parentId : null;
 
   if (!content && !attachment)
     return NextResponse.json({ error: "El comentario no puede estar vacío" }, { status: 400 });
@@ -152,6 +190,13 @@ export async function POST(
 
   const post = await prisma.post.findUnique({ where: { id: postId }, select: { id: true } });
   if (!post) return NextResponse.json({ error: "Post no encontrado" }, { status: 404 });
+  if (parentId) {
+    const parent = await prisma.postComment.findFirst({
+      where: { id: parentId, postId },
+      select: { id: true },
+    });
+    if (!parent) return NextResponse.json({ error: "Comentario padre no encontrado" }, { status: 404 });
+  }
 
   const internalLink = content ? findInternalTreeLink(content, req.nextUrl.origin) : null;
   const linkedTree = internalLink
@@ -177,12 +222,13 @@ export async function POST(
         attachmentType: attachment?.type,
         attachmentSize: attachment?.size,
         linkedTreeId: linkedTree?.id,
+        parentId,
       },
-      select: RICH_COMMENT_SELECT,
+      select: richCommentSelect(session.user.id),
     });
   } catch (error) {
     if (!isMissingDatabaseColumn(error)) throw error;
-    if (attachment || linkedTree) {
+    if (attachment || linkedTree || parentId) {
       return NextResponse.json(
         { error: "Los adjuntos todavía se están habilitando. Probá nuevamente en unos minutos." },
         { status: 503 },
@@ -199,7 +245,10 @@ export async function POST(
         attachmentName: null,
         attachmentType: null,
         attachmentSize: null,
+        parentId: null,
         linkedTree: null,
+        _count: { likes: 0, replies: 0 },
+        likes: [],
       },
     }, { status: 201 });
   }

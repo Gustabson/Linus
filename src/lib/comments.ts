@@ -44,7 +44,10 @@ export interface SocialCommentData {
   attachmentName: string | null;
   attachmentType: string | null;
   attachmentSize: number | null;
+  parentId: string | null;
   linkedTree: SharedTreeData | null;
+  _count: { likes: number; replies: number };
+  likes: { id: string }[];
   author: {
     id: string;
     name: string | null;
