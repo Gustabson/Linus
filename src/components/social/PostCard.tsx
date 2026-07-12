@@ -218,34 +218,36 @@ function CommentSection({
   postId,
   currentUserId,
   isAuthenticated,
-  initialCount,
+  onCountChange,
 }: {
   postId:        string;
   currentUserId: string | null;
   isAuthenticated: boolean;
-  initialCount:  number;
+  onCountChange: (delta: number) => void;
 }) {
   const [comments, setComments]   = useState<PostComment[]>([]);
-  const [count, setCount]         = useState(initialCount);
-  const [loaded, setLoaded]       = useState(false);
-  const [loading, setLoading]     = useState(false);
+  const [loading, setLoading]     = useState(true);
   const [text, setText]           = useState("");
   const [sending, setSending]     = useState(false);
   const [error, setError]         = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  async function load() {
-    if (loaded) return;
-    setLoading(true);
-    try {
-      const res  = await fetch(`/api/posts/${postId}/comments`);
-      const data = await res.json();
-      setComments(data.comments ?? []);
-      setLoaded(true);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    let active = true;
+    async function loadComments() {
+      try {
+        const res = await fetch(`/api/posts/${postId}/comments`);
+        const data = await res.json();
+        if (active && res.ok) setComments(data.comments ?? []);
+      } catch {
+        // The input remains usable even if existing comments cannot be loaded.
+      } finally {
+        if (active) setLoading(false);
+      }
     }
-  }
+    void loadComments();
+    return () => { active = false; };
+  }, [postId]);
 
   async function handleSend() {
     if (!text.trim() || sending) return;
@@ -260,7 +262,7 @@ function CommentSection({
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Error al comentar"); return; }
       setComments((prev) => [...prev, data.comment]);
-      setCount((c) => c + 1);
+      onCountChange(1);
       setText("");
       if (inputRef.current) inputRef.current.style.height = "auto";
     } finally {
@@ -276,7 +278,7 @@ function CommentSection({
     });
     if (res.ok) {
       setComments((prev) => prev.filter((c) => c.id !== commentId));
-      setCount((c) => Math.max(0, c - 1));
+      onCountChange(-1);
     }
   }
 
@@ -286,28 +288,15 @@ function CommentSection({
   }
 
   return (
-    <div className="pt-2 border-t border-border-subtle space-y-3">
-      {/* Load trigger */}
-      {!loaded && (
-        <button
-          onClick={load}
-          className="text-xs text-text-subtle hover:text-primary transition-colors"
-        >
-          {loading
-            ? <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Cargando...</span>
-            : count > 0
-              ? `Ver ${count} comentario${count !== 1 ? "s" : ""}`
-              : "Sin comentarios aún"
-          }
-        </button>
+    <div className="space-y-3 border-t border-border-subtle pt-3">
+      {loading && (
+        <p className="flex items-center gap-1.5 text-xs text-text-subtle">
+          <Loader2 className="h-3 w-3 animate-spin" /> Cargando comentarios…
+        </p>
       )}
 
-      {/* Comments list */}
-      {loaded && (
+      {comments.length > 0 && (
         <div className="space-y-2.5">
-          {comments.length === 0 && (
-            <p className="text-xs text-text-subtle">Sin comentarios aún.</p>
-          )}
           {comments.map((c) => {
             const authorHref = c.author.username ? `/${c.author.username}` : "#";
             const isOwn = c.author.id === currentUserId;
@@ -348,40 +337,42 @@ function CommentSection({
             );
           })}
 
-          {/* Input */}
-          {isAuthenticated && (
-            <div className="flex gap-2.5 pt-1">
-              <div className="w-7 shrink-0" />
-              <div className="flex-1 flex gap-2 items-end bg-bg rounded-xl border border-border px-3 py-2 focus-within:border-primary/40 transition-colors">
-                <textarea
-                  ref={inputRef}
-                  value={text}
-                  onChange={(e) => { setText(e.target.value); autoResize(e.target); }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
-                  }}
-                  placeholder="Escribí un comentario..."
-                  rows={1}
-                  maxLength={500}
-                  className="flex-1 resize-none text-sm text-text placeholder:text-text-subtle focus:outline-none leading-relaxed"
-                />
-                <button
-                  onClick={handleSend}
-                  disabled={!text.trim() || sending}
-                  className="shrink-0 text-primary hover:text-primary-h disabled:opacity-30 transition-colors pb-0.5"
-                >
-                  {sending
-                    ? <Loader2 className="w-4 h-4 animate-spin" />
-                    : <Send className="w-4 h-4" />
-                  }
-                </button>
-              </div>
-            </div>
-          )}
-
-          {error && <p className="pl-9 text-xs text-danger">{error}</p>}
         </div>
       )}
+
+      {isAuthenticated && (
+        <div className="flex gap-2.5 pt-1">
+          <div className="w-7 shrink-0" />
+          <div className="flex flex-1 items-end gap-2 rounded-xl border border-border bg-bg px-3 py-2 transition-colors focus-within:border-primary/40">
+            <textarea
+              ref={inputRef}
+              autoFocus
+              value={text}
+              onChange={(e) => { setText(e.target.value); autoResize(e.target); }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+              }}
+              placeholder="Escribí un comentario..."
+              rows={1}
+              maxLength={500}
+              className="flex-1 resize-none bg-transparent text-sm leading-relaxed text-text placeholder:text-text-subtle focus:outline-none"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!text.trim() || sending}
+              className="shrink-0 pb-0.5 text-primary transition-colors hover:text-primary-h disabled:opacity-30"
+              aria-label="Enviar comentario"
+            >
+              {sending
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <Send className="h-4 w-4" />
+              }
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="pl-9 text-xs text-danger">{error}</p>}
     </div>
   );
 }
@@ -400,6 +391,7 @@ export function PostCard({
   const [liked, setLiked]         = useState(post.likes.length > 0);
   const [liking, setLiking]       = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState(post._count.comments);
   const [deleted, setDeleted]     = useState(false);
 
   if (deleted) return null;
@@ -541,7 +533,7 @@ export function PostCard({
           }`}
         >
           <MessageCircle className={`w-4 h-4 ${showComments ? "fill-primary/20" : ""}`} />
-          <span>Comentar{post._count.comments > 0 ? ` · ${post._count.comments}` : ""}</span>
+          <span>Comentar{commentCount > 0 ? ` · ${commentCount}` : ""}</span>
         </button>
       </div>
 
@@ -551,7 +543,7 @@ export function PostCard({
           postId={post.id}
           currentUserId={currentUserId}
           isAuthenticated={isAuthenticated}
-          initialCount={post._count.comments}
+          onCountChange={(delta) => setCommentCount((count) => Math.max(0, count + delta))}
         />
       )}
     </article>

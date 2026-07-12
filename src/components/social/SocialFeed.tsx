@@ -138,16 +138,6 @@ export async function SocialFeed({ userId = null, tab = "tendencias" }: Props) {
         </div>
       )}
 
-      <header className="mb-1 flex items-end justify-between gap-5">
-        <div>
-          <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Comunidad</p>
-          <h1 className="text-2xl font-bold tracking-tight text-text sm:text-[28px]">Inicio</h1>
-          <p className="mt-1 max-w-xl text-sm leading-relaxed text-text-muted">
-            Ideas, recursos y conversaciones de la comunidad educativa.
-          </p>
-        </div>
-      </header>
-
       {/* Sticky tab switcher */}
       <div className="sticky top-0 z-20 mb-5 bg-bg/95 py-3 backdrop-blur-sm">
         <div className="inline-flex rounded-xl border border-border bg-surface p-1 shadow-sm">
