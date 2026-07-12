@@ -3,10 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, MessageCircle, GitFork, Send, Loader2, Trash2, MoreHorizontal, Flag, ArrowUpRight } from "lucide-react";
+import { Heart, MessageCircle, Loader2, Trash2, MoreHorizontal, Flag } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { CONTENT_TYPE_STYLE } from "@/lib/constants";
-import type { ContentType } from "@prisma/client";
+import { withoutLinkedTreeUrl, type SharedTreeData, type SocialCommentData } from "@/lib/comments";
+import { CommentAttachmentPreview } from "./CommentAttachmentPreview";
+import { CommentComposer } from "./CommentComposer";
+import { SharedTreeCard } from "./SharedTreeCard";
 
 export interface PostData {
   id:        string;
@@ -19,31 +21,10 @@ export interface PostData {
     username: string | null;
     image:    string | null;
   };
-  tree: {
-    id:          string;
-    slug:        string;
-    title:       string;
-    description: string | null;
-    contentType: ContentType;
-    forkDepth:   number;
-    owner: { username: string | null; name: string | null };
-    _count: { likes: number; forks: number };
-  } | null;
+  tree: SharedTreeData | null;
   _count:     { likes: number; comments: number };
   likes:      { id: string }[];
   isAuthenticated?: boolean;
-}
-
-interface PostComment {
-  id:        string;
-  content:   string;
-  createdAt: string;
-  author: {
-    id:       string;
-    name:     string | null;
-    username: string | null;
-    image:    string | null;
-  };
 }
 
 // ── Report reasons ───────────────────────────────────────────────────────────
@@ -225,12 +206,8 @@ function CommentSection({
   isAuthenticated: boolean;
   onCountChange: (delta: number) => void;
 }) {
-  const [comments, setComments]   = useState<PostComment[]>([]);
+  const [comments, setComments]   = useState<SocialCommentData[]>([]);
   const [loading, setLoading]     = useState(true);
-  const [text, setText]           = useState("");
-  const [sending, setSending]     = useState(false);
-  const [error, setError]         = useState("");
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     let active = true;
@@ -249,27 +226,6 @@ function CommentSection({
     return () => { active = false; };
   }, [postId]);
 
-  async function handleSend() {
-    if (!text.trim() || sending) return;
-    setSending(true);
-    setError("");
-    try {
-      const res  = await fetch(`/api/posts/${postId}/comments`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ content: text.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Error al comentar"); return; }
-      setComments((prev) => [...prev, data.comment]);
-      onCountChange(1);
-      setText("");
-      if (inputRef.current) inputRef.current.style.height = "auto";
-    } finally {
-      setSending(false);
-    }
-  }
-
   async function handleDelete(commentId: string) {
     const res = await fetch(`/api/posts/${postId}/comments`, {
       method:  "DELETE",
@@ -280,11 +236,6 @@ function CommentSection({
       setComments((prev) => prev.filter((c) => c.id !== commentId));
       onCountChange(-1);
     }
-  }
-
-  function autoResize(el: HTMLTextAreaElement) {
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   }
 
   return (
@@ -300,6 +251,12 @@ function CommentSection({
           {comments.map((c) => {
             const authorHref = c.author.username ? `/${c.author.username}` : "#";
             const isOwn = c.author.id === currentUserId;
+            const visibleText = c.linkedTree
+              ? withoutLinkedTreeUrl(c.content, c.linkedTree)
+              : c.content;
+            const attachment = c.attachmentUrl && c.attachmentName && c.attachmentType && c.attachmentSize
+              ? { url: c.attachmentUrl, name: c.attachmentName, type: c.attachmentType, size: c.attachmentSize }
+              : null;
             return (
               <div key={c.id} className="flex gap-2.5 group">
                 <Link href={authorHref} className="shrink-0">
@@ -331,7 +288,11 @@ function CommentSection({
                       </button>
                     )}
                   </div>
-                  <p className="text-sm text-text mt-0.5 break-words">{c.content}</p>
+                  <div className="mt-1.5 space-y-2">
+                    {visibleText && <p className="whitespace-pre-wrap break-words text-sm text-text">{visibleText}</p>}
+                    {c.linkedTree && <SharedTreeCard tree={c.linkedTree} compact />}
+                    {attachment && <CommentAttachmentPreview attachment={attachment} />}
+                  </div>
                 </div>
               </div>
             );
@@ -341,38 +302,14 @@ function CommentSection({
       )}
 
       {isAuthenticated && (
-        <div className="flex gap-2.5 pt-1">
-          <div className="w-7 shrink-0" />
-          <div className="flex flex-1 items-end gap-2 rounded-xl border border-border bg-bg px-3 py-2 transition-colors focus-within:border-primary/40">
-            <textarea
-              ref={inputRef}
-              autoFocus
-              value={text}
-              onChange={(e) => { setText(e.target.value); autoResize(e.target); }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
-              }}
-              placeholder="Escribí un comentario..."
-              rows={1}
-              maxLength={500}
-              className="flex-1 resize-none bg-transparent text-sm leading-relaxed text-text placeholder:text-text-subtle focus:outline-none"
-            />
-            <button
-              onClick={handleSend}
-              disabled={!text.trim() || sending}
-              className="shrink-0 pb-0.5 text-primary transition-colors hover:text-primary-h disabled:opacity-30"
-              aria-label="Enviar comentario"
-            >
-              {sending
-                ? <Loader2 className="h-4 w-4 animate-spin" />
-                : <Send className="h-4 w-4" />
-              }
-            </button>
-          </div>
-        </div>
+        <CommentComposer
+          postId={postId}
+          onCreated={(comment) => {
+            setComments((previous) => [...previous, comment]);
+            onCountChange(1);
+          }}
+        />
       )}
-
-      {error && <p className="pl-9 text-xs text-danger">{error}</p>}
     </div>
   );
 }
@@ -418,7 +355,9 @@ export function PostCard({
   }
 
   const authorHref = post.author.username ? `/${post.author.username}` : "#";
-  const badge      = post.tree ? CONTENT_TYPE_STYLE[post.tree.contentType] : null;
+  const visiblePostContent = post.tree
+    ? withoutLinkedTreeUrl(post.content, post.tree)
+    : post.content;
 
   return (
     <article className="space-y-5 rounded-[20px] border border-border bg-surface p-5 shadow-sm transition-[border-color,box-shadow] hover:border-primary/20 hover:shadow-md sm:p-6">
@@ -453,9 +392,11 @@ export function PostCard({
       </div>
 
       {/* Content */}
-      <p className="whitespace-pre-wrap break-words text-[16px] leading-7 text-text">
-        {post.content}
-      </p>
+      {visiblePostContent && (
+        <p className="whitespace-pre-wrap break-words text-[16px] leading-7 text-text">
+          {visiblePostContent}
+        </p>
+      )}
 
       {/* Optional image */}
       {post.imageUrl && (
@@ -471,45 +412,7 @@ export function PostCard({
       )}
 
       {/* Attached tree card */}
-      {post.tree && (
-        <Link
-          href={`/${post.tree.owner.username ?? ""}/${post.tree.slug}`}
-          className={`group block rounded-2xl border border-l-4 border-border bg-gradient-to-r p-4 transition-colors ${badge?.gradientCls ?? ""} ${badge?.hoverBorderCls ?? ""}`}
-          style={{ borderInlineStartColor: `var(--${post.tree.contentType.toLowerCase()})` }}
-        >
-          <div className="flex items-start gap-3">
-            {badge && (
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${badge.iconBgCls}`}>
-                {badge.iconLg}
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                {badge && (
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${badge.badgeCls}`}>
-                    {badge.label}
-                  </span>
-                )}
-                {post.tree.forkDepth > 0 && (
-                  <span className="text-xs text-text-subtle flex items-center gap-1">
-                    <GitFork className="w-3 h-3" /> Fork
-                  </span>
-                )}
-              </div>
-              <p className={`line-clamp-2 text-[15px] font-bold leading-snug text-text transition-colors ${badge?.groupHoverTextCls ?? "group-hover:text-primary"}`}>
-                {post.tree.title}
-              </p>
-              {post.tree.description && (
-                <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-text-muted">{post.tree.description}</p>
-              )}
-              <p className="mt-2 text-xs text-text-subtle">
-                por {post.tree.owner.name} · {post.tree._count.likes} me gusta · {post.tree._count.forks} forks
-              </p>
-            </div>
-            <ArrowUpRight className="h-4 w-4 shrink-0 text-text-subtle transition-colors group-hover:text-primary" />
-          </div>
-        </Link>
-      )}
+      {post.tree && <SharedTreeCard tree={post.tree} />}
 
       {/* Actions */}
       <div className="grid grid-cols-2 gap-2 border-t border-border-subtle pt-3">

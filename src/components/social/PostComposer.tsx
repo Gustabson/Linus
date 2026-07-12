@@ -4,7 +4,7 @@ import { useState, useRef, useTransition, useEffect } from "react";
 import Image from "next/image";
 import { Send, X, BookOpen, ChevronDown, ChevronUp, Loader2, Smile } from "lucide-react";
 import type { ContentType } from "@prisma/client";
-import { CONTENT_TYPE_STYLE } from "@/lib/constants";
+import { CONTENT_TYPE_STYLE, QUICK_EMOJIS } from "@/lib/constants";
 import type { PostData } from "./PostCard";
 
 interface Props {
@@ -28,8 +28,6 @@ interface TreeResult {
 }
 
 const MAX_CHARS = 2000;
-
-const QUICK_EMOJIS = ["😊","👍","❤️","🎉","🙏","😂","🔥","✅","⭐","💡","📚","✏️","🧠","🎓","💪","📖","📝","🤔","🚀","🌟"];
 
 export function PostComposer({ currentUser, onPostCreated }: Props) {
   const [content, setContent]         = useState("");

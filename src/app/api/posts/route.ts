@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { USER_BASIC_SELECT } from "@/lib/data";
+import { findInternalTreeLink } from "@/lib/comments";
 import type { Prisma } from "@prisma/client";
 
 // ── GET /api/posts  (feed) ────────────────────────────────────────────────────
@@ -112,11 +113,12 @@ export async function POST(req: NextRequest) {
   if (!session) return unauthorized();
 
   const { content, treeId, imageUrl } = await req.json().catch(() => ({}));
+  const normalizedContent = typeof content === "string" ? content.trim() : "";
 
-  if (!content?.trim()) {
+  if (!normalizedContent) {
     return NextResponse.json({ error: "El contenido no puede estar vacío" }, { status: 400 });
   }
-  if (content.trim().length > 2000) {
+  if (normalizedContent.length > 2000) {
     return NextResponse.json({ error: "Máximo 2000 caracteres" }, { status: 400 });
   }
   if (imageUrl != null) {
@@ -128,10 +130,26 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Validate treeId belongs to a public tree (or owned by author)
-  if (treeId) {
+  let resolvedTreeId = typeof treeId === "string" && treeId ? treeId : null;
+  if (!resolvedTreeId) {
+    const internalLink = findInternalTreeLink(normalizedContent, req.nextUrl.origin);
+    if (internalLink) {
+      const linkedTree = await prisma.documentTree.findFirst({
+        where: {
+          slug: internalLink.slug,
+          visibility: "PUBLIC",
+          owner: { username: internalLink.username },
+        },
+        select: { id: true },
+      });
+      resolvedTreeId = linkedTree?.id ?? null;
+    }
+  }
+
+  // Validate explicit and automatically resolved tree references.
+  if (resolvedTreeId) {
     const tree = await prisma.documentTree.findUnique({
-      where:  { id: treeId },
+      where:  { id: resolvedTreeId },
       select: { visibility: true, ownerId: true },
     });
     if (!tree) {
@@ -144,9 +162,9 @@ export async function POST(req: NextRequest) {
 
   const post = await prisma.post.create({
     data: {
-      content:  content.trim(),
+      content:  normalizedContent,
       imageUrl: imageUrl ?? null,
-      treeId:   treeId ?? null,
+      treeId:   resolvedTreeId,
       authorId: session.user.id,
     },
     include: {

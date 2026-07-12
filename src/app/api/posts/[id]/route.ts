@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma }       from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
+import { del } from "@vercel/blob";
+import { isOwnedCommentUpload } from "@/lib/comments";
 
 // ── DELETE /api/posts/[id] — only the post author can delete ──────────────────
 export async function DELETE(
@@ -14,7 +16,10 @@ export async function DELETE(
 
   const post = await prisma.post.findUnique({
     where:  { id },
-    select: { authorId: true },
+    select: {
+      authorId: true,
+      comments: { select: { attachmentUrl: true, authorId: true } },
+    },
   });
 
   if (!post)
@@ -24,6 +29,13 @@ export async function DELETE(
     return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
 
   await prisma.post.delete({ where: { id } });
+
+  const attachmentUrls = post.comments
+    .filter((comment) => isOwnedCommentUpload(comment.attachmentUrl, comment.authorId))
+    .map((comment) => comment.attachmentUrl as string);
+  if (attachmentUrls.length > 0) {
+    try { await del(attachmentUrls); } catch { /* Blob cleanup is best effort. */ }
+  }
 
   return NextResponse.json({ ok: true });
 }

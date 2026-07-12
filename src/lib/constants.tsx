@@ -75,3 +75,8 @@ export const CONTENT_TABS: {
 // ─── Document naming helpers ──────────────────────────────────────────────────
 export const KERNEL_DOC_PLACEHOLDER = "Ej: Introducción, Unidad 1, Clase 3…";
 export const KERNEL_NEW_DOC_LABEL = "Nuevo documento";
+
+export const QUICK_EMOJIS = [
+  "😊", "👍", "❤️", "🎉", "🙏", "😂", "🔥", "✅", "⭐", "💡",
+  "📚", "✏️", "🧠", "🎓", "💪", "📖", "📝", "🤔", "🚀", "🌟",
+];

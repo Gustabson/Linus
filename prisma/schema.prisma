@@ -162,6 +162,8 @@ model DocumentTree {
   attachedTo   TreeAttachment[] @relation("AttachedContent")
   // Social posts that share/reference this tree
   posts        Post[]
+  // Rich previews created when a tree link is shared in a comment
+  commentLinks PostComment[] @relation("CommentTreeLinks")
 
   @@index([ownerId])
   @@index([parentTreeId])
@@ -497,6 +499,14 @@ model PostComment {
   content   String
   createdAt DateTime @default(now())
 
+  attachmentUrl  String?
+  attachmentName String?
+  attachmentType String?
+  attachmentSize Int?
+
+  linkedTreeId String?
+  linkedTree   DocumentTree? @relation("CommentTreeLinks", fields: [linkedTreeId], references: [id], onDelete: SetNull)
+
   postId String
   post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
@@ -505,6 +515,7 @@ model PostComment {
 
   @@index([postId])
   @@index([authorId])
+  @@index([linkedTreeId])
 }
 
 model PostReport {
