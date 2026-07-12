@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { useSession } from "next-auth/react";
 import { FileUp, Loader2, Paperclip, Send, Smile, X } from "lucide-react";
 import {
   COMMENT_ATTACHMENT_ACCEPT,
@@ -25,6 +27,7 @@ export function CommentComposer({
   autoFocus?: boolean;
   onCreated: (comment: SocialCommentData) => void;
 }) {
+  const { data: session } = useSession();
   const [text, setText] = useState("");
   const [attachment, setAttachment] = useState<CommentAttachment | null>(null);
   const [showEmoji, setShowEmoji] = useState(false);
@@ -150,7 +153,15 @@ export function CommentComposer({
       )}
 
       <div className="flex gap-2.5 pt-1">
-        <div className="hidden w-7 shrink-0 sm:block" />
+        <div className="h-7 w-7 shrink-0">
+          {session?.user?.image ? (
+            <Image src={session.user.image} alt="" width={28} height={28} className="h-7 w-7 rounded-full object-cover" />
+          ) : (
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+              {(session?.user?.name ?? "?")[0]}
+            </div>
+          )}
+        </div>
         <div className="flex min-w-0 flex-1 items-end gap-1 rounded-xl border border-border bg-bg px-2 py-1.5 transition-colors focus-within:border-primary/40">
           <div className="relative shrink-0" ref={emojiRef}>
             <button
