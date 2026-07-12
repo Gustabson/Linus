@@ -3,6 +3,7 @@ import {
   buildCommentPage,
   findInternalTreeLink,
   isOwnedCommentUpload,
+  linkifyCommentText,
   withoutLinkedTreeUrl,
 } from "./comments";
 
@@ -57,6 +58,14 @@ describe("comment links", () => {
 
   it("ignores malformed percent-encoding instead of throwing", () => {
     expect(findInternalTreeLink("https://linus.edu/ana/%E0%A4%A", "https://linus.edu")).toBeNull();
+  });
+
+  it("turns visible URLs into links while preserving punctuation", () => {
+    expect(linkifyCommentText("Abrí https://example.com/file.pdf, gracias.")).toEqual([
+      { text: "Abrí ", href: null },
+      { text: "https://example.com/file.pdf", href: "https://example.com/file.pdf" },
+      { text: ", gracias.", href: null },
+    ]);
   });
 
   it("removes the resolved link without removing surrounding text", () => {

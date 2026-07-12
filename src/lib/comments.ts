@@ -63,6 +63,11 @@ export interface InternalTreeLink {
   slug: string;
 }
 
+export interface CommentTextSegment {
+  text: string;
+  href: string | null;
+}
+
 export function buildCommentPage<T extends { id: string }>(items: T[], total: number | null) {
   const hasMore = items.length > COMMENT_PAGE_SIZE;
   const comments = hasMore ? items.slice(0, COMMENT_PAGE_SIZE) : items;
@@ -79,6 +84,24 @@ const LINK_CANDIDATE = /https?:\/\/[^\s<>"']+|\/[\p{L}\p{N}_.-]+\/[\p{L}\p{N}_.-
 
 function trimTrailingPunctuation(value: string) {
   return value.replace(/[),.;!?]+$/u, "");
+}
+
+/** Splits comment text into safe plain-text and http(s)/internal-link segments. */
+export function linkifyCommentText(content: string): CommentTextSegment[] {
+  const segments: CommentTextSegment[] = [];
+  let cursor = 0;
+
+  for (const rawMatch of content.matchAll(LINK_CANDIDATE)) {
+    const index = rawMatch.index ?? 0;
+    const linkText = trimTrailingPunctuation(rawMatch[0]);
+    if (!linkText) continue;
+    if (index > cursor) segments.push({ text: content.slice(cursor, index), href: null });
+    segments.push({ text: linkText, href: linkText });
+    cursor = index + linkText.length;
+  }
+
+  if (cursor < content.length) segments.push({ text: content.slice(cursor), href: null });
+  return segments.length > 0 ? segments : [{ text: content, href: null }];
 }
 
 function decodedPathParts(pathname: string) {

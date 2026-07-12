@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, Heart, Loader2, MessageCircle, Trash2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { withoutLinkedTreeUrl, type SocialCommentData } from "@/lib/comments";
+import { linkifyCommentText, withoutLinkedTreeUrl, type SocialCommentData } from "@/lib/comments";
 import { CommentAttachmentPreview } from "./CommentAttachmentPreview";
 import { CommentComposer } from "./CommentComposer";
 import { ShareButton } from "./ShareButton";
@@ -207,7 +207,21 @@ export function CommentItem({
                 <p className="text-sm italic text-text-subtle">Comentario eliminado</p>
               ) : (
                 <>
-                  {visibleText && <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-text">{visibleText}</p>}
+                  {visibleText && (
+                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-text">
+                      {linkifyCommentText(visibleText).map((segment, index) => segment.href ? (
+                        <a
+                          key={`${segment.href}-${index}`}
+                          href={segment.href}
+                          target={segment.href.startsWith("/") ? undefined : "_blank"}
+                          rel={segment.href.startsWith("/") ? undefined : "noopener noreferrer"}
+                          className="font-medium text-primary underline decoration-primary/30 underline-offset-2 hover:decoration-primary"
+                        >
+                          {segment.text}
+                        </a>
+                      ) : <span key={`text-${index}`}>{segment.text}</span>)}
+                    </p>
+                  )}
                   {comment.linkedTree && <SharedTreeCard tree={comment.linkedTree} compact />}
                   {attachment && <CommentAttachmentPreview attachment={attachment} />}
                 </>
