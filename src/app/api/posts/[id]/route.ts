@@ -3,6 +3,7 @@ import { prisma }       from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { del } from "@vercel/blob";
 import { isOwnedCommentUpload } from "@/lib/comments";
+import { isMissingDatabaseColumn } from "@/lib/prisma-errors";
 
 // ── DELETE /api/posts/[id] — only the post author can delete ──────────────────
 export async function DELETE(
@@ -14,13 +15,23 @@ export async function DELETE(
 
   const { id } = await params;
 
-  const post = await prisma.post.findUnique({
-    where:  { id },
-    select: {
-      authorId: true,
-      comments: { select: { attachmentUrl: true, authorId: true } },
-    },
-  });
+  let post;
+  try {
+    post = await prisma.post.findUnique({
+      where: { id },
+      select: {
+        authorId: true,
+        comments: { select: { attachmentUrl: true, authorId: true } },
+      },
+    });
+  } catch (error) {
+    if (!isMissingDatabaseColumn(error)) throw error;
+    const legacyPost = await prisma.post.findUnique({
+      where: { id },
+      select: { authorId: true },
+    });
+    post = legacyPost ? { ...legacyPost, comments: [] } : null;
+  }
 
   if (!post)
     return NextResponse.json({ error: "Publicación no encontrada" }, { status: 404 });

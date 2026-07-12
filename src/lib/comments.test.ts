@@ -1,9 +1,29 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCommentPage,
   findInternalTreeLink,
   isOwnedCommentUpload,
   withoutLinkedTreeUrl,
 } from "./comments";
+
+describe("comment pagination", () => {
+  it("returns 30 comments and a cursor when another page exists", () => {
+    const page = buildCommentPage(
+      Array.from({ length: 31 }, (_, index) => ({ id: `comment-${index}` })),
+      100_000,
+    );
+    expect(page.comments).toHaveLength(30);
+    expect(page.nextCursor).toBe("comment-29");
+    expect(page.hasMore).toBe(true);
+    expect(page.total).toBe(100_000);
+  });
+
+  it("does not expose a cursor for the final page", () => {
+    const page = buildCommentPage([{ id: "only-comment" }], 1);
+    expect(page.nextCursor).toBeNull();
+    expect(page.hasMore).toBe(false);
+  });
+});
 
 describe("comment links", () => {
   it("finds a tree link from the current installation", () => {

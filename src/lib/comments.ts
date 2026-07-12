@@ -1,6 +1,7 @@
 import type { ContentType } from "@prisma/client";
 
 export const MAX_COMMENT_LENGTH = 500;
+export const COMMENT_PAGE_SIZE = 30;
 export const MAX_COMMENT_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 export const COMMENT_ATTACHMENT_ACCEPT =
   ".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.pdf,.doc,.docx";
@@ -56,6 +57,18 @@ export interface InternalTreeLink {
   matchedText: string;
   username: string;
   slug: string;
+}
+
+export function buildCommentPage<T extends { id: string }>(items: T[], total: number) {
+  const hasMore = items.length > COMMENT_PAGE_SIZE;
+  const comments = hasMore ? items.slice(0, COMMENT_PAGE_SIZE) : items;
+  return {
+    comments,
+    total,
+    hasMore,
+    nextCursor: hasMore ? comments[comments.length - 1].id : null,
+    pageSize: COMMENT_PAGE_SIZE,
+  };
 }
 
 const LINK_CANDIDATE = /https?:\/\/[^\s<>"']+|\/[\p{L}\p{N}_.-]+\/[\p{L}\p{N}_.-]+(?:\?[^\s<>"']*)?/giu;

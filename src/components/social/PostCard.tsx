@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Heart, MessageCircle, Loader2, Trash2, MoreHorizontal, Flag } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import { withoutLinkedTreeUrl, type SharedTreeData, type SocialCommentData } from "@/lib/comments";
+import { COMMENT_PAGE_SIZE, withoutLinkedTreeUrl, type SharedTreeData, type SocialCommentData } from "@/lib/comments";
 import { CommentAttachmentPreview } from "./CommentAttachmentPreview";
 import { CommentComposer } from "./CommentComposer";
 import { SharedTreeCard } from "./SharedTreeCard";
@@ -199,32 +199,67 @@ function CommentSection({
   postId,
   currentUserId,
   isAuthenticated,
+  totalComments,
   onCountChange,
 }: {
   postId:        string;
   currentUserId: string | null;
   isAuthenticated: boolean;
+  totalComments: number;
   onCountChange: (delta: number) => void;
 }) {
-  const [comments, setComments]   = useState<SocialCommentData[]>([]);
-  const [loading, setLoading]     = useState(true);
+  const [comments, setComments] = useState<SocialCommentData[]>([]);
+  const [total, setTotal] = useState(totalComments);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
-    let active = true;
-    async function loadComments() {
+    const controller = new AbortController();
+    async function loadFirstPage() {
+      setLoading(true);
+      setLoadError("");
       try {
-        const res = await fetch(`/api/posts/${postId}/comments`);
-        const data = await res.json();
-        if (active && res.ok) setComments(data.comments ?? []);
-      } catch {
-        // The input remains usable even if existing comments cannot be loaded.
+        const response = await fetch(`/api/posts/${postId}/comments`, { signal: controller.signal });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error ?? "No se pudieron cargar los comentarios");
+        setComments(data.comments ?? []);
+        setTotal(typeof data.total === "number" ? data.total : 0);
+        setNextCursor(data.nextCursor ?? null);
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          setLoadError(error instanceof Error ? error.message : "No se pudieron cargar los comentarios");
+        }
       } finally {
-        if (active) setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
-    void loadComments();
-    return () => { active = false; };
-  }, [postId]);
+    void loadFirstPage();
+    return () => controller.abort();
+  }, [postId, retryKey]);
+
+  async function loadMore() {
+    if (!nextCursor || loadingMore) return;
+    setLoadingMore(true);
+    setLoadError("");
+    try {
+      const response = await fetch(`/api/posts/${postId}/comments?cursor=${encodeURIComponent(nextCursor)}`);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "No se pudieron cargar más comentarios");
+      setComments((previous) => {
+        const knownIds = new Set(previous.map((comment) => comment.id));
+        return [...previous, ...(data.comments ?? []).filter((comment: SocialCommentData) => !knownIds.has(comment.id))];
+      });
+      setTotal(data.total ?? total);
+      setNextCursor(data.nextCursor ?? null);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "No se pudieron cargar más comentarios");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   async function handleDelete(commentId: string) {
     const res = await fetch(`/api/posts/${postId}/comments`, {
@@ -234,16 +269,47 @@ function CommentSection({
     });
     if (res.ok) {
       setComments((prev) => prev.filter((c) => c.id !== commentId));
+      setTotal((count) => Math.max(0, count - 1));
       onCountChange(-1);
     }
   }
 
   return (
     <div className="space-y-3 border-t border-border-subtle pt-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs font-semibold text-text">
+          Comentarios <span className="font-normal text-text-subtle">· {total}</span>
+        </p>
+      </div>
+
+      {isAuthenticated && (
+        <CommentComposer
+          postId={postId}
+          onCreated={(comment) => {
+            setComments((previous) => [comment, ...previous]);
+            setTotal((count) => count + 1);
+            onCountChange(1);
+          }}
+        />
+      )}
+
       {loading && (
         <p className="flex items-center gap-1.5 text-xs text-text-subtle">
-          <Loader2 className="h-3 w-3 animate-spin" /> Cargando comentarios…
+          <Loader2 className="h-3 w-3 animate-spin" /> Cargando hasta {COMMENT_PAGE_SIZE} comentarios recientes…
         </p>
+      )}
+
+      {!loading && loadError && comments.length === 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-danger/20 bg-danger/5 px-3 py-2">
+          <p className="text-xs text-danger">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => setRetryKey((key) => key + 1)}
+            className="shrink-0 text-xs font-semibold text-danger hover:underline"
+          >
+            Reintentar
+          </button>
+        </div>
       )}
 
       {comments.length > 0 && (
@@ -301,14 +367,25 @@ function CommentSection({
         </div>
       )}
 
-      {isAuthenticated && (
-        <CommentComposer
-          postId={postId}
-          onCreated={(comment) => {
-            setComments((previous) => [...previous, comment]);
-            onCountChange(1);
-          }}
-        />
+      {comments.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-subtle pt-3">
+          <p className="text-[11px] text-text-subtle">Mostrando {comments.length} de {total} comentarios</p>
+          {nextCursor && (
+            <button
+              type="button"
+              onClick={() => void loadMore()}
+              disabled={loadingMore}
+              className="flex min-h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-text-muted transition-colors hover:border-primary/30 hover:text-primary disabled:opacity-50"
+            >
+              {loadingMore && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Cargar {Math.min(COMMENT_PAGE_SIZE, Math.max(1, total - comments.length))} más
+            </button>
+          )}
+        </div>
+      )}
+
+      {!loading && loadError && comments.length > 0 && (
+        <p className="text-right text-xs text-danger">{loadError}</p>
       )}
     </div>
   );
@@ -446,6 +523,7 @@ export function PostCard({
           postId={post.id}
           currentUserId={currentUserId}
           isAuthenticated={isAuthenticated}
+          totalComments={commentCount}
           onCountChange={(delta) => setCommentCount((count) => Math.max(0, count + delta))}
         />
       )}
