@@ -3,7 +3,6 @@ import { prisma }       from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { del } from "@vercel/blob";
 import { isOwnedCommentUpload } from "@/lib/comments";
-import { isMissingDatabaseColumn } from "@/lib/prisma-errors";
 
 // ── DELETE /api/posts/[id] — only the post author can delete ──────────────────
 export async function DELETE(
@@ -15,23 +14,13 @@ export async function DELETE(
 
   const { id } = await params;
 
-  let post;
-  try {
-    post = await prisma.post.findUnique({
-      where: { id },
-      select: {
-        authorId: true,
-        comments: { select: { attachmentUrl: true, authorId: true } },
-      },
-    });
-  } catch (error) {
-    if (!isMissingDatabaseColumn(error)) throw error;
-    const legacyPost = await prisma.post.findUnique({
-      where: { id },
-      select: { authorId: true },
-    });
-    post = legacyPost ? { ...legacyPost, comments: [] } : null;
-  }
+  const post = await prisma.post.findUnique({
+    where: { id },
+    select: {
+      authorId: true,
+      comments: { select: { attachmentUrl: true, authorId: true } },
+    },
+  });
 
   if (!post)
     return NextResponse.json({ error: "Publicación no encontrada" }, { status: 404 });
@@ -41,11 +30,19 @@ export async function DELETE(
 
   await prisma.post.delete({ where: { id } });
 
-  const attachmentUrls = post.comments
+  const attachmentUrls = [...new Set(post.comments
     .filter((comment) => isOwnedCommentUpload(comment.attachmentUrl, comment.authorId))
-    .map((comment) => comment.attachmentUrl as string);
+    .map((comment) => comment.attachmentUrl as string))];
   if (attachmentUrls.length > 0) {
-    try { await del(attachmentUrls); } catch { /* Blob cleanup is best effort. */ }
+    const stillReferenced = await prisma.postComment.findMany({
+      where: { attachmentUrl: { in: attachmentUrls } },
+      select: { attachmentUrl: true },
+    });
+    const referencedUrls = new Set(stillReferenced.map((comment) => comment.attachmentUrl));
+    const orphanedUrls = attachmentUrls.filter((url) => !referencedUrls.has(url));
+    if (orphanedUrls.length > 0) {
+      try { await del(orphanedUrls); } catch { /* Blob cleanup is best effort. */ }
+    }
   }
 
   return NextResponse.json({ ok: true });

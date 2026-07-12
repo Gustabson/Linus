@@ -1,7 +1,7 @@
 import { Prisma } from "@prisma/client";
 
-/** Supports rolling deployments while an additive schema change is being applied. */
-export function isMissingDatabaseColumn(error: unknown) {
+/** Returns true when a serializable transaction should be retried. */
+export function isTransactionConflict(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError
-    && (error.code === "P2021" || error.code === "P2022");
+    && error.code === "P2034";
 }

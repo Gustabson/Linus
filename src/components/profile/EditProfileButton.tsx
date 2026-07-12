@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "@/hooks/useAppRouter";
 import { Pencil, X, Save, Camera, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 
 interface ProfileData {
   id:       string;
@@ -17,6 +18,7 @@ interface ProfileData {
 
 export function EditProfileButton({ user }: { user: ProfileData }) {
   const router   = useRouter();
+  const { update: updateSession } = useSession();
   const fileRef  = useRef<HTMLInputElement>(null);
 
   const [open,    setOpen]    = useState(false);
@@ -33,6 +35,10 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
   // Image state
   const [imageFile,    setImageFile]    = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  useEffect(() => () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+  }, [imagePreview]);
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -52,6 +58,7 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
 
   function handleClose() {
     setOpen(false);
+    setSaving(false);
     setError("");
     setImageFile(null);
     setImagePreview(null);
@@ -90,6 +97,7 @@ export function EditProfileButton({ user }: { user: ProfileData }) {
       }
 
       handleClose();
+      await updateSession();
       router.refresh();
     } catch {
       setError("Error de conexión. Intentá de nuevo.");

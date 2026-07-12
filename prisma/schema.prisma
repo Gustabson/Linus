@@ -499,6 +499,7 @@ model PostComment {
   id        String   @id @default(cuid())
   content   String
   createdAt DateTime @default(now())
+  deletedAt DateTime?
 
   attachmentUrl  String?
   attachmentName String?
@@ -523,6 +524,7 @@ model PostComment {
   @@index([authorId])
   @@index([linkedTreeId])
   @@index([parentId])
+  @@index([postId, parentId, createdAt, id])
 }
 
 model PostCommentLike {
@@ -538,6 +540,16 @@ model PostCommentLike {
   @@unique([commentId, userId])
   @@index([commentId])
   @@index([userId])
+}
+
+/// Database-backed fixed-window counters for authenticated mutation endpoints.
+/// The compound id contains only an action name, a user id and a time bucket.
+model ApiRateLimit {
+  id        String   @id
+  count     Int      @default(1)
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }
 
 model PostReport {

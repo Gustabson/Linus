@@ -40,6 +40,7 @@ export interface SocialCommentData {
   id: string;
   content: string;
   createdAt: string;
+  deletedAt: string | null;
   attachmentUrl: string | null;
   attachmentName: string | null;
   attachmentType: string | null;
@@ -62,7 +63,7 @@ export interface InternalTreeLink {
   slug: string;
 }
 
-export function buildCommentPage<T extends { id: string }>(items: T[], total: number) {
+export function buildCommentPage<T extends { id: string }>(items: T[], total: number | null) {
   const hasMore = items.length > COMMENT_PAGE_SIZE;
   const comments = hasMore ? items.slice(0, COMMENT_PAGE_SIZE) : items;
   return {
@@ -74,13 +75,23 @@ export function buildCommentPage<T extends { id: string }>(items: T[], total: nu
   };
 }
 
-const LINK_CANDIDATE = /https?:\/\/[^\s<>"']+|\/[\p{L}\p{N}_.-]+\/[\p{L}\p{N}_.-]+(?:\?[^\s<>"']*)?/giu;
+const LINK_CANDIDATE = /https?:\/\/[^\s<>"']+|\/[\p{L}\p{N}_.-]+\/[\p{L}\p{N}_.-]+(?:\/[\p{L}\p{N}_.-]+)*(?:\?[^\s<>"']*)?/giu;
 
 function trimTrailingPunctuation(value: string) {
   return value.replace(/[),.;!?]+$/u, "");
 }
 
-/** Finds the first two-segment link that belongs to this installation. */
+function decodedPathParts(pathname: string) {
+  try {
+    return pathname.split("/").filter(Boolean).map((part) => decodeURIComponent(part));
+  } catch {
+    return null;
+  }
+}
+
+/** Finds the first tree link that belongs to this installation.
+ * Deep links such as /user/tree/document resolve to the owning tree as well.
+ */
 export function findInternalTreeLink(
   content: string,
   requestOrigin: string,
@@ -97,8 +108,8 @@ export function findInternalTreeLink(
     }
 
     if (parsed.origin !== origin.origin) continue;
-    const parts = parsed.pathname.split("/").filter(Boolean).map(decodeURIComponent);
-    if (parts.length !== 2 || !parts[0] || !parts[1]) continue;
+    const parts = decodedPathParts(parsed.pathname);
+    if (!parts || parts.length < 2 || !parts[0] || !parts[1]) continue;
 
     return { matchedText, username: parts[0], slug: parts[1] };
   }
@@ -121,8 +132,8 @@ export function withoutLinkedTreeUrl(
     } catch {
       continue;
     }
-    const parts = parsed.pathname.split("/").filter(Boolean).map(decodeURIComponent);
-    if (parts[0] === tree.owner.username && parts[1] === tree.slug) {
+    const parts = decodedPathParts(parsed.pathname);
+    if (parts?.[0] === tree.owner.username && parts[1] === tree.slug) {
       return `${content.slice(0, rawMatch.index)}${content.slice((rawMatch.index ?? 0) + rawMatch[0].length)}`
         .replace(/[ \t]+\n/g, "\n")
         .replace(/\n{3,}/g, "\n\n")

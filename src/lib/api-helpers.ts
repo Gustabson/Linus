@@ -65,6 +65,20 @@ export const unauthorized = () =>
 export const forbidden = () =>
   NextResponse.json({ error: "Sin permiso" }, { status: 403 });
 
+/** Rejects browser mutations originating on another site (CSRF defense-in-depth). */
+export function rejectCrossOrigin(req: Request) {
+  if (req.headers.get("sec-fetch-site") === "cross-site") return forbidden();
+  const origin = req.headers.get("origin");
+  if (!origin) return null;
+  const expectedHost = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  try {
+    if (!expectedHost || new URL(origin).host !== expectedHost) return forbidden();
+  } catch {
+    return forbidden();
+  }
+  return null;
+}
+
 /** Escapes HTML special chars — use before interpolating user content into HTML. */
 export function escapeHtml(s: string): string {
   return s

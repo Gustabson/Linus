@@ -27,7 +27,7 @@ const TYPE_META: Record<NotificationType, { label: string; icon: React.ReactNode
   NEW_FOLLOWER:      { label: "te empezó a seguir",      icon: <UserPlus      className="w-4 h-4 text-primary"     />, section: "social"    },
   NEW_FORK:          { label: "forkeó tu contenido",     icon: <GitFork       className="w-4 h-4 text-blue-500"   />, section: "social"    },
   NEW_LIKE:          { label: "le gustó tu contenido",   icon: <Heart         className="w-4 h-4 text-red-500"    />, section: "social"    },
-  NEW_COMMENT:       { label: "comentó en tu documento", icon: <MessageSquare className="w-4 h-4 text-amber-500"  />, section: "contenido" },
+  NEW_COMMENT:       { label: "dejó un comentario", icon: <MessageSquare className="w-4 h-4 text-amber-500"  />, section: "contenido" },
   NEW_PROPOSAL:      { label: "te envió una propuesta",  icon: <GitFork       className="w-4 h-4 text-blue-500"   />, section: "contenido" },
   PROPOSAL_REVIEWED: { label: "revisó tu propuesta",     icon: <MessageSquare className="w-4 h-4 text-primary"    />, section: "contenido" },
 };

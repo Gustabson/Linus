@@ -37,6 +37,7 @@ export function CommentComposer({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const emojiRef = useRef<HTMLDivElement>(null);
+  const attachmentRef = useRef<CommentAttachment | null>(null);
 
   useEffect(() => {
     function closePicker(event: MouseEvent) {
@@ -44,6 +45,18 @@ export function CommentComposer({
     }
     document.addEventListener("mousedown", closePicker);
     return () => document.removeEventListener("mousedown", closePicker);
+  }, []);
+
+  useEffect(() => () => {
+    const pending = attachmentRef.current;
+    if (!pending) return;
+    // Best-effort cleanup for uploads abandoned by navigation or closing a reply box.
+    void fetch("/api/upload", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: pending.url }),
+      keepalive: true,
+    }).catch(() => undefined);
   }, []);
 
   function resize() {
@@ -93,8 +106,12 @@ export function CommentComposer({
         setError(data.error ?? "No se pudo adjuntar el archivo.");
         return;
       }
-      if (attachment) void deleteUpload(attachment);
-      setAttachment(data as CommentAttachment);
+      if (attachmentRef.current) void deleteUpload(attachmentRef.current);
+      const uploaded = data as CommentAttachment;
+      attachmentRef.current = uploaded;
+      setAttachment(uploaded);
+    } catch {
+      setError("No se pudo conectar para adjuntar el archivo.");
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -102,7 +119,8 @@ export function CommentComposer({
   }
 
   async function removeAttachment() {
-    const current = attachment;
+    const current = attachmentRef.current;
+    attachmentRef.current = null;
     setAttachment(null);
     if (current) await deleteUpload(current);
   }
@@ -122,10 +140,13 @@ export function CommentComposer({
         setError(data.error ?? "No se pudo publicar el comentario.");
         return;
       }
+      attachmentRef.current = null;
       onCreated(data.comment);
       setText("");
       setAttachment(null);
       if (inputRef.current) inputRef.current.style.height = "auto";
+    } catch {
+      setError("No se pudo conectar. Intentá nuevamente.");
     } finally {
       setSending(false);
     }
@@ -169,11 +190,13 @@ export function CommentComposer({
               onClick={() => setShowEmoji((value) => !value)}
               className={`grid h-8 w-8 place-items-center rounded-lg transition-colors ${showEmoji ? "bg-primary/10 text-primary" : "text-text-subtle hover:bg-surface hover:text-primary"}`}
               aria-label="Agregar emoji"
+              aria-expanded={showEmoji}
+              aria-haspopup="dialog"
             >
               <Smile className="h-4 w-4" />
             </button>
             {showEmoji && (
-              <div className="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-2xl border border-border bg-surface p-3 shadow-xl">
+              <div role="dialog" aria-label="Seleccionar emoji" className="absolute bottom-full left-0 z-50 mb-2 w-64 rounded-2xl border border-border bg-surface p-3 shadow-xl">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-text-subtle">Emojis</p>
                 <div className="flex flex-wrap gap-0.5">
                   {QUICK_EMOJIS.map((emoji) => (
@@ -181,6 +204,7 @@ export function CommentComposer({
                       key={emoji}
                       type="button"
                       onClick={() => insertEmoji(emoji)}
+                      aria-label={`Agregar emoji ${emoji}`}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-colors hover:bg-bg"
                     >
                       {emoji}
@@ -221,6 +245,7 @@ export function CommentComposer({
               }
             }}
             placeholder={placeholder}
+            aria-label={placeholder}
             rows={1}
             maxLength={MAX_COMMENT_LENGTH}
             className="min-h-8 min-w-0 flex-1 resize-none bg-transparent py-1 text-sm leading-relaxed text-text placeholder:text-text-subtle focus:outline-none"
@@ -238,7 +263,7 @@ export function CommentComposer({
       </div>
 
       <div className="flex items-center justify-between gap-3 sm:pl-9">
-        <p className="min-h-4 text-xs text-danger">{error}</p>
+        <p role="alert" aria-live="polite" className="min-h-4 text-xs text-danger">{error}</p>
         <p className="flex items-center gap-1 text-[10px] text-text-subtle">
           <FileUp className="h-3 w-3" /> GIF, media, PDF o Word · máx. 10 MB
         </p>

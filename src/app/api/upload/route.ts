@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { del, put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, parseBody, rejectCrossOrigin, unauthorized } from "@/lib/api-helpers";
 import { isOwnedCommentUpload } from "@/lib/comments";
+import { prisma } from "@/lib/prisma";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 const MAX_SIZE_MB = 10;
 
@@ -41,18 +43,39 @@ function hasExpectedSignature(ext: string, bytes: Uint8Array) {
     case "mp4": return ascii(4, 8) === "ftyp";
     case "webm": return bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3;
     case "doc": return bytes[0] === 0xd0 && bytes[1] === 0xcf && bytes[2] === 0x11 && bytes[3] === 0xe0;
-    case "docx": return bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
+    case "docx": {
+      const isZip = bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
+      if (!isZip) return false;
+      // ZIP directory entry names are stored verbatim even when contents are compressed.
+      const archiveText = new TextDecoder("latin1").decode(bytes);
+      return archiveText.includes("[Content_Types].xml") && archiveText.includes("word/");
+    }
     default: return true;
   }
 }
 
 export async function POST(req: NextRequest) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 
-  const formData = await req.formData();
+  const announcedSize = Number(req.headers.get("content-length") ?? 0);
+  if (Number.isFinite(announcedSize) && announcedSize > (MAX_SIZE_MB + 1) * 1024 * 1024)
+    return NextResponse.json({ error: `Máximo ${MAX_SIZE_MB}MB` }, { status: 413 });
+
+  const formData = await req.formData().catch(() => null);
+  if (!formData)
+    return NextResponse.json({ error: "Formulario inválido" }, { status: 400 });
   const file = formData.get("file") as File | null;
   const purpose = formData.get("purpose") === "comment" ? "comment" : "general";
+  const limited = await enforceRateLimit({
+    action: `upload:${purpose}`,
+    userId: session.user.id,
+    limit: purpose === "comment" ? 20 : 50,
+    windowMs: 60 * 60_000,
+  });
+  if (limited) return limited;
 
   if (!file)
     return NextResponse.json({ error: "No se envió archivo" }, { status: 400 });
@@ -69,8 +92,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Este tipo de archivo no se puede adjuntar a un comentario" }, { status: 400 });
 
   if (purpose === "comment") {
-    const header = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-    if (!hasExpectedSignature(ext, header))
+    const bytes = new Uint8Array(await (ext === "docx" ? file : file.slice(0, 16)).arrayBuffer());
+    if (!hasExpectedSignature(ext, bytes))
       return NextResponse.json({ error: "El contenido del archivo no coincide con su extensión" }, { status: 400 });
   }
 
@@ -88,12 +111,29 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
+  const limited = await enforceRateLimit({
+    action: "upload:delete", userId: session.user.id, limit: 40, windowMs: 60_000,
+  });
+  if (limited) return limited;
 
-  const body = await req.json().catch(() => ({}));
-  if (!isOwnedCommentUpload(body.url, session.user.id))
+  const body = await parseBody(req, 4_000);
+  if (!body || !isOwnedCommentUpload(body.url, session.user.id))
     return NextResponse.json({ error: "Archivo no válido" }, { status: 400 });
+
+  const referenced = await prisma.postComment.findFirst({
+    where: { attachmentUrl: body.url },
+    select: { id: true },
+  });
+  if (referenced) {
+    return NextResponse.json(
+      { error: "No se puede eliminar un archivo que ya fue publicado" },
+      { status: 409 },
+    );
+  }
 
   await del(body.url);
   return NextResponse.json({ ok: true });

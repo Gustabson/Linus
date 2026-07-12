@@ -23,6 +23,10 @@ describe("comment pagination", () => {
     expect(page.nextCursor).toBeNull();
     expect(page.hasMore).toBe(false);
   });
+
+  it("allows subsequent pages to omit the expensive total count", () => {
+    expect(buildCommentPage([{ id: "next" }], null).total).toBeNull();
+  });
 });
 
 describe("comment links", () => {
@@ -42,6 +46,17 @@ describe("comment links", () => {
       "https://example.com/ana/matematica",
       "https://linus.edu",
     )).toBeNull();
+  });
+
+  it("resolves a document deep link to its tree", () => {
+    expect(findInternalTreeLink(
+      "https://linus.edu/ana/matematica/leccion-1",
+      "https://linus.edu",
+    )).toMatchObject({ username: "ana", slug: "matematica" });
+  });
+
+  it("ignores malformed percent-encoding instead of throwing", () => {
+    expect(findInternalTreeLink("https://linus.edu/ana/%E0%A4%A", "https://linus.edu")).toBeNull();
   });
 
   it("removes the resolved link without removing surrounding text", () => {

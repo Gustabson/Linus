@@ -257,7 +257,7 @@ function CommentSection({
         const knownIds = new Set(previous.map((comment) => comment.id));
         return [...previous, ...(data.comments ?? []).filter((comment: SocialCommentData) => !knownIds.has(comment.id))];
       });
-      setTotal(data.total ?? total);
+      setTotal((current) => typeof data.total === "number" ? data.total : current);
       setNextCursor(data.nextCursor ?? null);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "No se pudieron cargar más comentarios");
@@ -280,7 +280,7 @@ function CommentSection({
         </p>
       </div>
 
-      {isAuthenticated && (
+      {isAuthenticated && !focusedCommentId && (
         <CommentComposer
           postId={postId}
           onCreated={(comment) => {
@@ -319,6 +319,8 @@ function CommentSection({
               postId={postId}
               currentUserId={currentUserId}
               isAuthenticated={isAuthenticated}
+              initialRepliesOpen={focusedCommentId === comment.id}
+              initialReplyComposerOpen={focusedCommentId === comment.id && isAuthenticated}
               onDeleted={handleDeleted}
               onThreadCountChange={onCountChange}
             />
@@ -367,6 +369,7 @@ export function PostCard({
   const [likeCount, setLikeCount] = useState(post._count.likes);
   const [liked, setLiked]         = useState(post.likes.length > 0);
   const [liking, setLiking]       = useState(false);
+  const [likeError, setLikeError] = useState("");
   const [showComments, setShowComments] = useState(initialCommentsOpen);
   const [commentCount, setCommentCount] = useState(post._count.comments);
   const [deleted, setDeleted]     = useState(false);
@@ -376,19 +379,19 @@ export function PostCard({
   async function toggleLike() {
     if (!isAuthenticated || liking) return;
     setLiking(true);
-    setLiked((prev) => !prev);
-    setLikeCount((prev) => liked ? prev - 1 : prev + 1);
+    setLikeError("");
 
     try {
       const res  = await fetch(`/api/posts/${post.id}/like`, { method: "POST" });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setLiked(data.liked);
         setLikeCount(data.count);
       } else {
-        setLiked((prev) => !prev);
-        setLikeCount(post._count.likes);
+        setLikeError(data.error ?? "No se pudo actualizar el Me gusta");
       }
+    } catch {
+      setLikeError("No se pudo conectar. Intentá nuevamente.");
     } finally {
       setLiking(false);
     }
@@ -458,7 +461,7 @@ export function PostCard({
       <div className="grid grid-cols-3 gap-2 border-t border-border-subtle pt-3">
         <button
           onClick={toggleLike}
-          disabled={!isAuthenticated}
+          disabled={!isAuthenticated || liking}
           aria-label={liked ? "Quitar Me gusta" : "Me gusta"}
           className={`flex min-h-10 items-center justify-center gap-1 rounded-xl px-1 text-xs font-semibold transition-colors sm:gap-2 sm:px-3 sm:text-sm ${
             liked
@@ -487,6 +490,7 @@ export function PostCard({
           className="flex min-h-10 items-center justify-center gap-1 rounded-xl px-1 text-xs font-semibold text-text-muted transition-colors hover:bg-bg hover:text-primary sm:gap-2 sm:px-3 sm:text-sm"
         />
       </div>
+      {likeError && <p role="alert" className="-mt-3 text-center text-xs text-danger">{likeError}</p>}
 
       {/* Comments section */}
       {showComments && (
