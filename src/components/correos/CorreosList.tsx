@@ -333,7 +333,7 @@ function MessageRow({
         {unread && <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-surface bg-primary" />}
       </div>
 
-      <div className="min-w-0 lg:grid lg:grid-cols-[minmax(8rem,0.35fr)_minmax(0,1fr)] lg:gap-5">
+      <div className="min-w-0 lg:grid lg:grid-cols-[9rem_minmax(0,1fr)] lg:gap-5">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-1.5">
             <p className={`truncate text-sm ${unread ? "font-bold text-text" : "font-semibold text-text"}`}>{personLabel}</p>
