@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, isUniqueViolation, parseBody } from "@/lib/api-helpers";
+import { getSession, unauthorized, isUniqueViolation, parseBody, rejectCrossOrigin } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ slug: string }> };
 const COMMIT_MESSAGE_MAX = 500;
@@ -10,6 +10,8 @@ class NoDraftsError extends Error {}
 class PublishConflictError extends Error {}
 
 export async function POST(req: NextRequest, { params }: Params) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 

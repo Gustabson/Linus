@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { rejectCrossOrigin } from "@/lib/api-helpers";
 
 // GET /api/notifications — returns latest 30 notifications + unread count
 export async function GET() {
@@ -26,7 +27,9 @@ export async function GET() {
 }
 
 // PATCH /api/notifications — mark all as read
-export async function PATCH() {
+export async function PATCH(req: NextRequest) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await auth();
   if (!session?.user?.id)
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });

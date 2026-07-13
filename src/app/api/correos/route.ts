@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { USER_BASIC_SELECT } from "@/lib/data";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, parseBody, rejectCrossOrigin, unauthorized } from "@/lib/api-helpers";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { sendCorreoEmail } from "@/lib/notifications";
 import { getTrashPresentation } from "@/lib/mail-trash";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 const SUBJECT_MAX = 200;
 const BODY_MAX    = 5000;
@@ -156,16 +157,32 @@ export async function GET(req: NextRequest) {
 
 // ── POST /api/correos — enviar nuevo correo ───────────────────────────────────
 export async function POST(req: NextRequest) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
+  const limited = await enforceRateLimit({
+    action: "mail-create", userId: session.user.id, limit: 60, windowMs: 60 * 60_000,
+  });
+  if (limited) return limited;
 
-  const body = await req.json().catch(() => null);
+  const body = await parseBody(req, 16_000);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
 
-  const { subject, htmlBody, recipientUsername, isDraft = false } = body;
+  const { subject, htmlBody, recipientUsername } = body;
+  if (typeof subject !== "string" || typeof htmlBody !== "string") {
+    return NextResponse.json({ error: "Asunto o mensaje inválido" }, { status: 400 });
+  }
+  if (body.isDraft !== undefined && typeof body.isDraft !== "boolean") {
+    return NextResponse.json({ error: "Estado de borrador inválido" }, { status: 400 });
+  }
+  if (recipientUsername != null && typeof recipientUsername !== "string") {
+    return NextResponse.json({ error: "Destinatario inválido" }, { status: 400 });
+  }
+  const isDraft = body.isDraft === true;
 
   // ── Validate subject
-  const trimmedSubject = String(subject ?? "").trim();
+  const trimmedSubject = subject.trim();
   if (!trimmedSubject) {
     return NextResponse.json({ error: "El asunto no puede estar vacío" }, { status: 400 });
   }
@@ -174,7 +191,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Validate & sanitize body
-  const trimmedBody = String(htmlBody ?? "").trim();
+  const trimmedBody = htmlBody.trim();
   if (!trimmedBody || trimmedBody === "<p></p>") {
     return NextResponse.json({ error: "El mensaje no puede estar vacío" }, { status: 400 });
   }
@@ -190,7 +207,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Seleccioná un destinatario" }, { status: 400 });
     }
     const recipient = await prisma.user.findUnique({
-      where:  { username: String(recipientUsername) },
+      where:  { username: recipientUsername.trim().toLowerCase() },
       select: { id: true },
     });
     if (!recipient) {

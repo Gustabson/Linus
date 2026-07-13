@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { USER_BASIC_SELECT } from "@/lib/data";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, parseBody, rejectCrossOrigin, unauthorized } from "@/lib/api-helpers";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { revalidatePath } from "next/cache";
 import { resolveMailScope, resolveMailView, type MailDeletionScope, type MailView } from "@/lib/mail-trash";
@@ -62,6 +62,8 @@ export async function GET(req: NextRequest, { params }: Params) {
 
 // ── PATCH /api/correos/[id] — update or send an existing draft ────────────────
 export async function PATCH(req: NextRequest, { params }: Params) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 
@@ -80,20 +82,27 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!existing.isDraft)
     return NextResponse.json({ error: "Solo se pueden editar borradores" }, { status: 400 });
 
-  const body = await req.json().catch(() => null);
+  const body = await parseBody(req, 16_000);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
 
-  const { subject, htmlBody, recipientUsername, isDraft = true } = body;
+  const { subject, htmlBody, recipientUsername } = body;
+  if (typeof subject !== "string" || typeof htmlBody !== "string")
+    return NextResponse.json({ error: "Asunto o mensaje inválido" }, { status: 400 });
+  if (body.isDraft !== undefined && typeof body.isDraft !== "boolean")
+    return NextResponse.json({ error: "Estado de borrador inválido" }, { status: 400 });
+  if (recipientUsername != null && typeof recipientUsername !== "string")
+    return NextResponse.json({ error: "Destinatario inválido" }, { status: 400 });
+  const isDraft = body.isDraft !== false;
 
   // Validate subject
-  const trimmedSubject = String(subject ?? "").trim();
+  const trimmedSubject = subject.trim();
   if (!trimmedSubject)
     return NextResponse.json({ error: "El asunto no puede estar vacío" }, { status: 400 });
   if (trimmedSubject.length > 200)
     return NextResponse.json({ error: "El asunto tiene un máximo de 200 caracteres" }, { status: 400 });
 
   // Validate & sanitize body
-  const trimmedBody = String(htmlBody ?? "").trim();
+  const trimmedBody = htmlBody.trim();
   if (!trimmedBody || trimmedBody === "<p></p>")
     return NextResponse.json({ error: "El mensaje no puede estar vacío" }, { status: 400 });
   const cleanBody = sanitizeHtml(trimmedBody);
@@ -105,7 +114,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Seleccioná un destinatario" }, { status: 400 });
 
     const recipient = await prisma.user.findUnique({
-      where:  { username: String(recipientUsername) },
+      where:  { username: recipientUsername.trim().toLowerCase() },
       select: { id: true },
     });
     if (!recipient)
@@ -118,7 +127,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     data: {
       subject:     trimmedSubject,
       body:        cleanBody,
-      isDraft:     isDraft as boolean,
+      isDraft,
       ...(recipientId !== null ? { recipientId } : {}),
     },
     select: { id: true, subject: true, isDraft: true, createdAt: true },
@@ -129,6 +138,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 // ── DELETE /api/correos/[id] — soft delete (per side) ────────────────────────
 export async function DELETE(req: NextRequest, { params }: Params) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 

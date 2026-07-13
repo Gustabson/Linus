@@ -32,3 +32,15 @@ export function safeHttpUrl(v: unknown, max = 2_048): string | null {
     return null;
   }
 }
+
+/** Mirrors the remote hosts configured for next/image to prevent broken posts. */
+export function safeRemoteImageUrl(v: unknown): string | null {
+  const normalized = safeHttpUrl(v);
+  if (!normalized) return null;
+  const url = new URL(normalized);
+  if (url.protocol !== "https:") return null;
+  const allowed = url.hostname === "lh3.googleusercontent.com"
+    || url.hostname === "avatars.githubusercontent.com"
+    || url.hostname.endsWith(".public.blob.vercel-storage.com");
+  return allowed ? normalized : null;
+}

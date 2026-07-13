@@ -8,6 +8,7 @@ import {
   Home, LayoutDashboard, Mail, Search, Compass, MessageSquareText,
   Settings, User, Bell, X, Inbox, Send, FileText, Pencil, LogOut, Trash2,
 } from "lucide-react";
+import { clearThemeCookies } from "@/lib/theme-cookie-client";
 
 // ── BottomNav: visible only on mobile (<768px) ────────────────────────────
 // Styled with sidebar colors (--sidebar-bg / --sidebar-text) so user
@@ -248,7 +249,7 @@ export function BottomNav() {
 
         <div className="border-t border-sidebar-text/20 mt-2 pt-2">
           <button
-            onClick={() => { setConfigOpen(false); document.cookie = "eduhub_theme=;path=/;max-age=0"; localStorage.removeItem("theme"); signOut(); }}
+            onClick={() => { setConfigOpen(false); clearThemeCookies(); localStorage.removeItem("theme"); signOut(); }}
             className="flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium text-sidebar-text/60 hover:bg-sidebar-text/10 hover:text-sidebar-text transition-colors"
           >
             <LogOut className="w-5 h-5 shrink-0" />

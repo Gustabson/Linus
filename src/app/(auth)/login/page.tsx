@@ -52,7 +52,7 @@ export default async function LoginPage({
               <BookOpen className="w-8 h-8 text-primary" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-text">Bienvenido a EduHub</h1>
+          <h1 className="text-2xl font-bold text-text">Bienvenido a LINUG</h1>
           <p className="text-text-muted mt-1 text-sm">
             La plataforma educativa colaborativa y abierta
           </p>

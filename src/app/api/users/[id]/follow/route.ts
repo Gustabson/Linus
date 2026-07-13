@@ -2,11 +2,14 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/notifications";
 import { NextResponse } from "next/server";
+import { rejectCrossOrigin } from "@/lib/api-helpers";
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
@@ -42,9 +45,11 @@ export async function POST(
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 

@@ -8,7 +8,13 @@ import { LayoutShell }     from "@/components/layout/LayoutShell";
 import { Toaster }         from "@/components/ui/Toaster";
 import { ThemeProvider }   from "@/components/layout/ThemeProvider";
 import { SWRProvider }     from "@/hooks/use-api";
-import { buildThemeCookie, cookieToStyle } from "@/lib/theme-config";
+import {
+  buildThemeCookie,
+  cookieToStyle,
+  LEGACY_THEME_COOKIE_NAME,
+  parseThemeCookieValue,
+  THEME_COOKIE_NAME,
+} from "@/lib/theme-config";
 import { ErrorBoundary }  from "@/components/shared/ErrorBoundary";
 import { ThemeScript }    from "@/components/layout/ThemeScript";
 
@@ -17,12 +23,12 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_APP_URL ?? process.env.AUTH_URL ?? "https://linus-jet.vercel.app"
   ),
   title: {
-    default:  "EduHub — Conocimiento Educativo Abierto",
-    template: "%s · EduHub",
+    default:  "LINUG — Conocimiento Educativo Abierto",
+    template: "%s · LINUG",
   },
   description:
     "Plataforma colaborativa de recursos educativos. Forkea, adapta y compartí currículos con personas de todo el mundo.",
-  openGraph: { siteName: "EduHub", locale: "es_AR", type: "website" },
+  openGraph: { siteName: "LINUG", locale: "es_AR", type: "website" },
   twitter: { card: "summary" },
 };
 
@@ -47,15 +53,20 @@ export default async function RootLayout({
   if (isLoggedIn) {
     try {
       const jar = await cookies();
-      const themeCookies = jar.getAll("eduhub_theme");
-      const raw = themeCookies.at(-1)?.value;
+      const currentCookie = jar.getAll(THEME_COOKIE_NAME).at(-1)?.value;
+      const legacyCookie = jar.getAll(LEGACY_THEME_COOKIE_NAME).at(-1)?.value;
+      const currentTheme = currentCookie ? parseThemeCookieValue(currentCookie) : null;
+      const legacyTheme = legacyCookie ? parseThemeCookieValue(legacyCookie) : null;
+      const parsed = currentTheme ?? legacyTheme;
 
-      if (raw) {
+      if (parsed) {
         // ── Fast path: cookie already present ─────────────────────────
-        const parsed = JSON.parse(decodeURIComponent(raw));
         const result = cookieToStyle(parsed);
         htmlStyle    = result.htmlStyle;
         if (result.isDark) initialTheme = "dark";
+        if (!currentTheme && legacyTheme) {
+          cookieToHydrate = encodeURIComponent(JSON.stringify(parsed));
+        }
       } else {
         // ── Slow path: first login or cookie was cleared ───────────────
         // Load from DB so the theme applies without a manual re-save.

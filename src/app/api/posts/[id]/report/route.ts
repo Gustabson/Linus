@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma }       from "@/lib/prisma";
-import { getSession, unauthorized, parseBody, safeString } from "@/lib/api-helpers";
+import { getSession, unauthorized, parseBody, rejectCrossOrigin, safeString } from "@/lib/api-helpers";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 const VALID_REASONS = ["spam", "inappropriate", "misinformation", "other"] as const;
 type Reason = (typeof VALID_REASONS)[number];
@@ -10,8 +11,14 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
+  const limited = await enforceRateLimit({
+    action: "post-report", userId: session.user.id, limit: 10, windowMs: 24 * 60 * 60_000,
+  });
+  if (limited) return limited;
 
   const { id } = await params;
   const body = await parseBody(req);

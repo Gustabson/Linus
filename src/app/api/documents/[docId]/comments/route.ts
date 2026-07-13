@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { USER_BASIC_SELECT } from "@/lib/data";
 import { createNotification } from "@/lib/notifications";
-import { getSession, unauthorized, forbidden, parseBody, safeString } from "@/lib/api-helpers";
+import { getSession, unauthorized, forbidden, parseBody, rejectCrossOrigin, safeString } from "@/lib/api-helpers";
 
 const COMMENT_MAX = 5_000;
 const QUOTE_MAX = 1_000;
@@ -66,6 +66,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ docId: string }> }
 ) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 
@@ -124,6 +126,8 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ docId: string }> }
 ) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 

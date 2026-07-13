@@ -15,7 +15,8 @@ import {
   Sun,
 } from "lucide-react";
 import { SectionCard } from "@/components/ui/Card";
-import { PRESET_DARK, PRESET_LIGHT, buildThemeCookie } from "@/lib/theme-config";
+import { PRESET_DARK, PRESET_LIGHT, buildThemeCookie, findThemeCookieValue, parseThemeCookieValue } from "@/lib/theme-config";
+import { writeThemeCookie as writeThemeCookieValue } from "@/lib/theme-cookie-client";
 
 type Mode = "light" | "dark" | "custom";
 type PaletteSection = "interface" | "sidebar" | "content";
@@ -146,16 +147,12 @@ function applyThemeVars({ mode, colors, sidebarColors, ctColors }: ThemeSnapshot
 }
 
 function readThemeCookie(): ThemeSnapshot | null {
-  const raw = document.cookie
-    .split("; ")
-    .filter((row) => row.startsWith("eduhub_theme="))
-    .at(-1)
-    ?.split("=")[1];
+  const raw = findThemeCookieValue(document.cookie);
   if (!raw) return null;
 
-  try {
-    const parsed = JSON.parse(decodeURIComponent(raw)) as Record<string, string>;
-    return {
+  const parsed = parseThemeCookieValue(raw);
+  if (!parsed) return null;
+  return {
       mode: parsed.mode === "dark" || parsed.mode === "custom" ? parsed.mode : "light",
       colors: {
         themeBg: parsed.bg,
@@ -174,9 +171,6 @@ function readThemeCookie(): ThemeSnapshot | null {
         themeResource: parsed.resource,
       },
     };
-  } catch {
-    return null;
-  }
 }
 
 function writeThemeCookie(snapshot: ThemeSnapshot) {
@@ -186,8 +180,7 @@ function writeThemeCookie(snapshot: ThemeSnapshot) {
     ...snapshot.ctColors,
   });
   cookie.mode = snapshot.mode;
-  document.cookie = "eduhub_theme=;path=/configuracion;max-age=0;SameSite=Lax";
-  document.cookie = `eduhub_theme=${encodeURIComponent(JSON.stringify(cookie))};path=/;max-age=31536000;SameSite=Lax`;
+  writeThemeCookieValue(encodeURIComponent(JSON.stringify(cookie)));
 }
 
 async function persistTheme(snapshot: ThemeSnapshot, keepalive = false) {
@@ -400,7 +393,7 @@ export function ConfigApariencia({
   return (
     <SectionCard
       title="Apariencia"
-      description="Elegí el aspecto de EduHub. Cada cambio se previsualiza y guarda automáticamente."
+      description="Elegí el aspecto de LINUG. Cada cambio se previsualiza y guarda automáticamente."
       action={status}
     >
       <div className="grid gap-3 sm:grid-cols-3">

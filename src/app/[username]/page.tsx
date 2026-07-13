@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   if (!user) return {};
   return {
     title: user.name ?? username,
-    description: user.bio ?? `Perfil de ${user.name ?? username} en EduHub`,
+    description: user.bio ?? `Perfil de ${user.name ?? username} en LINUG`,
     openGraph: { title: user.name ?? username, description: user.bio ?? undefined },
   };
 }

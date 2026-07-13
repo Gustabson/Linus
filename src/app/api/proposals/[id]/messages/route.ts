@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, parseBody, safeString } from "@/lib/api-helpers";
+import { getSession, unauthorized, parseBody, rejectCrossOrigin, safeString } from "@/lib/api-helpers";
 import { createNotification } from "@/lib/notifications";
 import { proposalCounterpartyId } from "@/lib/proposals";
 
@@ -8,6 +8,8 @@ type Params = { params: Promise<{ id: string }> };
 const MESSAGE_MAX = 5_000;
 
 export async function POST(req: NextRequest, { params }: Params) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
   const { id } = await params;

@@ -149,7 +149,7 @@ export default async function DocumentPreviewPage({
 
       {/* Footer */}
       <div className="text-center text-xs text-text-subtle pb-8 space-y-1">
-        <p>Generado por EduHub · Conocimiento Educativo Abierto</p>
+        <p>Generado por LINUG · Conocimiento Educativo Abierto</p>
         <Link href={`/${username}/${slug}/${docSlug}`} className="text-primary hover:underline">
           Ver versión completa con historial y comentarios
         </Link>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseBody, safeHttpUrl, safeString } from "./request-validation";
+import { parseBody, safeHttpUrl, safeRemoteImageUrl, safeString } from "./request-validation";
 
 describe("API input helpers", () => {
   it("accepts bounded JSON objects only", async () => {
@@ -18,5 +18,12 @@ describe("API input helpers", () => {
     expect(safeString("too long", 3)).toBeNull();
     expect(safeHttpUrl("https://example.com/a")).toBe("https://example.com/a");
     expect(safeHttpUrl("javascript:alert(1)")).toBeNull();
+  });
+
+  it("only accepts image hosts supported by the application", () => {
+    expect(safeRemoteImageUrl("https://example.public.blob.vercel-storage.com/posts/a.png"))
+      .toBe("https://example.public.blob.vercel-storage.com/posts/a.png");
+    expect(safeRemoteImageUrl("https://example.com/a.png")).toBeNull();
+    expect(safeRemoteImageUrl("http://lh3.googleusercontent.com/a.png")).toBeNull();
   });
 });

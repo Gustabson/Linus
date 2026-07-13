@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   const formData = await req.formData().catch(() => null);
   if (!formData)
     return NextResponse.json({ error: "Formulario inválido" }, { status: 400 });
-  const file = formData.get("file") as File | null;
+  const file = formData.get("file");
   const purpose = formData.get("purpose") === "comment" ? "comment" : "general";
   const limited = await enforceRateLimit({
     action: `upload:${purpose}`,
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   });
   if (limited) return limited;
 
-  if (!file)
+  if (!(file instanceof File))
     return NextResponse.json({ error: "No se envió archivo" }, { status: 400 });
   if (file.size > MAX_SIZE_MB * 1024 * 1024)
     return NextResponse.json({ error: `Máximo ${MAX_SIZE_MB}MB` }, { status: 400 });

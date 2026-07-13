@@ -1,10 +1,10 @@
-# EduHub
+# LINUG
 
 Plataforma colaborativa de recursos educativos. Creá, forkeá y compartí currículos con personas de todo el mundo.
 
 ## Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org) (App Router)
+- **Framework**: [Next.js 16](https://nextjs.org) (App Router)
 - **Base de datos**: PostgreSQL vía [Prisma ORM](https://prisma.io) (recomendado: [Neon](https://neon.tech))
 - **Autenticación**: [NextAuth v5](https://authjs.dev)
 - **Editor de texto**: [TipTap](https://tiptap.dev)
@@ -14,7 +14,7 @@ Plataforma colaborativa de recursos educativos. Creá, forkeá y compartí curr�
 
 ## Requisitos
 
-- Node.js 18+
+- Node.js 20.9+
 - PostgreSQL 14+ (o cuenta en Neon)
 - Cuenta en Resend (para emails de verificación y notificaciones)
 - Cuenta en Vercel (para Blob storage, o reemplazar con S3/Cloudflare R2)
@@ -23,8 +23,8 @@ Plataforma colaborativa de recursos educativos. Creá, forkeá y compartí curr�
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/tu-usuario/eduhub.git
-cd eduhub
+git clone https://github.com/tu-usuario/linug.git
+cd linug
 
 # 2. Instalar dependencias
 npm install
@@ -51,7 +51,7 @@ Copiá `.env.example` a `.env.local` y completá los valores:
 
 ```env
 # Base de datos
-DATABASE_URL="postgresql://usuario:contraseña@host:5432/eduhub"
+DATABASE_URL="postgresql://usuario:contraseña@host:5432/linug"
 
 # NextAuth v5
 AUTH_SECRET="generá uno con: openssl rand -base64 32"
@@ -79,7 +79,7 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 src/
 ├── app/                    # Rutas (Next.js App Router)
-│   ├── api/                # API routes (37 endpoints)
+│   ├── api/                # API routes
 │   ├── [username]/[slug]/  # Vistas de documentos
 │   └── ...                 # Feed, explorar, correos, etc.
 ├── components/             # Componentes React reutilizables
@@ -92,7 +92,7 @@ src/
 │   ├── sanitize.ts         # Sanitización HTML (correos)
 │   ├── theme-config.ts     # Sistema de temas (fuente de verdad)
 │   └── ...
-└── middleware.ts           # Rate limiting (IP-based)
+└── proxy.ts                # Rate limiting IP de primera línea
 
 prisma/
 └── schema.prisma           # Modelos de la base de datos
@@ -124,10 +124,10 @@ Asegurate de configurar todas las variables de entorno en el panel de Vercel ant
 ## Seguridad
 
 - Los correos se sanitizan con `sanitize-html` antes de guardarse en la DB
-- Rate limiting en todos los endpoints API (ver `src/middleware.ts`)
+- Rate limiting IP en todos los endpoints API (`src/proxy.ts`) y límites persistentes por usuario en operaciones sensibles
 - Los forks son solo 1 nivel de profundidad (no se puede forkear un fork)
 - Autenticación requerida en todas las rutas de escritura
-- Temas guardados por cuenta, nunca en el navegador como estado compartido
+- Temas guardados por cuenta y sincronizados mediante una cookie validada para evitar parpadeos al cargar
 
 ## Licencia
 

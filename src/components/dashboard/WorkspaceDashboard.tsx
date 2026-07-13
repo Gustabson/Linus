@@ -22,6 +22,7 @@ import {
 import { CONTENT_TABS, CONTENT_TYPE_STYLE } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { useRouter } from "@/hooks/useAppRouter";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 export interface WorkspaceTree {
   id: string;
@@ -341,6 +342,7 @@ function WorkspaceTreeCard({ tree, ownerPath }: { tree: WorkspaceTree; ownerPath
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState("");
   const style = CONTENT_TYPE_STYLE[tree.contentType];
   const href = `/${ownerPath}/${tree.slug}`;
@@ -354,8 +356,6 @@ function WorkspaceTreeCard({ tree, ownerPath }: { tree: WorkspaceTree; ownerPath
   }, []);
 
   async function deleteTree() {
-    const forkWarning = tree._count.forks > 0 ? " Los forks existentes se conservarán." : "";
-    if (!window.confirm(`¿Eliminar “${tree.title}”? Esta acción no se puede deshacer.${forkWarning}`)) return;
     setDeleting(true);
     setError("");
     try {
@@ -363,14 +363,17 @@ function WorkspaceTreeCard({ tree, ownerPath }: { tree: WorkspaceTree; ownerPath
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error ?? "No se pudo eliminar el contenido");
       setMenuOpen(false);
+      setConfirmDelete(false);
       router.refresh();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "No se pudo eliminar el contenido");
       setDeleting(false);
+      setConfirmDelete(false);
     }
   }
 
   return (
+    <>
     <article className={`group relative flex min-h-56 flex-col overflow-visible rounded-2xl border bg-surface shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${style.borderCls} ${style.hoverBorderCls}`}>
       <Link href={href} className="absolute inset-0 z-0 rounded-2xl" aria-label={`Abrir ${tree.title}`} />
 
@@ -401,7 +404,10 @@ function WorkspaceTreeCard({ tree, ownerPath }: { tree: WorkspaceTree; ownerPath
                 <button
                   type="button"
                   role="menuitem"
-                  onClick={() => void deleteTree()}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setConfirmDelete(true);
+                  }}
                   disabled={deleting}
                   className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-danger hover:bg-danger/5 disabled:opacity-50"
                 >
@@ -433,5 +439,18 @@ function WorkspaceTreeCard({ tree, ownerPath }: { tree: WorkspaceTree; ownerPath
         <span className="flex items-center gap-1.5 text-sm font-bold text-primary">Abrir <ArrowUpRight className="h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></span>
       </div>
     </article>
+      {confirmDelete && (
+        <ConfirmDialog
+          title={`Eliminar “${tree.title}”`}
+          description={tree._count.forks > 0
+            ? "Esta acción no se puede deshacer. Los forks existentes se conservarán."
+            : "Esta acción no se puede deshacer."}
+          confirmLabel="Eliminar contenido"
+          busy={deleting}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() => void deleteTree()}
+        />
+      )}
+    </>
   );
 }

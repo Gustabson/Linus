@@ -2,7 +2,7 @@ import { auth } from "./auth";
 import { prisma } from "./prisma";
 import { NextResponse } from "next/server";
 import { slugify } from "./utils";
-export { parseBody, safeHttpUrl, safeString } from "./request-validation";
+export { parseBody, safeHttpUrl, safeRemoteImageUrl, safeString } from "./request-validation";
 
 /** Returns the authenticated session, or null if not authenticated. */
 export async function getSession() {

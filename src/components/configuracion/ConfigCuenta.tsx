@@ -97,7 +97,7 @@ export function ConfigCuenta({ email, emailVerified, providers, createdAt }: Pro
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wide text-text-subtle">Miembro desde</p>
               <p className="mt-1 text-sm font-bold capitalize text-text">{joinedDate}</p>
-              <p className="mt-2 text-xs text-text-subtle">Tu cuenta de EduHub</p>
+              <p className="mt-2 text-xs text-text-subtle">Tu cuenta de LINUG</p>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
+import { getSession, unauthorized, parseBody, rejectCrossOrigin } from "@/lib/api-helpers";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -16,6 +16,8 @@ async function getParticipant(id: string, userId: string) {
 
 // PATCH /api/proposals/[id] — mark a private conversation as read.
 export async function PATCH(req: NextRequest, { params }: Params) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
   const { id } = await params;

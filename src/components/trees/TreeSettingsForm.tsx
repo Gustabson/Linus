@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "@/hooks/useAppRouter";
 import { Save, Trash2, Eye, EyeOff, Link } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface TreeData {
   id: string;
@@ -23,26 +24,53 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
   });
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   async function save() {
     setSaving(true);
     setError("");
-    const res = await fetch(`/api/trees/${tree.slug}/settings`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const data = await res.json();
-    setSaving(false);
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/trees/${tree.slug}/settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Error al guardar");
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       // If slug changed (title change), redirect
       if (data.slug && data.slug !== tree.slug) {
         router.push(`/${ownerUsername}/${data.slug}/configuracion`);
       }
-    } else {
-      setError(data.error ?? "Error al guardar");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Error al guardar");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function archive() {
+    if (archiving) return;
+    setArchiving(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/trees/${tree.slug}/settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived: true }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "No se pudo archivar el contenido");
+      setConfirmArchive(false);
+      router.push("/dashboard");
+      router.refresh();
+    } catch (archiveError) {
+      setConfirmArchive(false);
+      setError(archiveError instanceof Error ? archiveError.message : "No se pudo archivar el contenido");
+    } finally {
+      setArchiving(false);
     }
   }
 
@@ -132,20 +160,23 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
           <button
             type="button"
             className="flex items-center gap-2 text-sm text-red-600 border border-red-200 px-4 py-2 rounded-lg hover:bg-red-50 transition-colors"
-            onClick={() => {
-              if (confirm("¿Seguro que querés archivar este currículo?")) {
-                fetch(`/api/trees/${tree.slug}/settings`, {
-                  method: "PATCH",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ archived: true }),
-                }).then(() => router.push("/dashboard"));
-              }
-            }}
+            onClick={() => setConfirmArchive(true)}
           >
             <Trash2 className="w-4 h-4" />
             Archivar contenido
           </button>
         </div>
+      )}
+      {confirmArchive && (
+        <ConfirmDialog
+          title={`Archivar “${tree.title}”`}
+          description="Se ocultará de las búsquedas, pero los forks existentes seguirán funcionando."
+          confirmLabel="Archivar contenido"
+          busyLabel="Archivando…"
+          busy={archiving}
+          onCancel={() => setConfirmArchive(false)}
+          onConfirm={() => void archive()}
+        />
       )}
     </div>
   );

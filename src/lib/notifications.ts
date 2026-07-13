@@ -23,7 +23,7 @@ const TYPE_TO_PREF: Partial<Record<NotificationType, string>> = {
 
 // ── Subject line per type ─────────────────────────────────────────────────────
 const TYPE_SUBJECT: Partial<Record<NotificationType, (actor: string) => string>> = {
-  NEW_FOLLOWER:      (a) => `${a} empezó a seguirte en EduHub`,
+  NEW_FOLLOWER:      (a) => `${a} empezó a seguirte en LINUG`,
   NEW_LIKE:          (a) => `A ${a} le gustó tu publicación`,
   NEW_COMMENT:       (a) => `${a} dejó un comentario`,
   NEW_PROPOSAL:      (a) => `${a} inició una propuesta privada`,
@@ -103,7 +103,7 @@ export async function createNotification({
 
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
-      from:    process.env.RESEND_FROM_EMAIL ?? "EduHub <onboarding@resend.dev>",
+      from:    process.env.RESEND_FROM_EMAIL ?? "LINUG <onboarding@resend.dev>",
       to:      recipient.email,
       subject,
       html:    buildNotificationEmail({ subject: htmlSubject, body, link: fullLink }),
@@ -145,7 +145,7 @@ export async function sendCorreoEmail({
     const safePreview = escapeHtml(previewText);
 
     await resend.emails.send({
-      from:    process.env.RESEND_FROM_EMAIL ?? "EduHub <onboarding@resend.dev>",
+      from:    process.env.RESEND_FROM_EMAIL ?? "LINUG <onboarding@resend.dev>",
       to:      recipient.email,
       subject: `Nuevo correo de ${senderName}: ${subject}`,
       html:    buildNotificationEmail({
@@ -165,7 +165,7 @@ function buildNotificationEmail({
   subject,
   body,
   link,
-  cta = "Ver en EduHub",
+  cta = "Ver en LINUG",
 }: {
   subject: string;
   body:    string;
@@ -192,7 +192,7 @@ function buildNotificationEmail({
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
                 </svg>
-                <span style="color:white;font-size:20px;font-weight:700;letter-spacing:-0.3px;">EduHub</span>
+                <span style="color:white;font-size:20px;font-weight:700;letter-spacing:-0.3px;">LINUG</span>
               </div>
             </td>
           </tr>
@@ -223,7 +223,7 @@ function buildNotificationEmail({
           <tr>
             <td style="padding:16px 40px 28px;border-top:1px solid #f3f4f6;">
               <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.5;">
-                Recibís este correo porque tenés activadas las notificaciones en EduHub.<br/>
+                Recibís este correo porque tenés activadas las notificaciones en LINUG.<br/>
                 Podés cambiar tus preferencias en <a href="${appBaseUrl()}/configuracion" style="color:#15803d;">Configuración → Notificaciones</a>.
               </p>
             </td>

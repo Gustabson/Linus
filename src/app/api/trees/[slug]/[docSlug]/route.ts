@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, parseBody, safeString } from "@/lib/api-helpers";
+import { getSession, unauthorized, parseBody, rejectCrossOrigin, safeString } from "@/lib/api-helpers";
 
 const DOCUMENT_TITLE_MAX = 200;
 
@@ -12,6 +12,8 @@ type Params = { params: Promise<{ slug: string; docSlug: string }> };
  * Only the tree owner can rename.
  */
 export async function PATCH(req: NextRequest, { params }: Params) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 
@@ -47,7 +49,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
  * Deletes a document and all its versions/sections (cascade).
  * Only the tree owner can delete documents.
  */
-export async function DELETE(_req: NextRequest, { params }: Params) {
+export async function DELETE(req: NextRequest, { params }: Params) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 

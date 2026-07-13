@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma }       from "@/lib/prisma";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, rejectCrossOrigin, unauthorized } from "@/lib/api-helpers";
 import { del } from "@vercel/blob";
 import { isOwnedCommentUpload } from "@/lib/comments";
 
 // ── DELETE /api/posts/[id] — only the post author can delete ──────────────────
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 

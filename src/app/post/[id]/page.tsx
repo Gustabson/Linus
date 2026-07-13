@@ -32,7 +32,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const author = comment?.author ?? post.author;
   const content = comment && !comment.deletedAt ? comment.content : post.content;
   const description = content.trim().replace(/\s+/g, " ").slice(0, 180)
-    || "Conversación de la comunidad educativa en EduHub";
+    || "Conversación de la comunidad educativa en LINUG";
   const title = `${author.name ?? author.username ?? "Alguien"} en la comunidad`;
 
   return {

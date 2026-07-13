@@ -1,134 +1,36 @@
-# Informe de Auditoría — EduHub
-**Fecha:** Mayo 2026 · **Actualizado:** Mayo 2026 (fixes aplicados)
-**Alcance:** Seguridad, bugs, limpieza, optimización, mantenibilidad
+# Informe de auditoría — LINUG
 
----
+**Actualizado:** 13 de julio de 2026
+**Alcance:** marca, seguridad, integridad de datos, manejo de errores, rendimiento básico y compilación.
 
-## 🔴 SEGURIDAD (2 issues)
+## Correcciones aplicadas
 
-### S1 — SVG en whitelist de upload permite XSS ✅ FIXED
-**Archivo:** `src/app/api/upload/route.ts:9`  
-**Riesgo:** Medio  
-**Fix aplicado:** SVG eliminado de `ALLOWED_EXTENSIONS` y `EXT_TO_MIME`.
+- Renombrado visible y técnico de la marca anterior a `LINUG`/`linug` en interfaz, metadatos, correos, documentación, ejemplos y paquete npm.
+- Migración compatible hacia `linug_theme`; las preferencias existentes no se pierden y la cookie anterior se elimina progresivamente.
+- Validación estricta de las cookies de tema: sólo se aceptan modos conocidos y colores hexadecimales, evitando CSS inválido o manipulado.
+- Protección CSRF de defensa en profundidad en las 41 operaciones `POST`, `PATCH` y `DELETE` de la API.
+- Lectura limitada de cuerpos JSON en correos, posts, configuración y verificación de email.
+- Validación de tipos sin conversiones implícitas en correos, borradores, respuestas, posts y URLs de imágenes.
+- Límites persistentes por usuario para posts, reportes, correos, respuestas, reenvío de verificación e importación de documentos.
+- Reenvío de verificación restringido a la dirección de la sesión autenticada.
+- Subidas verificadas por tamaño, extensión, firma binaria y contenido activo. PDF, DOCX y PPTX con acciones, macros, scripts u objetos ejecutables son rechazados.
+- La importación del editor comparte las mismas comprobaciones de PDF/DOCX y tiene límite de frecuencia para reducir abuso de CPU y almacenamiento.
+- Confirmaciones nativas del navegador reemplazadas por diálogos de la interfaz; errores de red ahora se muestran sin dejar botones bloqueados.
+- Corregido el archivado que redirigía al dashboard incluso cuando la API había fallado.
+- Corregidos estados de error al forkear, renombrar, importar y eliminar documentos o secciones.
+- URLs de imágenes de posts limitadas a los hosts admitidos por `next/image`, evitando publicaciones que rompían al renderizar.
 
-### S2 — La mayoría de API routes no tienen try/catch
-**Archivos:** ~28 de 37 routes sin manejo de errores  
-**Riesgo:** Bajo-Medio  
-Si Prisma lanza un error (DB caída, constraint violada), el error crudo se devuelve como 500 con stack trace. En producción Vercel no muestra el trace, pero es frágil.
-**Fix:** Agregar `try/catch` o un wrapper en `api-helpers.ts`.
+## Verificación
 
----
+- `npm audit`: 0 vulnerabilidades.
+- Prisma: esquema válido.
+- TypeScript: 0 errores.
+- Vitest: 12 archivos y 86 pruebas aprobadas.
+- Next.js: compilación optimizada de producción aprobada.
+- Búsqueda completa: no quedan referencias literales a la marca anterior; el nombre previo de cookie se construye dinámicamente sólo para migración.
 
-## 🟡 BUGS Y EDGE CASES (4 issues)
+## Decisiones conservadas
 
-### B1 — Race condition en `uniqueSlug`
-**Archivo:** `src/lib/api-helpers.ts:35-43`  
-Ya está documentado en el comentario. La función `uniqueSlug` hace check + insert sin atomicidad.
-**Fix:** Los callers deberían wrappear en `try/catch` y reintentar en `P2002`. Verificar que `trees/route.ts` y `trees/[slug]/documents/route.ts` lo hagan.
-
-### B2 — `fetchForkSubtree` recursivo sin límite real de DB queries
-**Archivo:** `src/app/[username]/[slug]/page.tsx:36-61`  
-3 niveles de profundidad con `Promise.all` de children. Si un árbol tiene 20 forks por nivel, son potencialmente 20 + 400 + 8000 queries. El `take: 20` ayuda pero no es un límite duro.
-**Fix:** Agregar un contador global de queries o mover a una vista materializada si escala.
-
-### B3 — Layout `auth()` corre en cada request aunque la página tenga `revalidate`
-**Archivo:** `src/app/layout.tsx`  
-`auth()` es necesario para pasar sesión al `SessionProvider`. Pero en páginas cacheadas por ISR, el layout se ejecuta igual. NextAuth ya cachea internamente el JWT verify, así que el impacto es mínimo (~1ms).
-**Estado:** OK por ahora. Monitorear si crece.
-
-### B4 — `getOwnedKernel` no verifica visibility
-**Archivo:** `src/lib/api-helpers.ts:22`  
-Solo checkea `ownerId` y `contentType === "KERNEL"`. Si un kernel es `PRIVATE`, teóricamente solo el owner debería verlo. Pero el check de visibilidad está en la página (`[username]/[slug]/page.tsx:113`), no en el helper.
-**Fix:** Agregar check de visibility en `getOwnedTree`/`getOwnedKernel` o documentar que la responsabilidad es del caller.
-
----
-
-## 🟢 OPTIMIZACIÓN (3 issues)
-
-### O1 — `Post.createdAt` sin índice compuesto con `authorId`
-**Archivo:** `prisma/schema.prisma:471`  
-Al filtrar posts por autor Y ordenar por fecha, el índice `@@index([createdAt])` no se usa completamente. Debería ser `@@index([authorId, createdAt])`.
-**Fix:** Agregar índice compuesto.
-
-### O2 — `DocumentTree.updatedAt` sin índice
-**Archivo:** `prisma/schema.prisma`  
-El dashboard ordena `orderBy: { updatedAt: "desc" }` sin índice. Para pocos usuarios no es problema, pero con 1000+ trees por usuario se vuelve lento.
-**Fix:** `@@index([ownerId, updatedAt])`.
-
-### O3 — Attachments cargan todos los datos en una sola query
-**Archivo:** `src/app/[username]/[slug]/page.tsx:94-105`  
-Los attachments incluyen `content.owner` y `_count` en la query principal. Para kernels con 50+ attachments, es mucha data innecesaria si el usuario no scrollea hasta abajo.
-**Fix:** Lazy-load attachments o paginar.
-
----
-
-## 🔵 MANTENIBILIDAD (5 issues)
-
-### M1 — 37 API route files, sin estructura común
-Cada route tiene su propio patrón de error handling, validación y response. Un wrapper `withAuth(handler)` en `api-helpers.ts` reduciría 37 repeticiones de:
-```ts
-const session = await getSession();
-if (!session) return unauthorized();
-```
-**Fix:** Crear `withAuth(fn)` wrapper.
-
-### M2 — Prisma `select` shapes repetidos
-El patrón `{ id: true, name: true, username: true, image: true }` aparece en ~12 lugares. Ya existe `USER_BASIC_SELECT` en `lib/data.ts` pero no se usa en todas partes.
-**Fix:** Reemplazar todos los inline selects con `USER_BASIC_SELECT`.
-
-### M3 — `dangerouslySetInnerHTML` en CorreosDetalle
-**Archivo:** `src/components/correos/CorreosDetalle.tsx:393,412`  
-Está bien sanitizado server-side, pero si alguien agrega un nuevo endpoint de correos sin sanitizar, hay XSS. La dependencia está implícita.
-**Fix:** Mover la sanitización a un helper compartido y usarlo en TODOS los endpoints de correos + agregar test.
-
-### M4 — CSS variables duplicadas en `globals.css`
-`--primary-h`, `--kernel-h`, `--module-h`, `--resource-h` se definen igual que sus padres pero con menos opacidad. Si se agrega un nuevo color (`--newcolor`), hay que recordar agregar `--newcolor-h`.
-**Fix:** Podrían generarse automáticamente con un postcss plugin o definir `-h` como `color-mix(in srgb, var(--kernel) 80%, black)` en CSS moderno.
-
-### M5 — Scroll-to-top duplicado
-Tanto `PostFeed` como `ProfileFeed` tienen botón de scroll-to-top implementado de forma ligeramente distinta. Deberían compartir un componente `ScrollToTop`.
-**Fix:** Extraer a `components/shared/ScrollToTop.tsx`.
-
----
-
-## ⚪ LIMPIEZA (3 issues)
-
-### L1 — `tsconfig.tsbuildinfo` en git
-El archivo de build cache de TypeScript aparece en `git status` cada vez. Debería estar en `.gitignore`.
-**Fix:** Agregar `tsconfig.tsbuildinfo` a `.gitignore`.
-
-### L2 — Componentes con 4+ `useState`
-`PostFeed` (4), `PostComposer` (6), `AttachmentsPanel` (8). Podrían beneficiarse de `useReducer` o custom hooks para separar lógica de UI.
-**Fix:** Extraer a custom hooks (`useFeedState`, `useAttachmentState`).
-
-### L3 — `SocialFeed` hace 3 queries en paralelo pero suggested users no se usan si el panel está oculto
-**Archivo:** `src/components/social/SocialFeed.tsx:52-62`  
-Siempre se fetchean 5 suggested users aunque el sidebar solo se muestra en desktop (≥1024px). En mobile es query desperdiciada.
-**Fix:** Mover suggested users a client-side fetch condicional o usar CSS media query + `useMediaQuery`.
-
----
-
-## 📊 RESUMEN
-
-| Categoría | Issues | Prioridad |
-|---|---|---|
-| Seguridad | 2 | Alta |
-| Bugs | 4 | Media |
-| Optimización | 3 | Media |
-| Mantenibilidad | 5 | Baja-Media |
-| Limpieza | 3 | Baja |
-
-**Recomendación de orden de trabajo:**
-1. ~~S1 (SVG XSS)~~ ✅
-2. ~~O1 + O2 (índices DB)~~ ✅
-3. ~~M1 (withAuth wrapper)~~ ✅ (creado, disponible para usar)
-4. ~~M2 (USER_BASIC_SELECT)~~ ✅ (aplicado en SocialFeed + posts API)
-5. ~~L1 (gitignore tsbuildinfo)~~ ✅
-6. ~~B4 (visibility check en helpers)~~ ✅
-7. ~~M5 (ScrollToTop compartido)~~ ✅
-8. B1 (uniqueSlug race condition) — documentado, aceptable a escala actual
-9. S2 (try/catch en routes) — withAuth wrapper listo, aplicar progresivamente
-10. L2 (custom hooks) — opcional
-11. O3 (lazy attachments) — arquitectónico, evaluar si crece
-12. M3 (dangerouslySetInnerHTML) — seguro, ya sanitizado
-13. M4 (CSS -h duplicadas) — nice to have
+- La ruta experimental `/linus-2` permanece por compatibilidad con la prueba visual existente. Comparte los componentes principales y no duplica la lógica de datos.
+- La política CSP todavía necesita `unsafe-inline` para los scripts y estilos generados por Next.js. El resto de las directivas restringe objetos, frames, formularios, imágenes y conexiones.
+- La cookie de tema no es `HttpOnly` porque debe aplicarse antes de la hidratación para evitar parpadeos; contiene únicamente colores y modo, nunca credenciales.

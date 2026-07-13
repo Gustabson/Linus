@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, parseBody, safeString } from "@/lib/api-helpers";
+import { getSession, unauthorized, parseBody, rejectCrossOrigin, safeString } from "@/lib/api-helpers";
 import { createNotification } from "@/lib/notifications";
 
 const SUBJECT_MAX = 160;
@@ -44,6 +44,8 @@ export async function GET() {
 
 // POST /api/proposals — start a private conversation about a document.
 export async function POST(req: NextRequest) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 

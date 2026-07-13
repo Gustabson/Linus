@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { splitTextIntoSections, pdfEmbedContent, textToTipTapDoc } from "@/lib/importUtils";
 import { ensureDraft } from "@/lib/sections";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, rejectCrossOrigin, unauthorized } from "@/lib/api-helpers";
 import { getSafePdfUrl } from "@/lib/pdf";
 import { createHmac, timingSafeEqual } from "crypto";
+import { containsUnsafeOfficePayload, containsUnsafePdfActions, hasExpectedFileSignature } from "@/lib/upload-security";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
 
@@ -60,8 +62,14 @@ async function appendSections(
  *   { error: string }                     – something went wrong
  */
 export async function POST(req: NextRequest, { params }: Params) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
+  const limited = await enforceRateLimit({
+    action: "document-import", userId: session.user.id, limit: 20, windowMs: 60 * 60_000,
+  });
+  if (limited) return limited;
 
   const { slug, docSlug } = await params;
 
@@ -83,14 +91,19 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (Number.isFinite(announcedSize) && announcedSize > MAX_IMPORT_SIZE + 1_000_000)
     return NextResponse.json({ error: "El archivo supera el límite permitido" }, { status: 413 });
 
-  const formData = await req.formData();
+  const formData = await req.formData().catch(() => null);
+  if (!formData) return NextResponse.json({ error: "Formulario inválido" }, { status: 400 });
 
   // ── Case A: finalise a pending PDF embed (client sends title + blobUrl) ──
-  const pendingBlobUrl = formData.get("blobUrl") as string | null;
-  const pendingTitle   = formData.get("sectionTitle") as string | null;
+  const pendingBlobValue = formData.get("blobUrl");
+  const pendingTitleValue = formData.get("sectionTitle");
   const uploadToken    = formData.get("uploadToken");
 
-  if (pendingBlobUrl && pendingTitle) {
+  if (pendingBlobValue != null || pendingTitleValue != null) {
+    if (typeof pendingBlobValue !== "string" || typeof pendingTitleValue !== "string")
+      return NextResponse.json({ error: "Datos de importación inválidos" }, { status: 400 });
+    const pendingBlobUrl = pendingBlobValue;
+    const pendingTitle = pendingTitleValue;
     if (!getSafePdfUrl(pendingBlobUrl) || !validPendingBlobToken(pendingBlobUrl, session.user.id, uploadToken))
       return NextResponse.json({ error: "blobUrl inválida" }, { status: 400 });
     const trimmedTitle = pendingTitle.trim();
@@ -106,8 +119,8 @@ export async function POST(req: NextRequest, { params }: Params) {
   }
 
   // ── Case B: new file upload ───────────────────────────────────────────────
-  const file = formData.get("file") as File | null;
-  if (!file) return NextResponse.json({ error: "No se recibió archivo" }, { status: 400 });
+  const file = formData.get("file");
+  if (!(file instanceof File)) return NextResponse.json({ error: "No se recibió archivo" }, { status: 400 });
   if (file.size > MAX_IMPORT_SIZE)
     return NextResponse.json(
       { error: `El archivo supera el límite de ${MAX_IMPORT_SIZE / (1024 * 1024)} MB` },
@@ -124,8 +137,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   // ── PDF ──────────────────────────────────────────────────────────────────
   if (filename.endsWith(".pdf")) {
-    if (buffer.subarray(0, 5).toString("ascii") !== "%PDF-")
+    if (!hasExpectedFileSignature("pdf", buffer))
       return NextResponse.json({ error: "El archivo no es un PDF válido" }, { status: 400 });
+    if (containsUnsafePdfActions(buffer))
+      return NextResponse.json({ error: "El PDF contiene acciones ejecutables o contenido incrustado no permitido" }, { status: 400 });
     let text = "";
     try {
       // pdf-parse is CJS; import dynamically to avoid ESM issues
@@ -167,14 +182,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   // ── DOCX ─────────────────────────────────────────────────────────────────
   } else if (filename.endsWith(".docx")) {
-    const zipSignature = buffer.subarray(0, 4);
-    const validZipSignature = zipSignature[0] === 0x50 && zipSignature[1] === 0x4b && (
-      (zipSignature[2] === 0x03 && zipSignature[3] === 0x04) ||
-      (zipSignature[2] === 0x05 && zipSignature[3] === 0x06) ||
-      (zipSignature[2] === 0x07 && zipSignature[3] === 0x08)
-    );
-    if (!validZipSignature)
+    if (!hasExpectedFileSignature("docx", buffer))
       return NextResponse.json({ error: "El archivo no es un Word válido" }, { status: 400 });
+    if (containsUnsafeOfficePayload(buffer))
+      return NextResponse.json({ error: "El documento contiene macros, scripts u objetos ejecutables" }, { status: 400 });
     try {
       const mammoth = await import("mammoth");
       const result  = await mammoth.extractRawText({ buffer });

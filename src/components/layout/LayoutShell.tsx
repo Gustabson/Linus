@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Menu }        from "lucide-react";
 import { Sidebar }     from "@/components/layout/Sidebar";
 import { BottomNav }   from "@/components/layout/BottomNav";
+import { clearThemeCookies, writeThemeCookie } from "@/lib/theme-cookie-client";
 
 interface Props {
   children:         React.ReactNode;
@@ -27,7 +28,7 @@ export function LayoutShell({ children, isLoggedIn, cookieToHydrate }: Props) {
   useEffect(() => {
     if (!isLoggedIn) {
       localStorage.removeItem("theme");
-      document.cookie = "eduhub_theme=;path=/;max-age=0";
+      clearThemeCookies();
     }
   }, [isLoggedIn]);
 
@@ -35,7 +36,7 @@ export function LayoutShell({ children, isLoggedIn, cookieToHydrate }: Props) {
   // persist it as a cookie so future navigations use the fast path.
   useEffect(() => {
     if (isLoggedIn && cookieToHydrate) {
-      document.cookie = `eduhub_theme=${cookieToHydrate};path=/;max-age=31536000;SameSite=Lax`;
+      writeThemeCookie(cookieToHydrate);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount — value is stable from SSR

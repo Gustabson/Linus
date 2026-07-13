@@ -126,7 +126,7 @@ export async function LandingPage() {
       {/* ── How it works ────────────────────────────────────────────── */}
       <section className="space-y-8">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-text">¿Qué podés hacer en EduHub?</h2>
+          <h2 className="text-2xl font-bold text-text">¿Qué podés hacer en LINUG?</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

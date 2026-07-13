@@ -51,8 +51,8 @@ export async function POST(req: NextRequest) {
   const formData = await req.formData().catch(() => null);
   if (!formData)
     return NextResponse.json({ error: "Formulario inválido" }, { status: 400 });
-  const file = formData.get("image") as File | null;
-  if (!file)
+  const file = formData.get("image");
+  if (!(file instanceof File))
     return NextResponse.json({ error: "No se recibió imagen" }, { status: 400 });
   if (file.size === 0 || file.size > MAX_SIZE)
     return NextResponse.json({ error: "La imagen debe pesar entre 1 byte y 2 MB" }, { status: 400 });

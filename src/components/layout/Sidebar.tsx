@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { clearThemeCookies } from "@/lib/theme-cookie-client";
 
 const POLL_MS = 180_000; // 3 min — badge counts don't need real-time
 
@@ -112,7 +113,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       <div className="border-b border-sidebar-text/20 px-5 py-5">
         <Link href="/" className="flex items-center gap-2.5 text-sidebar-text font-bold text-xl" onClick={onClose}>
           <BookOpen className="w-7 h-7" />
-          EduHub
+          LINUG
         </Link>
       </div>
 
@@ -188,7 +189,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
             {/* Cerrar sesión */}
             <button
-              onClick={() => { document.cookie = "eduhub_theme=;path=/;max-age=0"; localStorage.removeItem("theme"); signOut(); }}
+              onClick={() => { clearThemeCookies(); localStorage.removeItem("theme"); signOut(); }}
               className="flex items-center gap-3.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-sidebar-text/60 hover:bg-sidebar-text/10 hover:text-sidebar-text transition-all"
             >
               <LogOut className="w-5 h-5 shrink-0" />

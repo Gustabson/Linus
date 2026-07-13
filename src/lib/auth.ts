@@ -30,13 +30,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...(process.env.RESEND_API_KEY
       ? [ResendProvider({
           apiKey: process.env.RESEND_API_KEY,
-          from:   process.env.RESEND_FROM_EMAIL ?? "EduHub <onboarding@resend.dev>",
+          from:   process.env.RESEND_FROM_EMAIL ?? "LINUG <onboarding@resend.dev>",
           async sendVerificationRequest({ identifier: email, url }) {
             const resend = new Resend(process.env.RESEND_API_KEY);
             await resend.emails.send({
-              from:    process.env.RESEND_FROM_EMAIL ?? "EduHub <onboarding@resend.dev>",
+              from:    process.env.RESEND_FROM_EMAIL ?? "LINUG <onboarding@resend.dev>",
               to:      email,
-              subject: "Tu link de acceso a EduHub",
+              subject: "Tu link de acceso a LINUG",
               html:    buildMagicLinkEmail(url),
             });
           },
@@ -85,7 +85,7 @@ function buildMagicLinkEmail(url: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accedé a EduHub</title>
+  <title>Accedé a LINUG</title>
 </head>
 <body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:40px 16px;">
@@ -100,7 +100,7 @@ function buildMagicLinkEmail(url: string): string {
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
                 </svg>
-                <span style="color:white;font-size:22px;font-weight:700;letter-spacing:-0.3px;">EduHub</span>
+                <span style="color:white;font-size:22px;font-weight:700;letter-spacing:-0.3px;">LINUG</span>
               </div>
             </td>
           </tr>
@@ -112,7 +112,7 @@ function buildMagicLinkEmail(url: string): string {
                 Tu link de acceso
               </h1>
               <p style="margin:0 0 24px;font-size:15px;color:#6b7280;line-height:1.6;">
-                Hacé click en el botón para entrar a EduHub. El link expira en <strong>10 minutos</strong> y solo funciona una vez.
+                Hacé click en el botón para entrar a LINUG. El link expira en <strong>10 minutos</strong> y solo funciona una vez.
               </p>
 
               <table cellpadding="0" cellspacing="0" width="100%">
@@ -120,7 +120,7 @@ function buildMagicLinkEmail(url: string): string {
                   <td align="center" style="padding:8px 0 32px;">
                     <a href="${url}"
                       style="display:inline-block;background:#15803d;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 36px;border-radius:10px;">
-                      Entrar a EduHub
+                      Entrar a LINUG
                     </a>
                   </td>
                 </tr>
@@ -140,7 +140,7 @@ function buildMagicLinkEmail(url: string): string {
             <td style="padding:20px 40px 32px;border-top:1px solid #f3f4f6;">
               <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.5;">
                 Si no solicitaste este link, podés ignorar este correo. Tu cuenta no corre ningún riesgo.<br/>
-                Este mensaje fue enviado por EduHub — la plataforma educativa colaborativa.
+                Este mensaje fue enviado por LINUG — la plataforma educativa colaborativa.
               </p>
             </td>
           </tr>

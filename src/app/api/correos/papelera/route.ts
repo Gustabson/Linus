@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, rejectCrossOrigin, unauthorized } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 

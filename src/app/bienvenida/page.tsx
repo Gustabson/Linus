@@ -68,7 +68,7 @@ export default function BienvenidaPage() {
           <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
             <BookOpen className="w-7 h-7 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-text">¡Bienvenido a EduHub!</h1>
+          <h1 className="text-2xl font-bold text-text">¡Bienvenido a LINUG!</h1>
           <p className="text-text-muted text-sm">
             Elegí un nombre de usuario único. Las demás personas lo usarán para encontrarte.
           </p>

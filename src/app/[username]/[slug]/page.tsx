@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   const typeLabel = tree.contentType === "KERNEL" ? "Kernel" : tree.contentType === "MODULE" ? "Módulo" : "Recurso";
   return {
     title:       tree.title,
-    description: tree.description ?? `${typeLabel} educativo por ${tree.owner.name} en EduHub`,
+    description: tree.description ?? `${typeLabel} educativo por ${tree.owner.name} en LINUG`,
     openGraph:   { title: tree.title, description: tree.description ?? undefined, type: "article" },
   };
 }

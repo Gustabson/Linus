@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, parseBody, rejectCrossOrigin, safeRemoteImageUrl, safeString, unauthorized } from "@/lib/api-helpers";
 import { USER_BASIC_SELECT } from "@/lib/data";
 import { findInternalTreeLink } from "@/lib/comments";
 import type { Prisma } from "@prisma/client";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 // ── GET /api/posts  (feed) ────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
@@ -109,11 +110,26 @@ export async function GET(req: NextRequest) {
 
 // ── POST /api/posts  (create) ─────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
+  const limited = await enforceRateLimit({
+    action: "post-create", userId: session.user.id, limit: 60, windowMs: 60 * 60_000,
+  });
+  if (limited) return limited;
 
-  const { content, treeId, imageUrl } = await req.json().catch(() => ({}));
+  const body = await parseBody(req, 16_000);
+  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  const { content, treeId, imageUrl } = body;
   const normalizedContent = typeof content === "string" ? content.trim() : "";
+  const normalizedTreeId = treeId == null || treeId === "" ? null : safeString(treeId, 100);
+  const normalizedImageUrl = imageUrl == null || imageUrl === "" ? null : safeRemoteImageUrl(imageUrl);
+
+  if (treeId != null && treeId !== "" && !normalizedTreeId)
+    return NextResponse.json({ error: "Contenido adjunto inválido" }, { status: 400 });
+  if (imageUrl != null && imageUrl !== "" && !normalizedImageUrl)
+    return NextResponse.json({ error: "URL de imagen inválida" }, { status: 400 });
 
   if (!normalizedContent) {
     return NextResponse.json({ error: "El contenido no puede estar vacío" }, { status: 400 });
@@ -121,16 +137,7 @@ export async function POST(req: NextRequest) {
   if (normalizedContent.length > 2000) {
     return NextResponse.json({ error: "Máximo 2000 caracteres" }, { status: 400 });
   }
-  if (imageUrl != null) {
-    try {
-      const parsed = new URL(imageUrl);
-      if (parsed.protocol !== "https:") throw new Error();
-    } catch {
-      return NextResponse.json({ error: "URL de imagen inválida" }, { status: 400 });
-    }
-  }
-
-  let resolvedTreeId = typeof treeId === "string" && treeId ? treeId : null;
+  let resolvedTreeId = normalizedTreeId;
   if (!resolvedTreeId) {
     const internalLink = findInternalTreeLink(normalizedContent, req.nextUrl.origin);
     if (internalLink) {
@@ -163,7 +170,7 @@ export async function POST(req: NextRequest) {
   const post = await prisma.post.create({
     data: {
       content:  normalizedContent,
-      imageUrl: imageUrl ?? null,
+      imageUrl: normalizedImageUrl,
       treeId:   resolvedTreeId,
       authorId: session.user.id,
     },

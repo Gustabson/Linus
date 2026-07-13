@@ -11,6 +11,7 @@ import { CommentComposer } from "./CommentComposer";
 import { ShareButton } from "./ShareButton";
 import { SharedTreeCard } from "./SharedTreeCard";
 import { useRouter } from "@/hooks/useAppRouter";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const COMMENT_INTERACTIVE_SELECTOR = [
   "a", "button", "input", "textarea", "select", "video", "audio",
@@ -51,6 +52,7 @@ export function CommentItem({
   const [replyError, setReplyError] = useState("");
   const [actionError, setActionError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleted, setDeleted] = useState(!!comment.deletedAt);
   const initialLoadStarted = useRef(false);
 
@@ -98,7 +100,7 @@ export function CommentItem({
   }
 
   async function deleteComment() {
-    if (deleting || !window.confirm("¿Eliminar este comentario? Esta acción no se puede deshacer.")) return;
+    if (deleting) return;
     setDeleting(true);
     setActionError("");
     try {
@@ -119,6 +121,7 @@ export function CommentItem({
         setLikeCount(0);
         setShowReplyComposer(false);
       }
+      setConfirmDelete(false);
     } catch {
       setActionError("No se pudo conectar. Intentá nuevamente.");
     } finally {
@@ -191,7 +194,7 @@ export function CommentItem({
               {isOwn && !deleted && (
                 <button
                   type="button"
-                  onClick={() => void deleteComment()}
+                  onClick={() => setConfirmDelete(true)}
                   disabled={deleting}
                   className="p-1 text-text-subtle opacity-100 transition-opacity hover:text-danger focus:opacity-100 disabled:opacity-50 sm:opacity-0 sm:group-hover:opacity-100"
                   title="Eliminar comentario"
@@ -317,6 +320,16 @@ export function CommentItem({
         </div>
       )}
       {replyError && <p className="ml-10 mt-1 text-xs text-danger">{replyError}</p>}
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Eliminar comentario"
+          description="Esta acción no se puede deshacer. Si tiene respuestas, el texto se ocultará para conservar la conversación."
+          confirmLabel="Eliminar comentario"
+          busy={deleting}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() => void deleteComment()}
+        />
+      )}
     </div>
   );
 }

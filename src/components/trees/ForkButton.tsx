@@ -21,6 +21,7 @@ export function ForkButton({
   const [containers, setContainers] = useState<UserContainer[]>([]);
   const [loadingContainers, setLoadingContainers] = useState(false);
   const [selectedContainerId, setSelectedContainerId] = useState<string | null>(null);
+  const [error, setError] = useState("");
   const router = useRouter();
   const { data: session } = useSession();
 
@@ -28,35 +29,48 @@ export function ForkButton({
 
   async function loadContainers() {
     setLoadingContainers(true);
-    const types = contentType === "RESOURCE" ? "KERNEL,MODULE" : "KERNEL";
-    const res = await fetch(`/api/trees/search?scope=mine&types=${types}&limit=20`, { cache: "no-store" });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok) setContainers(data.trees ?? []);
-    setLoadingContainers(false);
+    setError("");
+    try {
+      const types = contentType === "RESOURCE" ? "KERNEL,MODULE" : "KERNEL";
+      const res = await fetch(`/api/trees/search?scope=mine&types=${types}&limit=20`, { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "No se pudieron cargar tus contenidos");
+      setContainers(Array.isArray(data.trees) ? data.trees : []);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "No se pudieron cargar tus contenidos");
+    } finally {
+      setLoadingContainers(false);
+    }
   }
 
   async function handleFork(targetKernelId?: string | null) {
     setLoading(true);
+    setError("");
     try {
       const res = await fetch("/api/trees/fork", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ treeId, targetKernelId: targetKernelId ?? null }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       const ownerUsername = session?.user?.username ?? session?.user?.name ?? "";
       if (res.ok && data.slug) { setShowModal(false); router.push(`/${ownerUsername}/${data.slug}`); }
-      else alert(data.error ?? "Error al forkear");
+      else setError(data.error ?? "No se pudo forkear el contenido");
+    } catch {
+      setError("No se pudo conectar. Intentá nuevamente.");
     } finally { setLoading(false); }
   }
 
   if (!needsContainerPicker) {
     return (
-      <button onClick={() => handleFork()} disabled={loading}
-        className="flex items-center gap-2 border border-border text-text text-sm px-4 py-2 rounded-lg hover:bg-bg transition-colors disabled:opacity-50">
-        <GitFork className="w-4 h-4" />
-        {loading ? "Forkeando..." : "Forkear"}
-      </button>
+      <div className="flex flex-col items-start gap-2">
+        <button onClick={() => handleFork()} disabled={loading}
+          className="flex items-center gap-2 border border-border text-text text-sm px-4 py-2 rounded-lg hover:bg-bg transition-colors disabled:opacity-50">
+          <GitFork className="w-4 h-4" />
+          {loading ? "Forkeando..." : "Forkear"}
+        </button>
+        {error && <p role="alert" className="text-xs text-danger">{error}</p>}
+      </div>
     );
   }
 
@@ -100,6 +114,8 @@ export function ForkButton({
                 ))}
               </div>
             )}
+
+            {error && <p role="alert" className="rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>}
 
             <div className="flex gap-2 pt-1">
               <button onClick={() => handleFork(null)} disabled={loading}

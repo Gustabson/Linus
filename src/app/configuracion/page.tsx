@@ -87,7 +87,7 @@ export default async function ConfiguracionPage({
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-primary">Preferencias</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-text">Configuración</h1>
-          <p className="mt-1 text-sm text-text-muted">Gestioná tu identidad, cuenta y experiencia en EduHub.</p>
+          <p className="mt-1 text-sm text-text-muted">Gestioná tu identidad, cuenta y experiencia en LINUG.</p>
         </div>
         <Link href={profilePath} className="inline-flex w-fit items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-text-muted transition-colors hover:border-primary/30 hover:text-primary">
           {user.image ? (

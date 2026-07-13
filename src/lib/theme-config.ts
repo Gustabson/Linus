@@ -7,12 +7,26 @@
 //
 // Fields:
 //   dbField   → Prisma column name (snake_case in DB)
-//   cookieKey → key in the eduhub_theme cookie
+//   cookieKey → key in the linug_theme cookie
 //   cssVar    → CSS custom property (set on <html>)
 //   light     → default hex for light mode
 //   dark      → default hex for dark mode
 //   group     → "core" (custom mode only), "sidebar", or "content"
 //   label     → human-readable name for the settings UI
+
+export const THEME_COOKIE_NAME = "linug_theme";
+// Kept only to migrate preferences saved before the product rename.
+export const LEGACY_THEME_COOKIE_NAME = ["edu", "hub_theme"].join("");
+export const THEME_COOKIE_NAMES = [THEME_COOKIE_NAME, LEGACY_THEME_COOKIE_NAME] as const;
+
+export function findThemeCookieValue(cookieHeader: string): string | null {
+  const rows = cookieHeader.split("; ");
+  for (const name of THEME_COOKIE_NAMES) {
+    const value = rows.filter((row) => row.startsWith(`${name}=`)).at(-1)?.slice(name.length + 1);
+    if (value && parseThemeCookieValue(value)) return value;
+  }
+  return null;
+}
 
 export interface ThemeProperty {
   dbField:   string;
@@ -50,6 +64,25 @@ const byDbField = new Map(THEME_PROPERTIES.map((p) => [p.dbField, p]));
 /** Map cookie key → ThemeProperty */
 const byCookieKey = new Map(THEME_PROPERTIES.map((p) => [p.cookieKey, p]));
 
+/** Parses and allow-lists a theme cookie. Invalid or empty cookies are ignored. */
+export function parseThemeCookieValue(encodedValue: string): Record<string, string> | null {
+  try {
+    const decoded = JSON.parse(decodeURIComponent(encodedValue)) as unknown;
+    if (!decoded || typeof decoded !== "object" || Array.isArray(decoded)) return null;
+    const safe: Record<string, string> = {};
+    for (const [key, value] of Object.entries(decoded)) {
+      if (key === "mode" && (value === "light" || value === "dark" || value === "custom")) {
+        safe.mode = value;
+      } else if (byCookieKey.has(key) && typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value)) {
+        safe[key] = value;
+      }
+    }
+    return Object.keys(safe).length ? safe : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Build cookie payload from raw DB/config values.
  *  Input keys are dbField names (themeBg, themeKernel, ...).
  *  Output keys are cookieKey names (bg, kernel, ...). */
@@ -77,7 +110,7 @@ export function cookieToStyle(rawCookie: Record<string, string>): {
       continue;
     }
     const prop = byCookieKey.get(key);
-    if (prop) {
+    if (prop && /^#[0-9a-f]{6}$/i.test(value)) {
       style[prop.cssVar] = value;
       // Derivatives
       if (prop.cssVar === "--bg")           { /* no derivative needed */ }

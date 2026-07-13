@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, parseBody, rejectCrossOrigin, unauthorized } from "@/lib/api-helpers";
 import { isValidHex } from "@/lib/theme";
-import { buildThemeCookie } from "@/lib/theme-config";
+import { buildThemeCookie, THEME_COOKIE_NAME, THEME_COOKIE_NAMES } from "@/lib/theme-config";
 
 // Length caps for text fields — protects DB from megabyte-string spam.
 const LIMITS = {
@@ -54,10 +54,12 @@ export async function GET() {
 
 // ── PATCH /api/configuracion ──────────────────────────────────────────────────
 export async function PATCH(req: NextRequest) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 
-  const body = await req.json().catch(() => null);
+  const body = await parseBody(req, 16_000);
   if (!body || typeof body !== "object" || Array.isArray(body))
     return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
 
@@ -202,15 +204,18 @@ export async function PATCH(req: NextRequest) {
     });
     payload.mode = updated.themeMode;
 
-    response.cookies.set("eduhub_theme", JSON.stringify(payload), {
+    response.cookies.set(THEME_COOKIE_NAME, JSON.stringify(payload), {
       path: "/",
       maxAge: 31536000,
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
     });
-    response.headers.append(
-      "Set-Cookie",
-      "eduhub_theme=; Path=/configuracion; Max-Age=0; SameSite=Lax"
-    );
+    for (const name of THEME_COOKIE_NAMES) {
+      response.headers.append("Set-Cookie", `${name}=; Path=/configuracion; Max-Age=0; SameSite=Lax`);
+      if (name !== THEME_COOKIE_NAME) {
+        response.headers.append("Set-Cookie", `${name}=; Path=/; Max-Age=0; SameSite=Lax`);
+      }
+    }
   }
 
   return response;

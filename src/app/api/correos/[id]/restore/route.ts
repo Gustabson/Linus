@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized } from "@/lib/api-helpers";
+import { getSession, rejectCrossOrigin, unauthorized } from "@/lib/api-helpers";
 import { revalidatePath } from "next/cache";
 import { resolveMailScope, type MailDeletionScope } from "@/lib/mail-trash";
 
@@ -8,6 +8,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const crossOrigin = rejectCrossOrigin(request);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 

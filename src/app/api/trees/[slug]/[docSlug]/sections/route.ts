@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { copySectionFields, forkPublishedVersionToDraft, sanitizeRichTextDocument, SECTION_TITLE_MAX } from "@/lib/sections";
-import { getSession, unauthorized, parseBody, safeString } from "@/lib/api-helpers";
+import { getSession, unauthorized, parseBody, rejectCrossOrigin, safeString } from "@/lib/api-helpers";
 import type { VersionStatus } from "@prisma/client";
 
 type Params = { params: Promise<{ slug: string; docSlug: string }> };
@@ -65,6 +65,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 // ── POST — add a new section ──────────────────────────────────────────────────
 export async function POST(req: NextRequest, { params }: Params) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 
@@ -124,6 +126,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
 // ── PATCH — update a section's content / meta ─────────────────────────────────
 export async function PATCH(req: NextRequest, { params }: Params) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 
@@ -193,6 +197,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 // ── DELETE — remove a section ─────────────────────────────────────────────────
 export async function DELETE(req: NextRequest, { params }: Params) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 

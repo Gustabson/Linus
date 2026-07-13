@@ -9,6 +9,7 @@ import {
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { clearThemeCookies } from "@/lib/theme-cookie-client";
 
 export function Navbar() {
   const { data: session, update, status } = useSession();
@@ -52,7 +53,7 @@ export function Navbar() {
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary shrink-0">
               <BookOpen className="w-6 h-6" />
-              <span>EduHub</span>
+              <span>LINUG</span>
             </Link>
 
             {/* Desktop nav — 3 links only */}
@@ -89,7 +90,7 @@ export function Navbar() {
                   </Link>
                   <NotificationBell />
                   <button
-                    onClick={() => { document.cookie = "eduhub_theme=;path=/;max-age=0"; localStorage.removeItem("theme"); signOut(); }}
+                    onClick={() => { clearThemeCookies(); localStorage.removeItem("theme"); signOut(); }}
                     title="Cerrar sesión"
                     className="text-text-subtle hover:text-red-500 p-2 rounded-xl hover:bg-red-50 transition-colors"
                   >
@@ -136,7 +137,7 @@ export function Navbar() {
                       onClick={() => setOpen(false)}
                     />
                     <button
-                      onClick={() => { document.cookie = "eduhub_theme=;path=/;max-age=0"; localStorage.removeItem("theme"); signOut(); }}
+                      onClick={() => { clearThemeCookies(); localStorage.removeItem("theme"); signOut(); }}
                       className="flex items-center gap-2 px-3 py-2.5 text-red-500 rounded-xl hover:bg-red-50 w-full text-sm transition-colors"
                     >
                       <LogOut className="w-4 h-4" /> Cerrar sesión

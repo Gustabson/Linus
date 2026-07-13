@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, getOwnedTree, unauthorized, forbidden, uniqueSlug, parseBody, safeString } from "@/lib/api-helpers";
+import { getSession, getOwnedTree, unauthorized, forbidden, uniqueSlug, parseBody, rejectCrossOrigin, safeString } from "@/lib/api-helpers";
 
 const DOCUMENT_TITLE_MAX = 200;
 
@@ -8,6 +8,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 

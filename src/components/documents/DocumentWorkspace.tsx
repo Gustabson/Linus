@@ -24,9 +24,11 @@ import styles from "./DocumentWorkspace.module.css";
 import { useRouter } from "@/hooks/useAppRouter";
 import { EmbeddedPdf } from "./EmbeddedPdf";
 import { ResourcesPanel, type AttachedResource } from "@/components/trees/ResourcesPanel";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 type SaveState = "saved" | "saving" | "error";
 type SectionIdMap = Record<string, string>;
+type PendingPdfImport = { blobUrl: string; uploadToken: string; sectionTitle: string };
 
 interface DocumentWorkspaceProps {
   treeSlug: string;
@@ -128,6 +130,12 @@ export function DocumentWorkspace({
   const [titleValue, setTitleValue] = useState(initialDisplayTitle);
   const [editingTitle, setEditingTitle] = useState(false);
   const [savingTitle, setSavingTitle] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState("");
+  const [sectionToDelete, setSectionToDelete] = useState<DocumentSection | null>(null);
+  const [deletingSection, setDeletingSection] = useState(false);
+  const [confirmDocumentDelete, setConfirmDocumentDelete] = useState(false);
+  const [deletingDocument, setDeletingDocument] = useState(false);
+  const [pendingPdfImport, setPendingPdfImport] = useState<PendingPdfImport | null>(null);
   const [editorPage, setEditorPage] = useState(1);
   const [editorPageCount, setEditorPageCount] = useState(1);
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -344,23 +352,50 @@ export function DocumentWorkspace({
   }
 
   async function deleteSection(section: DocumentSection) {
-    if (!window.confirm(`¿Eliminar la sección "${section.sectionType}"?`)) return;
-    if (!(await drainSaves())) return;
-    const response = await fetch(`/api/trees/${treeSlug}/${docSlug}/sections`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sectionId: section.id }),
-    });
-    if (!response.ok) { setSaveState("error"); return; }
-    const data = await response.json();
-    setSections((current) => {
-      const remaining = applySectionIdMap(current.filter((item) => item.id !== section.id), data.sectionIdMap ?? {});
-      setActiveId((currentId) => {
-        const mapped = (data.sectionIdMap ?? {})[currentId] ?? currentId;
-        return remaining.some((item) => item.id === mapped) ? mapped : remaining[0]?.id ?? "";
+    if (deletingSection) return;
+    setDeletingSection(true);
+    setWorkspaceError("");
+    if (!(await drainSaves())) {
+      setDeletingSection(false);
+      setSectionToDelete(null);
+      setWorkspaceError("No se pudo guardar antes de eliminar la sección.");
+      return;
+    }
+    try {
+      const response = await fetch(`/api/trees/${treeSlug}/${docSlug}/sections`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sectionId: section.id }),
       });
-      return remaining;
-    });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "No se pudo eliminar la sección.");
+      setSections((current) => {
+        const remaining = applySectionIdMap(current.filter((item) => item.id !== section.id), data.sectionIdMap ?? {});
+        setActiveId((currentId) => {
+          const mapped = (data.sectionIdMap ?? {})[currentId] ?? currentId;
+          return remaining.some((item) => item.id === mapped) ? mapped : remaining[0]?.id ?? "";
+        });
+        return remaining;
+      });
+      setUnpublishedChanges(true);
+      setIsPublished(false);
+      setSectionToDelete(null);
+    } catch (error) {
+      setSaveState("error");
+      setWorkspaceError(error instanceof Error ? error.message : "No se pudo eliminar la sección.");
+      setSectionToDelete(null);
+    } finally {
+      setDeletingSection(false);
+    }
+  }
+
+  async function refreshSectionsAfterImport() {
+    const sectionsResponse = await fetch(`/api/trees/${treeSlug}/${docSlug}/sections`, { cache: "no-store" });
+    if (!sectionsResponse.ok) throw new Error("El archivo se importó, pero no se pudo actualizar el editor.");
+    const fresh = await sectionsResponse.json();
+    const nextSections = Array.isArray(fresh.sections) ? fresh.sections as DocumentSection[] : [];
+    setSections(nextSections);
+    setActiveId(nextSections.at(-1)?.id ?? "");
     setUnpublishedChanges(true);
     setIsPublished(false);
   }
@@ -369,6 +404,7 @@ export function DocumentWorkspace({
     if (!(await drainSaves())) return;
     setImporting(true);
     setShowDocumentMenu(false);
+    setWorkspaceError("");
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -376,27 +412,41 @@ export function DocumentWorkspace({
       let response = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, { method: "POST", body: formData });
       let data = await response.json().catch(() => ({}));
       if (response.ok && data.needsTitle) {
-        const sectionTitle = window.prompt("Este PDF no tiene texto seleccionable. Escribí un título para la sección:", file.name.replace(/\.pdf$/i, ""));
-        if (!sectionTitle?.trim()) return;
-        const pending = new FormData();
-        pending.append("blobUrl", data.blobUrl);
-        pending.append("uploadToken", data.uploadToken);
-        pending.append("sectionTitle", sectionTitle.trim().slice(0, 200));
-        response = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, { method: "POST", body: pending });
-        data = await response.json().catch(() => ({}));
+        if (typeof data.blobUrl !== "string" || typeof data.uploadToken !== "string")
+          throw new Error("La respuesta de importación es inválida.");
+        setPendingPdfImport({
+          blobUrl: data.blobUrl,
+          uploadToken: data.uploadToken,
+          sectionTitle: file.name.replace(/\.pdf$/i, "").slice(0, 200),
+        });
+        return;
       }
       if (!response.ok) throw new Error(data.error ?? "No se pudo importar el archivo.");
-
-      const sectionsResponse = await fetch(`/api/trees/${treeSlug}/${docSlug}/sections`, { cache: "no-store" });
-      if (!sectionsResponse.ok) throw new Error("El archivo se importó, pero no se pudo actualizar el editor.");
-      const fresh = await sectionsResponse.json();
-      const nextSections = Array.isArray(fresh.sections) ? fresh.sections as DocumentSection[] : [];
-      setSections(nextSections);
-      setActiveId(nextSections.at(-1)?.id ?? "");
-      setUnpublishedChanges(true);
-      setIsPublished(false);
+      await refreshSectionsAfterImport();
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : "No se pudo importar el archivo.");
+      setWorkspaceError(error instanceof Error ? error.message : "No se pudo importar el archivo.");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function finishPendingPdfImport(event: React.FormEvent) {
+    event.preventDefault();
+    if (!pendingPdfImport?.sectionTitle.trim() || importing) return;
+    setImporting(true);
+    setWorkspaceError("");
+    try {
+      const pending = new FormData();
+      pending.append("blobUrl", pendingPdfImport.blobUrl);
+      pending.append("uploadToken", pendingPdfImport.uploadToken);
+      pending.append("sectionTitle", pendingPdfImport.sectionTitle.trim().slice(0, 200));
+      const response = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, { method: "POST", body: pending });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "No se pudo importar el PDF.");
+      await refreshSectionsAfterImport();
+      setPendingPdfImport(null);
+    } catch (error) {
+      setWorkspaceError(error instanceof Error ? error.message : "No se pudo importar el PDF.");
     } finally {
       setImporting(false);
     }
@@ -404,11 +454,25 @@ export function DocumentWorkspace({
 
   async function deleteDocument() {
     setShowDocumentMenu(false);
-    if (!window.confirm(`¿Eliminar el documento "${titleValue}"? Esta acción no se puede deshacer.`)) return;
-    if (!(await drainSaves())) return;
-    const response = await fetch(`/api/trees/${treeSlug}/${docSlug}`, { method: "DELETE" });
-    if (response.ok) router.push(`/${ownerUsername}/${treeSlug}`);
-    else window.alert("No se pudo eliminar el documento.");
+    if (deletingDocument) return;
+    setDeletingDocument(true);
+    setWorkspaceError("");
+    if (!(await drainSaves())) {
+      setDeletingDocument(false);
+      setConfirmDocumentDelete(false);
+      setWorkspaceError("No se pudo guardar antes de eliminar el documento.");
+      return;
+    }
+    try {
+      const response = await fetch(`/api/trees/${treeSlug}/${docSlug}`, { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "No se pudo eliminar el documento.");
+      router.push(`/${ownerUsername}/${treeSlug}`);
+    } catch (error) {
+      setWorkspaceError(error instanceof Error ? error.message : "No se pudo eliminar el documento.");
+      setConfirmDocumentDelete(false);
+      setDeletingDocument(false);
+    }
   }
 
   async function commitDocumentTitle() {
@@ -433,7 +497,7 @@ export function DocumentWorkspace({
       if (contentType !== "KERNEL" && data.slug && data.slug !== treeSlug)
         router.replace(`/${ownerUsername}/${data.slug}/${docSlug}`);
     } catch (error) {
-      window.alert(error instanceof Error ? error.message : "No se pudo renombrar el documento.");
+      setWorkspaceError(error instanceof Error ? error.message : "No se pudo renombrar el documento.");
     } finally {
       setSavingTitle(false);
     }
@@ -474,7 +538,7 @@ export function DocumentWorkspace({
           {savingTitle && <Loader2 size={14} className={styles.spin} />}
         </div>
         <div className={styles.documentMeta}>
-          <span>{treeTitle} — Linus</span>
+          <span>{treeTitle} — LINUG</span>
           <span>{authorName}</span>
           {saveState === "error" ? (
             <button type="button" className={styles.errorState} onClick={() => { const id = Object.keys(pendingSaves.current)[0]; if (id) void flushSection(id); }}>No se pudo guardar · Reintentar</button>
@@ -482,6 +546,7 @@ export function DocumentWorkspace({
             <span className={styles.savedState}>{saveState === "saving" ? <><Loader2 size={12} className={styles.spin} /> Guardando…</> : <><Check size={13} /> Guardado</>}</span>
           )}
         </div>
+        {workspaceError && <p role="alert" className={styles.errorState}>{workspaceError}</p>}
       </section>
 
       <div className={styles.workspace}>
@@ -528,7 +593,7 @@ export function DocumentWorkspace({
                 {isOwner && renamingId !== section.id && (
                   <span className={styles.sectionActions}>
                     <button type="button" title="Renombrar" onClick={() => { setRenamingId(section.id); setRenameValue(section.sectionType); }}><Pencil size={12} /></button>
-                    <button type="button" title="Eliminar" onClick={() => deleteSection(section)}><Trash2 size={12} /></button>
+                    <button type="button" title="Eliminar" onClick={() => setSectionToDelete(section)}><Trash2 size={12} /></button>
                   </span>
                 )}
               </div>
@@ -580,7 +645,7 @@ export function DocumentWorkspace({
               <div className={styles.documentMenu}>
                 <Link href={`${basePath}/historial`} onClick={() => setShowDocumentMenu(false)}><GitBranch size={14} /> Historial</Link>
                 {isOwner && <button type="button" onClick={() => importInput.current?.click()}><Upload size={14} /> Importar Word / PDF</button>}
-                {isOwner && contentType === "KERNEL" && <button type="button" className={styles.dangerMenuItem} onClick={deleteDocument}><Trash2 size={14} /> Eliminar documento</button>}
+                {isOwner && contentType === "KERNEL" && <button type="button" className={styles.dangerMenuItem} onClick={() => { setShowDocumentMenu(false); setConfirmDocumentDelete(true); }}><Trash2 size={14} /> Eliminar documento</button>}
               </div>
             )}
             <input ref={importInput} type="file" accept=".pdf,.docx" hidden onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) importDocument(file); }} />
@@ -602,6 +667,49 @@ export function DocumentWorkspace({
           </section>
         </aside>
       </div>
+      {sectionToDelete && (
+        <ConfirmDialog
+          title="Eliminar sección"
+          description={<>¿Eliminar <strong className="text-text">“{sectionToDelete.sectionType}”</strong>? Esta acción no se puede deshacer.</>}
+          confirmLabel="Eliminar sección"
+          busy={deletingSection}
+          onCancel={() => setSectionToDelete(null)}
+          onConfirm={() => void deleteSection(sectionToDelete)}
+        />
+      )}
+      {confirmDocumentDelete && (
+        <ConfirmDialog
+          title="Eliminar documento"
+          description={<>¿Eliminar <strong className="text-text">“{titleValue}”</strong>? Se perderán sus secciones y esta acción no se puede deshacer.</>}
+          confirmLabel="Eliminar documento"
+          busy={deletingDocument}
+          onCancel={() => setConfirmDocumentDelete(false)}
+          onConfirm={() => void deleteDocument()}
+        />
+      )}
+      {pendingPdfImport && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-text/45 p-4 backdrop-blur-sm" role="presentation">
+          <form onSubmit={finishPendingPdfImport} role="dialog" aria-modal="true" aria-labelledby="pdf-import-title" className="w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-2xl">
+            <h2 id="pdf-import-title" className="text-lg font-bold text-text">Nombrar sección del PDF</h2>
+            <p className="mt-1 text-sm leading-relaxed text-text-muted">El PDF no tiene texto seleccionable. Se mostrará incrustado como una sección.</p>
+            <label className="mt-4 block text-sm font-semibold text-text" htmlFor="pdf-section-title">Título de la sección</label>
+            <input
+              id="pdf-section-title"
+              autoFocus
+              maxLength={200}
+              value={pendingPdfImport.sectionTitle}
+              onChange={(event) => setPendingPdfImport((current) => current ? { ...current, sectionTitle: event.target.value } : null)}
+              className="mt-1 w-full rounded-xl border border-border bg-bg px-3 py-2.5 text-sm text-text outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <div className="mt-6 flex justify-end gap-2">
+              <button type="button" disabled={importing} onClick={() => setPendingPdfImport(null)} className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-text-muted hover:bg-bg disabled:opacity-50">Cancelar</button>
+              <button type="submit" disabled={importing || !pendingPdfImport.sectionTitle.trim()} className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-fg hover:bg-primary-h disabled:opacity-50">
+                {importing && <Loader2 size={15} className={styles.spin} />} {importing ? "Importando…" : "Agregar sección"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   FileText, AlertTriangle, Pencil, Check,
 } from "lucide-react";
 import { DocExportButton, type ExportSection } from "./DocExportButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface Props {
   treeSlug:       string;
@@ -33,21 +34,32 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
   const [editingTitle,  setEditingTitle]  = useState(false);
   const [savingTitle,   setSavingTitle]   = useState(false);
   const titleInputRef                     = useRef<HTMLInputElement>(null);
+  const savedTitleRef                     = useRef(docTitle);
+  const [actionError, setActionError]      = useState("");
 
   async function commitTitle() {
     const trimmed = titleValue.trim();
-    if (!trimmed) { setTitleValue(docTitle); setEditingTitle(false); return; }
-    if (trimmed === titleValue && !editingTitle) return;
+    if (!trimmed) { setTitleValue(savedTitleRef.current); setEditingTitle(false); return; }
+    if (trimmed === savedTitleRef.current) { setEditingTitle(false); return; }
     setSavingTitle(true);
-    const res = await fetch(`/api/trees/${treeSlug}/${docSlug}`, {
-      method:  "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ title: trimmed }),
-    });
-    setSavingTitle(false);
-    if (res.ok) setTitleValue(trimmed);
-    else setTitleValue(docTitle); // revert on error
-    setEditingTitle(false);
+    setActionError("");
+    try {
+      const res = await fetch(`/api/trees/${treeSlug}/${docSlug}`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ title: trimmed }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "No se pudo renombrar el documento");
+      savedTitleRef.current = trimmed;
+      setTitleValue(trimmed);
+    } catch (error) {
+      setTitleValue(savedTitleRef.current);
+      setActionError(error instanceof Error ? error.message : "No se pudo renombrar el documento");
+    } finally {
+      setSavingTitle(false);
+      setEditingTitle(false);
+    }
   }
 
   function startEditTitle() {
@@ -57,12 +69,13 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
 
   function handleTitleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter")  { e.preventDefault(); commitTitle(); }
-    if (e.key === "Escape") { setTitleValue(titleValue); setEditingTitle(false); }
+    if (e.key === "Escape") { setTitleValue(savedTitleRef.current); setEditingTitle(false); }
   }
 
   // ── Delete state ──────────────────────────────────────────────────────────
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting]                   = useState(false);
+  const [deleteError, setDeleteError]             = useState("");
 
   // ── Import state ──────────────────────────────────────────────────────────
   const [importState, setImportState] = useState<ImportState>({ step: "idle" });
@@ -78,14 +91,17 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
 
   async function handleDelete() {
     setDeleting(true);
-    const res = await fetch(`/api/trees/${treeSlug}/${docSlug}`, { method: "DELETE" });
-    if (res.ok) {
-      router.refresh();
+    setDeleteError("");
+    try {
+      const res = await fetch(`/api/trees/${treeSlug}/${docSlug}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "No se pudo eliminar el documento");
       router.push(`/${ownerUsername}/${treeSlug}`);
-    } else {
+      router.refresh();
+    } catch (error) {
       setDeleting(false);
       setShowDeleteConfirm(false);
-      alert("No se pudo eliminar el documento.");
+      setDeleteError(error instanceof Error ? error.message : "No se pudo eliminar el documento");
     }
   }
 
@@ -98,20 +114,23 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
 
   async function uploadFile(file: File, mode: "split" | "single") {
     setImportState({ step: "uploading" });
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("mode", mode);
-
-    const res  = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, { method: "POST", body: formData });
-    const data = await res.json();
-
-    if (!res.ok) { setImportState({ step: "error", message: data.error ?? "Error al importar." }); return; }
-
-    if (data.needsTitle) { setImportState({ step: "needsTitle", blobUrl: data.blobUrl, uploadToken: data.uploadToken }); return; }
-
-    setImportState({ step: "done", count: data.count });
-    setTimeout(() => { router.refresh(); setImportState({ step: "idle" }); }, 1500);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("mode", mode);
+      const res = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, { method: "POST", body: formData });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Error al importar.");
+      if (data.needsTitle) {
+        if (typeof data.blobUrl !== "string" || typeof data.uploadToken !== "string") throw new Error("Respuesta de importación inválida.");
+        setImportState({ step: "needsTitle", blobUrl: data.blobUrl, uploadToken: data.uploadToken });
+        return;
+      }
+      setImportState({ step: "done", count: Number(data.count) || 0 });
+      setTimeout(() => { router.refresh(); setImportState({ step: "idle" }); }, 1500);
+    } catch (error) {
+      setImportState({ step: "error", message: error instanceof Error ? error.message : "Error al importar." });
+    }
   }
 
   async function handleEmbedSubmit(e: React.FormEvent) {
@@ -126,14 +145,16 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
     formData.append("uploadToken",  importState.uploadToken);
     formData.append("sectionTitle", embedTitle.trim());
 
-    const res  = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, { method: "POST", body: formData });
-    const data = await res.json();
-
-    if (!res.ok) { setImportState({ step: "error", message: data.error ?? "Error al guardar." }); return; }
-
-    setImportState({ step: "done", count: 1 });
-    setEmbedTitle("");
-    setTimeout(() => { router.refresh(); setImportState({ step: "idle" }); }, 1500);
+    try {
+      const res = await fetch(`/api/trees/${treeSlug}/${docSlug}/import`, { method: "POST", body: formData });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Error al guardar.");
+      setImportState({ step: "done", count: 1 });
+      setEmbedTitle("");
+      setTimeout(() => { router.refresh(); setImportState({ step: "idle" }); }, 1500);
+    } catch (error) {
+      setImportState({ step: "error", message: error instanceof Error ? error.message : "Error al guardar." });
+    }
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -280,6 +301,17 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
         </div>
       )}
 
+      {deleteError && (
+        <p role="alert" className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
+          {deleteError}
+        </p>
+      )}
+      {actionError && (
+        <p role="alert" className="rounded-xl border border-danger/20 bg-danger/5 px-4 py-3 text-sm text-danger">
+          {actionError}
+        </p>
+      )}
+
       {importState.step === "needsTitle" && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
           <p className="text-sm text-amber-800 flex items-center gap-2">
@@ -306,35 +338,14 @@ export function DocActionBar({ treeSlug, treeTitle, docSlug, docTitle, ownerUser
 
       {/* ── Delete confirmation modal ── */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-surface rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-5">
-            <div className="flex items-start gap-4">
-              <div className="bg-red-100 p-3 rounded-2xl shrink-0">
-                <Trash2 className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <h2 className="font-bold text-text text-lg">Eliminar documento</h2>
-                <p className="text-sm text-text-muted mt-1 leading-relaxed">
-                  ¿Eliminar <span className="font-semibold text-text">"{titleValue}"</span>?{" "}
-                  Se perderán todas las secciones y el historial. Esta acción no se puede deshacer.
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-1">
-              <button onClick={() => setShowDeleteConfirm(false)} disabled={deleting} className="text-sm text-text-muted px-4 py-2.5 rounded-xl hover:bg-bg transition-colors">
-                Cancelar
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex items-center gap-2 text-sm bg-red-600 text-white px-4 py-2.5 rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors"
-              >
-                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                {deleting ? "Eliminando…" : "Sí, eliminar"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          title="Eliminar documento"
+          description={<>¿Eliminar <strong className="text-text">“{titleValue}”</strong>? Se perderán todas las secciones y el historial.</>}
+          confirmLabel="Eliminar documento"
+          busy={deleting}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={() => void handleDelete()}
+        />
       )}
     </>
   );
