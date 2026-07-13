@@ -175,6 +175,10 @@ export function TreePickerModal({
               {results.map((tree) => {
                 const style = CONTENT_TYPE_STYLE[tree.contentType];
                 const isPrivate = tree.visibility === "PRIVATE";
+                const ownerIdentity = [
+                  tree.owner.name,
+                  tree.owner.username ? `@${tree.owner.username}` : null,
+                ].filter(Boolean).join(" · ");
                 return (
                   <button
                     key={tree.id}
@@ -191,7 +195,7 @@ export function TreePickerModal({
                       </span>
                       <span className="mt-1 block truncate text-sm font-bold text-text transition-colors group-hover:text-primary">{tree.title}</span>
                       <span className="mt-0.5 block truncate text-xs text-text-muted">
-                        {isPrivate ? "Cambiá la visibilidad para poder compartirlo" : `por ${tree.owner.name ?? tree.owner.username ?? "Usuario"}`}
+                        {isPrivate ? "Cambiá la visibilidad para poder compartirlo" : ownerIdentity || "Usuario"}
                       </span>
                     </span>
                   </button>

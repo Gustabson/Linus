@@ -13,7 +13,7 @@ import {
 } from "@/lib/comments";
 import { CONTENT_TYPE_STYLE, QUICK_EMOJIS } from "@/lib/constants";
 import { CommentAttachmentPreview } from "./CommentAttachmentPreview";
-import { TreePickerModal, type TreePickerResult } from "./TreePickerModal";
+import { TreePickerModal, type TreePickerResult } from "@/components/shared/TreePickerModal";
 
 export function CommentComposer({
   postId,

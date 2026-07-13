@@ -2,10 +2,10 @@
 
 import { useState, useRef, useTransition, useEffect } from "react";
 import Image from "next/image";
-import { Send, X, BookOpen, ChevronDown, ChevronUp, Loader2, Smile } from "lucide-react";
-import type { ContentType } from "@prisma/client";
+import { Send, X, BookOpen, ChevronDown, Loader2, Smile } from "lucide-react";
 import { CONTENT_TYPE_STYLE, QUICK_EMOJIS } from "@/lib/constants";
 import type { PostData } from "./PostCard";
+import { TreePickerModal, type TreePickerResult } from "@/components/shared/TreePickerModal";
 
 interface Props {
   currentUser: {
@@ -16,27 +16,13 @@ interface Props {
   onPostCreated: (post: PostData) => void;
 }
 
-interface TreeResult {
-  id:          string;
-  slug:        string;
-  title:       string;
-  description: string | null;
-  contentType: ContentType;
-  forkDepth:   number;
-  owner: { username: string | null; name: string | null };
-  _count: { likes: number; forks: number };
-}
-
 const MAX_CHARS = 2000;
 
 export function PostComposer({ currentUser, onPostCreated }: Props) {
   const [content, setContent]         = useState("");
-  const [attachedTree, setAttachedTree] = useState<TreeResult | null>(null);
-  const [showTreeSearch, setShowTreeSearch] = useState(false);
+  const [attachedTree, setAttachedTree] = useState<TreePickerResult | null>(null);
+  const [showTreePicker, setShowTreePicker] = useState(false);
   const [showEmoji, setShowEmoji]     = useState(false);
-  const [treeQuery, setTreeQuery]     = useState("");
-  const [treeResults, setTreeResults] = useState<TreeResult[]>([]);
-  const [searching, setSearching]     = useState(false);
   const [expanded, setExpanded]       = useState(false);
   const [submitting, startSubmit]     = useTransition();
   const [error, setError]             = useState("");
@@ -71,26 +57,13 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
   const charCount  = content.length;
   const overLimit  = charCount > MAX_CHARS;
   const canSubmit  = content.trim().length > 0 && !overLimit && !submitting;
-  const isExpanded = expanded || content.length > 0 || !!attachedTree || showTreeSearch;
+  const isExpanded = expanded || content.length > 0 || !!attachedTree || showTreePicker;
 
   function autoResize() {
     const ta = textareaRef.current;
     if (!ta) return;
     ta.style.height = "auto";
     ta.style.height = `${Math.min(ta.scrollHeight, 300)}px`;
-  }
-
-  async function searchTrees(q: string) {
-    setTreeQuery(q);
-    if (q.trim().length < 2) { setTreeResults([]); return; }
-    setSearching(true);
-    try {
-      const res  = await fetch(`/api/trees/search?q=${encodeURIComponent(q)}&limit=6&types=KERNEL,MODULE,RESOURCE`);
-      const data = await res.json();
-      setTreeResults(data.trees ?? []);
-    } finally {
-      setSearching(false);
-    }
   }
 
   function handleSubmit() {
@@ -117,15 +90,14 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
       onPostCreated(post);
       setContent("");
       setAttachedTree(null);
-      setShowTreeSearch(false);
-      setTreeQuery("");
-      setTreeResults([]);
+      setShowTreePicker(false);
       setExpanded(false);
       if (textareaRef.current) textareaRef.current.style.height = "auto";
     });
   }
 
   return (
+    <>
     <div className="overflow-visible rounded-2xl border border-border bg-surface shadow-sm transition-shadow focus-within:shadow-md">
       <div className="flex gap-3 p-4 sm:p-5">
         {/* Avatar */}
@@ -194,66 +166,16 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
 
       {isExpanded && (
       <div className="space-y-3 border-t border-border-subtle px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
-      {/* Tree search toggle */}
-      <div className="space-y-2">
-        <button
-          type="button"
-          onClick={() => setShowTreeSearch(!showTreeSearch)}
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-text-muted transition-colors hover:bg-bg hover:text-primary"
-        >
-          <BookOpen className="w-4 h-4" />
-          {attachedTree ? "Cambiar contenido adjunto" : "Adjuntar kernel / módulo / recurso"}
-          {showTreeSearch ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        </button>
-
-        {showTreeSearch && (
-          <div className="space-y-2">
-            <input
-              type="text"
-              value={treeQuery}
-              onChange={(e) => searchTrees(e.target.value)}
-              placeholder="Buscar por título..."
-              className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-primary/40 focus:outline-none"
-            />
-            {searching && (
-              <p className="text-xs text-text-subtle flex items-center gap-1.5 px-1">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Buscando...
-              </p>
-            )}
-            {treeResults.length > 0 && (
-              <div className="border border-border rounded-xl overflow-hidden divide-y divide-border-subtle">
-                {treeResults.map((tree) => {
-                  const badge = CONTENT_TYPE_STYLE[tree.contentType];
-                  return (
-                    <button
-                      key={tree.id}
-                      type="button"
-                      onClick={() => {
-                        setAttachedTree(tree);
-                        setShowTreeSearch(false);
-                        setTreeQuery("");
-                        setTreeResults([]);
-                      }}
-                      className="w-full px-3 py-2.5 text-left transition-colors hover:bg-primary/5"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${badge.badgeCls}`}>
-                          {badge.label}
-                        </span>
-                        <span className="text-sm font-medium text-text truncate">{tree.title}</span>
-                        <span className="text-xs text-text-subtle shrink-0">por {tree.owner.name}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {treeQuery.trim().length >= 2 && !searching && treeResults.length === 0 && (
-              <p className="text-xs text-text-subtle px-1">Sin resultados.</p>
-            )}
-          </div>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={() => setShowTreePicker(true)}
+        className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-text-muted transition-colors hover:bg-bg hover:text-primary"
+        aria-haspopup="dialog"
+      >
+        <BookOpen className="w-4 h-4" />
+        {attachedTree ? "Cambiar contenido adjunto" : "Adjuntar kernel / módulo / recurso"}
+        <ChevronDown className="w-3.5 h-3.5" />
+      </button>
 
       {/* Footer: emoji + char count + submit */}
       <div className="flex items-center justify-between gap-3">
@@ -305,5 +227,16 @@ export function PostComposer({ currentUser, onPostCreated }: Props) {
       </div>
       )}
     </div>
+    <TreePickerModal
+      open={showTreePicker}
+      onClose={() => setShowTreePicker(false)}
+      onSelect={(tree) => {
+        setAttachedTree(tree);
+        setShowTreePicker(false);
+        setExpanded(true);
+        setError("");
+      }}
+    />
+    </>
   );
 }
