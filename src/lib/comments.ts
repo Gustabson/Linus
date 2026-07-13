@@ -4,7 +4,7 @@ export const MAX_COMMENT_LENGTH = 500;
 export const COMMENT_PAGE_SIZE = 30;
 export const MAX_COMMENT_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 export const COMMENT_ATTACHMENT_ACCEPT =
-  ".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.pdf,.doc,.docx";
+  ".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.pdf,.docx";
 
 export const COMMENT_ATTACHMENT_MIME_TYPES = new Set([
   "image/jpeg",
@@ -14,7 +14,6 @@ export const COMMENT_ATTACHMENT_MIME_TYPES = new Set([
   "video/mp4",
   "video/webm",
   "application/pdf",
-  "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]);
 

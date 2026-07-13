@@ -93,7 +93,7 @@ function safeComment<T extends { linkedTree: null | ({ visibility: string; owner
 ) {
   const linkedTree = comment.linkedTree;
   const canSeeTree = linkedTree
-    && (linkedTree.visibility === "PUBLIC" || linkedTree.ownerId === viewerId);
+    && (linkedTree.visibility !== "PRIVATE" || linkedTree.ownerId === viewerId);
   if (!canSeeTree) return { ...comment, linkedTree: null };
   const { visibility: _visibility, ownerId: _ownerId, ...safeTree } = linkedTree;
   return { ...comment, linkedTree: safeTree };
@@ -185,9 +185,12 @@ export async function POST(
   const content = typeof body.content === "string" ? body.content.trim() : "";
   const attachment = await normalizeAttachment(body.attachment, session.user.id);
   const parentId = typeof body.parentId === "string" && body.parentId ? body.parentId : null;
+  const requestedTreeId = typeof body.linkedTreeId === "string" && body.linkedTreeId
+    ? body.linkedTreeId
+    : null;
 
-  if (!content && !attachment)
-    return NextResponse.json({ error: "El comentario no puede estar vacío" }, { status: 400 });
+  if (body.linkedTreeId != null && (!requestedTreeId || requestedTreeId.length > 64))
+    return NextResponse.json({ error: "Contenido educativo inválido" }, { status: 400 });
   if (body.attachment && !attachment)
     return NextResponse.json({ error: "El archivo adjunto no es válido" }, { status: 400 });
   if (content.length > MAX_COMMENT_LENGTH)
@@ -220,17 +223,32 @@ export async function POST(
     parentAuthorId = parent.authorId;
   }
 
-  const internalLink = content ? findInternalTreeLink(content, req.nextUrl.origin) : null;
-  const linkedTree = internalLink
+  const internalLink = !requestedTreeId && content
+    ? findInternalTreeLink(content, req.nextUrl.origin)
+    : null;
+  const linkedTree = requestedTreeId
     ? await prisma.documentTree.findFirst({
         where: {
-          slug: internalLink.slug,
-          visibility: "PUBLIC",
-          owner: { username: internalLink.username },
+          id: requestedTreeId,
+          visibility: { in: ["PUBLIC", "UNLISTED"] },
         },
         select: { id: true },
       })
-    : null;
+    : internalLink
+      ? await prisma.documentTree.findFirst({
+          where: {
+            slug: internalLink.slug,
+            visibility: { in: ["PUBLIC", "UNLISTED"] },
+            owner: { username: internalLink.username },
+          },
+          select: { id: true },
+        })
+      : null;
+
+  if (requestedTreeId && !linkedTree)
+    return NextResponse.json({ error: "Ese contenido es privado o ya no está disponible" }, { status: 400 });
+  if (!content && !attachment && !linkedTree)
+    return NextResponse.json({ error: "El comentario no puede estar vacío" }, { status: 400 });
 
   const comment = await prisma.postComment.create({
     data: {

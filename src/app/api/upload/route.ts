@@ -5,16 +5,21 @@ import { getSession, parseBody, rejectCrossOrigin, unauthorized } from "@/lib/ap
 import { isOwnedCommentUpload } from "@/lib/comments";
 import { prisma } from "@/lib/prisma";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import {
+  containsUnsafeOfficePayload,
+  containsUnsafePdfActions,
+  hasExpectedFileSignature,
+} from "@/lib/upload-security";
 
 const MAX_SIZE_MB = 10;
 
 const ALLOWED_EXTENSIONS = new Set([
   "jpg", "jpeg", "png", "gif", "webp",
-  "pdf", "mp4", "webm", "zip", "txt", "csv", "doc", "docx", "pptx",
+  "pdf", "mp4", "webm", "zip", "txt", "csv", "docx", "pptx",
 ]);
 
 const COMMENT_EXTENSIONS = new Set([
-  "jpg", "jpeg", "png", "gif", "webp", "pdf", "mp4", "webm", "doc", "docx",
+  "jpg", "jpeg", "png", "gif", "webp", "pdf", "mp4", "webm", "docx",
 ]);
 
 const EXT_TO_MIME: Record<string, string> = {
@@ -24,35 +29,9 @@ const EXT_TO_MIME: Record<string, string> = {
   mp4: "video/mp4", webm: "video/webm",
   zip: "application/zip",
   txt: "text/plain", csv: "text/csv",
-  doc: "application/msword",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 };
-
-function hasExpectedSignature(ext: string, bytes: Uint8Array) {
-  const ascii = (start: number, end: number) =>
-    String.fromCharCode(...bytes.slice(start, end));
-
-  switch (ext) {
-    case "jpg":
-    case "jpeg": return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-    case "png": return bytes[0] === 0x89 && ascii(1, 4) === "PNG";
-    case "gif": return ascii(0, 6) === "GIF87a" || ascii(0, 6) === "GIF89a";
-    case "webp": return ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP";
-    case "pdf": return ascii(0, 5) === "%PDF-";
-    case "mp4": return ascii(4, 8) === "ftyp";
-    case "webm": return bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3;
-    case "doc": return bytes[0] === 0xd0 && bytes[1] === 0xcf && bytes[2] === 0x11 && bytes[3] === 0xe0;
-    case "docx": {
-      const isZip = bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04;
-      if (!isZip) return false;
-      // ZIP directory entry names are stored verbatim even when contents are compressed.
-      const archiveText = new TextDecoder("latin1").decode(bytes);
-      return archiveText.includes("[Content_Types].xml") && archiveText.includes("word/");
-    }
-    default: return true;
-  }
-}
 
 export async function POST(req: NextRequest) {
   const crossOrigin = rejectCrossOrigin(req);
@@ -91,11 +70,14 @@ export async function POST(req: NextRequest) {
   if (purpose === "comment" && !COMMENT_EXTENSIONS.has(ext))
     return NextResponse.json({ error: "Este tipo de archivo no se puede adjuntar a un comentario" }, { status: 400 });
 
-  if (purpose === "comment") {
-    const bytes = new Uint8Array(await (ext === "docx" ? file : file.slice(0, 16)).arrayBuffer());
-    if (!hasExpectedSignature(ext, bytes))
-      return NextResponse.json({ error: "El contenido del archivo no coincide con su extensión" }, { status: 400 });
-  }
+  const needsFullInspection = ext === "docx" || ext === "pptx" || ext === "pdf";
+  const bytes = new Uint8Array(await (needsFullInspection ? file : file.slice(0, 16)).arrayBuffer());
+  if (!hasExpectedFileSignature(ext, bytes))
+    return NextResponse.json({ error: "El contenido del archivo no coincide con su extensión" }, { status: 400 });
+  if ((ext === "docx" || ext === "pptx") && containsUnsafeOfficePayload(bytes))
+    return NextResponse.json({ error: "El documento contiene macros, scripts u objetos ejecutables" }, { status: 400 });
+  if (ext === "pdf" && containsUnsafePdfActions(bytes))
+    return NextResponse.json({ error: "El PDF contiene acciones ejecutables o contenido incrustado no permitido" }, { status: 400 });
 
   const filename = purpose === "comment"
     ? `comments/${encodeURIComponent(session.user.id)}/${Date.now()}-${randomUUID()}.${ext}`
