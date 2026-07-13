@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import {
-  BookOpen, Search, LogOut, Menu, X, AlertCircle,
+  Search, LogOut, Menu, X, AlertCircle,
   LayoutDashboard, Home,
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
+import { LinugMark } from "@/components/brand/LinugMark";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { clearThemeCookies } from "@/lib/theme-cookie-client";
 
@@ -52,8 +53,8 @@ export function Navbar() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary shrink-0">
-              <BookOpen className="w-6 h-6" />
-              <span>LINUG</span>
+              <LinugMark className="h-7 w-7" />
+              <span className="tracking-[-0.035em]">LINUG</span>
             </Link>
 
             {/* Desktop nav — 3 links only */}

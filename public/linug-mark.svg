@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <style>
+    .linug-stroke { stroke: #111827; }
+    .linug-fill { fill: #111827; }
+    @media (prefers-color-scheme: dark) {
+      .linug-stroke { stroke: #f9fafb; }
+      .linug-fill { fill: #f9fafb; }
+    }
+  </style>
+  <path class="linug-stroke" d="M15.98 8.25C13.14 6.05 9.54 5.05 5.5 5.54v17.42c4.04-.49 7.64.51 10.48 2.71" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="linug-stroke" d="M16.02 8.25c2.84-2.2 6.44-3.2 10.48-2.71v17.42c-4.04-.49-7.64.51-10.48 2.71" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="linug-stroke" d="M16 8.25v3.1M16 15.35v10.32M14.55 14.3l-3.2 2.35M17.45 14.3l3.2 2.35" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="linug-fill" cx="16" cy="13.35" r="1.8"/>
+  <circle class="linug-fill" cx="10.15" cy="17.55" r="1.25"/>
+  <circle class="linug-fill" cx="21.85" cy="17.55" r="1.25"/>
+</svg>

@@ -28,6 +28,7 @@ export const metadata: Metadata = {
   },
   description:
     "Plataforma colaborativa de recursos educativos. Forkea, adapta y compartí currículos con personas de todo el mundo.",
+  icons: { icon: "/linug-mark.svg" },
   openGraph: { siteName: "LINUG", locale: "es_AR", type: "website" },
   twitter: { card: "summary" },
 };

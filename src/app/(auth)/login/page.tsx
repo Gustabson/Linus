@@ -1,8 +1,8 @@
 import { signIn } from "@/lib/auth";
-import { BookOpen } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { MagicLinkForm } from "@/components/auth/MagicLinkForm";
+import { LinugMark } from "@/components/brand/LinugMark";
 
 // Shown after the magic link is sent (?verify=1)
 function VerifyBanner() {
@@ -49,7 +49,7 @@ export default async function LoginPage({
         <div className="text-center">
           <div className="flex justify-center mb-3">
             <div className="bg-primary/10 p-3 rounded-full">
-              <BookOpen className="w-8 h-8 text-primary" />
+              <LinugMark className="h-8 w-8 text-primary" />
             </div>
           </div>
           <h1 className="text-2xl font-bold text-text">Bienvenido a LINUG</h1>
