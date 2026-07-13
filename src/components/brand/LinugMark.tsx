@@ -1,6 +1,6 @@
 import type { HTMLAttributes, SVGProps } from "react";
 
-const ART_MARK_URL = "/brand/linug-emblem-art-v2-transparent.png";
+const ART_MARK_URL = "/brand/linug-emblem-art-v3-heart-transparent.png";
 
 interface LinugArtMarkProps extends HTMLAttributes<HTMLSpanElement> {
   label?: string;
