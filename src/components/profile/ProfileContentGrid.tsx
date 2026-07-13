@@ -64,8 +64,8 @@ export function ProfileContentGrid({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 overflow-x-auto rounded-2xl border border-border bg-surface p-1.5 shadow-sm">
-        <div className="flex min-w-max items-center gap-1">
+      <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-surface p-1.5 shadow-sm">
+        <div className="flex flex-wrap items-center gap-1">
           {filters.map((item) => {
             const active = filter === item.key;
             return (

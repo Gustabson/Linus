@@ -218,7 +218,7 @@ export default async function UserProfilePage({
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span>
                 <span className="min-w-0">
                   <strong className="block text-xl leading-none text-text">{value}</strong>
-                  <span className="mt-1 block truncate text-[11px] font-medium text-text-subtle">{label}</span>
+                  <span className="mt-1 block text-[11px] font-medium leading-tight text-text-subtle">{label}</span>
                 </span>
               </div>
             ))}
