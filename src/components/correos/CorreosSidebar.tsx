@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, Send, FileText, Pencil } from "lucide-react";
+import { Inbox, Mail, Send, FileText, Pencil } from "lucide-react";
 
 interface Props {
   unreadCount: number;
@@ -25,15 +25,23 @@ export function CorreosSidebar({ unreadCount }: Props) {
   return (
     <>
       {/* ── Desktop: vertical sidebar ───────────────────────────────────── */}
-      <aside className="hidden md:flex w-56 shrink-0 border-r border-border flex-col bg-surface">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-surface md:flex">
+        <div className="flex items-center gap-2 px-5 pb-1 pt-5">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary"><Mail className="h-4 w-4" /></span>
+          <div>
+            <p className="text-sm font-bold text-text">Correos</p>
+            <p className="text-[11px] text-text-subtle">Mensajes privados</p>
+          </div>
+        </div>
+
         {/* Redactar */}
         <div className="p-4">
           <Link
             href="/correos/redactar"
             className={`w-full flex items-center justify-center gap-2 font-semibold text-sm px-4 py-2.5 rounded-2xl shadow-sm transition-colors ${
               pathname === "/correos/redactar"
-                ? "bg-primary-h text-white"
-                : "bg-primary hover:bg-primary-h text-white"
+                ? "bg-primary-h text-primary-fg"
+                : "bg-primary text-primary-fg hover:bg-primary-h"
             }`}
           >
             <Pencil className="w-4 h-4" />
@@ -42,27 +50,31 @@ export function CorreosSidebar({ unreadCount }: Props) {
         </div>
 
         {/* Carpetas */}
-        <nav className="flex-1 px-2 space-y-0.5">
+        <nav className="flex-1 space-y-1 px-2">
           {FOLDERS.map(({ href, icon: Icon, label }) => (
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive(href)
-                  ? "bg-primary/5 text-primary"
+                  ? "bg-primary/10 text-primary"
                   : "text-text-muted hover:bg-border-subtle hover:text-text"
               }`}
             >
               <Icon className="w-4 h-4 shrink-0" />
               <span className="flex-1 truncate">{label}</span>
               {href === "/correos" && unreadCount > 0 && (
-                <span className="bg-primary text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                <span className="min-w-[20px] rounded-full bg-primary px-1.5 py-0.5 text-center text-xs font-bold text-primary-fg">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
             </Link>
           ))}
         </nav>
+
+        <p className="mx-4 mb-4 border-t border-border-subtle pt-4 text-[11px] leading-relaxed text-text-subtle">
+          Solo vos y la otra persona pueden ver estos mensajes.
+        </p>
       </aside>
 
       {/* Mobile: no bar — navigation handled by BottomNav modal */}

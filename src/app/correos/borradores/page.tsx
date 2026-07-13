@@ -17,12 +17,18 @@ export default async function BorradoresPage() {
       deletedBySender: false,
     },
     orderBy: { createdAt: "desc" },
-    take: 30,
+    take: 31,
     select: {
       id: true, subject: true, isRead: true, createdAt: true, body: true,
       recipient: { select: USER_BASIC_SELECT },
     },
   });
+
+  const hasMore = messages.length > 30;
+  if (hasMore) messages.pop();
+  const initialCursor = hasMore && messages.length > 0
+    ? messages[messages.length - 1].createdAt.toISOString()
+    : null;
 
   const normalized = messages.map((m) => ({
     id:        m.id,
@@ -37,7 +43,7 @@ export default async function BorradoresPage() {
     <CorreosList
       messages={normalized}
       folder="borradores"
-      currentUserId={session.user.id}
+      initialCursor={initialCursor}
     />
   );
 }

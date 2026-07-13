@@ -18,12 +18,18 @@ export default async function EnviadosPage() {
       recipientId:     { not: null },
     },
     orderBy: { createdAt: "desc" },
-    take: 30,
+    take: 31,
     select: {
       id: true, subject: true, isRead: true, createdAt: true, body: true,
       recipient: { select: USER_BASIC_SELECT },
     },
   });
+
+  const hasMore = messages.length > 30;
+  if (hasMore) messages.pop();
+  const initialCursor = hasMore && messages.length > 0
+    ? messages[messages.length - 1].createdAt.toISOString()
+    : null;
 
   // Normalize shape: use recipient as the "other person" display
   const normalized = messages.map((m) => ({
@@ -39,7 +45,7 @@ export default async function EnviadosPage() {
     <CorreosList
       messages={normalized}
       folder="enviados"
-      currentUserId={session.user.id}
+      initialCursor={initialCursor}
     />
   );
 }

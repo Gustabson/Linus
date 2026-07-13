@@ -7,6 +7,7 @@ import { sendCorreoEmail } from "@/lib/notifications";
 
 const SUBJECT_MAX = 200;
 const BODY_MAX    = 5000;
+const PAGE_SIZE   = 30;
 
 // ── GET /api/correos — bandeja de entrada ─────────────────────────────────────
 export async function GET(req: NextRequest) {
@@ -15,28 +16,77 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const cursor = searchParams.get("cursor");
+  const folder = searchParams.get("folder") ?? "bandeja";
+
+  if (!["bandeja", "enviados", "borradores"].includes(folder)) {
+    return NextResponse.json({ error: "Carpeta inválida" }, { status: 400 });
+  }
 
   const cursorDate = cursor ? new Date(cursor) : null;
   if (cursorDate && isNaN(cursorDate.getTime()))
     return NextResponse.json({ error: "Parámetro cursor inválido" }, { status: 400 });
 
-  const messages = await prisma.message.findMany({
-    where: {
-      recipientId:        session.user.id,   // only own inbox
-      isDraft:            false,
-      deletedByRecipient: false,
-      ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
-    },
-    orderBy: { createdAt: "desc" },
-    take: 30,
-    select: {
-      id: true, subject: true, isRead: true, createdAt: true,
-      body: true,   // needed for preview (trimmed client-side)
-      sender: { select: USER_BASIC_SELECT },
-    },
-  });
+  const cursorFilter = cursorDate ? { createdAt: { lt: cursorDate } } : {};
+  let messages;
 
-  return NextResponse.json({ messages });
+  if (folder === "bandeja") {
+    messages = await prisma.message.findMany({
+      where: {
+        recipientId: session.user.id,
+        isDraft: false,
+        deletedByRecipient: false,
+        ...cursorFilter,
+      },
+      orderBy: { createdAt: "desc" },
+      take: PAGE_SIZE + 1,
+      select: {
+        id: true,
+        subject: true,
+        isRead: true,
+        createdAt: true,
+        body: true,
+        sender: { select: USER_BASIC_SELECT },
+      },
+    });
+  } else {
+    const rows = await prisma.message.findMany({
+      where: {
+        senderId: session.user.id,
+        isDraft: folder === "borradores",
+        deletedBySender: false,
+        ...(folder === "enviados" ? { recipientId: { not: null } } : {}),
+        ...cursorFilter,
+      },
+      orderBy: { createdAt: "desc" },
+      take: PAGE_SIZE + 1,
+      select: {
+        id: true,
+        subject: true,
+        isRead: true,
+        createdAt: true,
+        body: true,
+        recipient: { select: USER_BASIC_SELECT },
+      },
+    });
+    messages = rows.map(({ recipient, ...message }) => ({
+      ...message,
+      isRead: folder === "borradores" ? true : message.isRead,
+      sender: recipient ?? {
+        id: "",
+        name: folder === "borradores" ? "Sin destinatario" : "Desconocido",
+        username: null,
+        image: null,
+      },
+    }));
+  }
+
+  const hasMore = messages.length > PAGE_SIZE;
+  if (hasMore) messages.pop();
+  const nextCursor = hasMore && messages.length > 0
+    ? messages[messages.length - 1].createdAt.toISOString()
+    : null;
+
+  return NextResponse.json({ messages, nextCursor });
 }
 
 // ── POST /api/correos — enviar nuevo correo ───────────────────────────────────

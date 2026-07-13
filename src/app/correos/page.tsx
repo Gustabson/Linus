@@ -18,18 +18,24 @@ export default async function BandejaPage() {
       deletedByRecipient: false,
     },
     orderBy: { createdAt: "desc" },
-    take: 30,
+    take: 31,
     select: {
       id: true, subject: true, isRead: true, createdAt: true, body: true,
       sender: { select: USER_BASIC_SELECT },
     },
   });
 
+  const hasMore = messages.length > 30;
+  if (hasMore) messages.pop();
+  const initialCursor = hasMore && messages.length > 0
+    ? messages[messages.length - 1].createdAt.toISOString()
+    : null;
+
   return (
     <CorreosList
       messages={messages.map((m) => ({ ...m, createdAt: m.createdAt.toISOString() }))}
       folder="bandeja"
-      currentUserId={session.user.id}
+      initialCursor={initialCursor}
     />
   );
 }

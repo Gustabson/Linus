@@ -151,7 +151,7 @@ export function CorreosRedactar({
     );
     if (autoSaveState === "saved") return (
       <span className="flex items-center gap-1 text-xs text-text-subtle">
-        <Check className="w-3 h-3 text-green-500" /> Guardado
+        <Check className="h-3 w-3 text-primary" /> Guardado
       </span>
     );
     return null;
@@ -171,7 +171,7 @@ export function CorreosRedactar({
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleDiscard} disabled={sending || saving}
-            className="flex items-center gap-1.5 text-sm text-text-muted hover:text-red-500 px-3 py-2 rounded-xl hover:bg-red-50 transition-colors">
+            className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm text-text-muted transition-colors hover:bg-danger/10 hover:text-danger">
             <Trash2 className="w-4 h-4" />
             {isEditingDraft ? "Cancelar" : "Descartar"}
           </button>
@@ -195,7 +195,7 @@ export function CorreosRedactar({
         <AutoSaveLabel />
         <div className="flex items-center gap-1 ml-auto">
           <button onClick={handleDiscard} disabled={sending || saving}
-            className="flex items-center gap-1 text-sm text-text-muted hover:text-red-500 px-2.5 py-2 rounded-xl hover:bg-red-50 transition-colors">
+            className="flex items-center gap-1 rounded-xl px-2.5 py-2 text-sm text-text-muted transition-colors hover:bg-danger/10 hover:text-danger">
             <Trash2 className="w-4 h-4" /> Descartar
           </button>
           <button onClick={handleSaveDraft} disabled={saving || sending}
@@ -241,7 +241,7 @@ export function CorreosRedactar({
       {(error || sent) && (
         <div className={`px-6 py-3 border-t text-sm font-medium ${
           sent ? "bg-primary/5 border-primary/10 text-primary"
-               : "bg-red-50 border-red-100 text-red-600"
+               : "bg-danger/10 border-danger/20 text-danger"
         }`}>
           {sent ? "✓ Correo enviado. Redirigiendo..." : error}
         </div>

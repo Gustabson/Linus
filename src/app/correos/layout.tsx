@@ -19,7 +19,7 @@ export default async function CorreosLayout({ children }: { children: React.Reac
   });
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100dvh-3.5rem)] md:h-[calc(100dvh-5rem)] lg:h-[calc(100dvh-3rem)] md:mb-6 bg-surface rounded-2xl border border-border overflow-hidden">
+    <div className="flex h-[calc(100dvh-4.75rem)] flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm md:mb-6 md:h-[calc(100dvh-5rem)] md:flex-row lg:h-[calc(100dvh-3rem)]">
       <CorreosSidebar unreadCount={unreadCount} />
       <main className="flex-1 min-w-0 overflow-y-auto">
         {children}
