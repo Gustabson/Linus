@@ -1,4 +1,42 @@
-import type { SVGProps } from "react";
+import type { HTMLAttributes, SVGProps } from "react";
+
+const ART_MARK_URL = "/brand/linug-emblem-art-v2-transparent.png";
+
+interface LinugArtMarkProps extends HTMLAttributes<HTMLSpanElement> {
+  label?: string;
+}
+
+/**
+ * Detailed LINUG emblem for brand surfaces. The generated artwork is used as
+ * an alpha mask so it always inherits the active theme color.
+ */
+export function LinugArtMark({
+  className = "",
+  label,
+  style,
+  ...props
+}: LinugArtMarkProps) {
+  return (
+    <span
+      {...props}
+      role={label ? "img" : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
+      className={`inline-block bg-current ${className}`}
+      style={{
+        ...style,
+        WebkitMaskImage: `url(${ART_MARK_URL})`,
+        maskImage: `url(${ART_MARK_URL})`,
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+      }}
+    />
+  );
+}
 
 interface LinugMarkProps extends SVGProps<SVGSVGElement> {
   title?: string;

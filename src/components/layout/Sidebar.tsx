@@ -9,7 +9,7 @@ import {
   Mail, Settings, LogOut, AlertCircle, MessageSquareText,
 } from "lucide-react";
 import Image from "next/image";
-import { LinugMark } from "@/components/brand/LinugMark";
+import { LinugArtMark } from "@/components/brand/LinugMark";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { clearThemeCookies } from "@/lib/theme-cookie-client";
 
@@ -113,7 +113,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {/* ── Logo ─────────────────────────────────────────────── */}
       <div className="border-b border-sidebar-text/20 px-5 py-5">
         <Link href="/" className="flex items-center gap-2.5 text-sidebar-text font-bold text-xl" onClick={onClose}>
-          <LinugMark className="h-8 w-8 shrink-0" />
+          <LinugArtMark className="h-10 w-10 shrink-0" />
           <span className="tracking-[-0.035em]">LINUG</span>
         </Link>
       </div>

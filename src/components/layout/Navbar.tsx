@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
-import { LinugMark } from "@/components/brand/LinugMark";
+import { LinugArtMark } from "@/components/brand/LinugMark";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { clearThemeCookies } from "@/lib/theme-cookie-client";
 
@@ -53,7 +53,7 @@ export function Navbar() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary shrink-0">
-              <LinugMark className="h-7 w-7" />
+              <LinugArtMark className="h-9 w-9" />
               <span className="tracking-[-0.035em]">LINUG</span>
             </Link>
 

@@ -14,7 +14,7 @@ import {
   Settings,
   UserRound,
 } from "lucide-react";
-import { LinugMark } from "@/components/brand/LinugMark";
+import { LinugArtMark } from "@/components/brand/LinugMark";
 import styles from "./Linus2Workspace.module.css";
 
 const NAV_ITEMS = [
@@ -61,7 +61,7 @@ export function Linus2Shell({ children, userName, username }: Linus2ShellProps) 
     <div className={styles.shell} onClickCapture={keepNavigationInLinus2}>
       <aside className={styles.globalNav}>
         <Link href="/linus-2" className={styles.brand}>
-          <span className={styles.brandMark}><LinugMark width={18} height={18} /></span>
+          <span className={styles.brandMark}><LinugArtMark className="h-[22px] w-[22px]" /></span>
           <span>Linus 2</span>
         </Link>
 

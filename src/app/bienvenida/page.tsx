@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { CheckCircle, Loader2 } from "lucide-react";
-import { LinugMark } from "@/components/brand/LinugMark";
+import { LinugArtMark } from "@/components/brand/LinugMark";
 
 export default function BienvenidaPage() {
   const router = useRouter();
@@ -67,7 +67,7 @@ export default function BienvenidaPage() {
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto">
-            <LinugMark className="h-8 w-8 text-primary" />
+            <LinugArtMark className="h-12 w-12 text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-text">¡Bienvenido a LINUG!</h1>
           <p className="text-text-muted text-sm">
