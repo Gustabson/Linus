@@ -363,7 +363,9 @@ function MessageRow({
   const unread = folder === "bandeja" && !message.isRead;
   const preview = stripHtml(message.body) || "Sin contenido";
   const avatarLetter = (message.sender.name ?? message.sender.username ?? "?")[0].toUpperCase();
-  const href = folder === "borradores" ? `/correos/redactar?id=${message.id}` : `/correos/${message.id}`;
+  const href = folder === "borradores"
+    ? `/correos/redactar?id=${message.id}`
+    : `/correos/${message.id}?view=${folder === "bandeja" ? "recipient" : "sender"}`;
   const displayFolder = folder === "papelera" ? message.origin : folder;
   const personLabel = displayFolder === "bandeja"
     ? (message.sender.name ?? message.sender.username ?? "Usuario")

@@ -4,16 +4,20 @@ import { USER_BASIC_SELECT } from "@/lib/data";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { revalidatePath } from "next/cache";
-import { resolveMailScope, type MailDeletionScope } from "@/lib/mail-trash";
+import { resolveMailScope, resolveMailView, type MailDeletionScope, type MailView } from "@/lib/mail-trash";
 
 type Params = { params: Promise<{ id: string }> };
 
 // ── GET /api/correos/[id] — fetch + auto-mark read ────────────────────────────
-export async function GET(_req: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, { params }: Params) {
   const session = await getSession();
   if (!session) return unauthorized();
 
   const { id } = await params;
+  const requestedView = new URL(req.url).searchParams.get("view");
+  if (requestedView && requestedView !== "sender" && requestedView !== "recipient") {
+    return NextResponse.json({ error: "Vista de correo inválida" }, { status: 400 });
+  }
 
   const message = await prisma.message.findFirst({
     where: { id, parentId: null },
@@ -36,15 +40,24 @@ export async function GET(_req: NextRequest, { params }: Params) {
   if (!isRecipient && !isSender)
     return NextResponse.json({ error: "Sin acceso" }, { status: 403 });
 
-  if (isSender    && message.deletedBySender)    return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-  if (isRecipient && message.deletedByRecipient) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  const activeView = resolveMailView((requestedView ?? null) as MailView | null, {
+    isSender,
+    isRecipient,
+    deletedBySender: message.deletedBySender,
+    deletedByRecipient: message.deletedByRecipient,
+  });
+  if (!activeView) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
   // Auto-mark as read when recipient opens the message
-  if (isRecipient && !message.isRead) {
+  if (activeView === "recipient" && !message.isRead) {
     await prisma.message.update({ where: { id }, data: { isRead: true } });
   }
 
-  return NextResponse.json({ ...message, isRead: isRecipient ? true : message.isRead });
+  return NextResponse.json({
+    ...message,
+    activeView,
+    isRead: activeView === "recipient" ? true : message.isRead,
+  });
 }
 
 // ── PATCH /api/correos/[id] — update or send an existing draft ────────────────

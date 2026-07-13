@@ -1,5 +1,24 @@
 export type MailDeletionScope = "sender" | "recipient" | "both";
 export type MailOrigin = "bandeja" | "enviados" | "borradores";
+export type MailView = "sender" | "recipient";
+
+export function resolveMailView(
+  requestedView: MailView | null,
+  message: {
+    isSender: boolean;
+    isRecipient: boolean;
+    deletedBySender: boolean;
+    deletedByRecipient: boolean;
+  },
+): MailView | null {
+  const senderVisible = message.isSender && !message.deletedBySender;
+  const recipientVisible = message.isRecipient && !message.deletedByRecipient;
+
+  if (requestedView === "sender") return senderVisible ? "sender" : null;
+  if (requestedView === "recipient") return recipientVisible ? "recipient" : null;
+  if (recipientVisible) return "recipient";
+  return senderVisible ? "sender" : null;
+}
 
 export function resolveMailScope(
   requestedScope: MailDeletionScope | null,
