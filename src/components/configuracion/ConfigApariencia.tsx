@@ -551,9 +551,9 @@ export function ConfigApariencia({
             <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
               <div className="flex min-h-48">
                 <div className="w-[4.5rem] shrink-0 p-2" style={{ backgroundColor: sidebarColors.themeSidebarBg, color: sidebarColors.themeSidebarText }}>
-                  <div className="mb-4 flex items-center gap-1 text-[9px] font-bold"><span className="h-3 w-3 rounded bg-current opacity-90" /> Edu</div>
+                  <div className="mb-4 flex items-center gap-1 text-[9px] font-bold"><span className="h-3 w-3 rounded bg-current" /> LINUG</div>
                   {["Inicio", "Espacio", "Explorar"].map((item, index) => (
-                    <div key={item} className={`mb-1 rounded px-1.5 py-1 text-[8px] ${index === 0 ? "bg-white/15 font-bold" : "opacity-75"}`}>{item}</div>
+                    <div key={item} className={`mb-1 rounded px-1.5 py-1 text-[8px] ${index === 0 ? "bg-white/15 font-bold" : ""}`}>{item}</div>
                   ))}
                 </div>
                 <div className="min-w-0 flex-1 p-3">

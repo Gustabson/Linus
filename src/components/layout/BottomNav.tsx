@@ -5,10 +5,11 @@ import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useCallback } from "react";
 import {
-  Home, LayoutDashboard, Mail, Search, Compass, MessageSquareText,
+  LayoutDashboard, Mail, Search, Compass, MessageSquareText,
   Settings, User, Bell, X, Inbox, Send, FileText, Pencil, LogOut, Trash2,
 } from "lucide-react";
 import { clearThemeCookies } from "@/lib/theme-cookie-client";
+import { LinugArtMark } from "@/components/brand/LinugMark";
 
 // ── BottomNav: visible only on mobile (<768px) ────────────────────────────
 // Styled with sidebar colors (--sidebar-bg / --sidebar-text) so user
@@ -89,7 +90,7 @@ function BottomModal({
           <h3 className="text-base font-semibold text-sidebar-text">{title}</h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-sidebar-text/10 text-sidebar-text/70 hover:text-sidebar-text transition-colors"
+            className="p-1.5 rounded-xl text-sidebar-text hover:bg-sidebar-text/10 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -119,9 +120,9 @@ function ModalLink({
     <Link
       href={href}
       onClick={onClose}
-      className="flex items-center gap-3.5 px-4 py-3 rounded-xl text-base font-medium text-sidebar-text/80 hover:bg-sidebar-text/10 hover:text-sidebar-text transition-colors"
+      className="flex items-center gap-3.5 px-4 py-3 rounded-xl text-base font-medium text-sidebar-text hover:bg-sidebar-text/10 transition-colors"
     >
-      <Icon className="w-5 h-5 shrink-0 text-sidebar-text/60" />
+      <Icon className="w-5 h-5 shrink-0" />
       <span className="flex-1">{label}</span>
       {badge != null && badge > 0 && (
         <span className="min-w-[1.25rem] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1.5 leading-none">
@@ -134,7 +135,7 @@ function ModalLink({
 
 // ── Sidebar-style helpers ──────────────────────────────────────────────────
 const ACTIVE   = "text-sidebar-text bg-sidebar-text/15 rounded-xl";
-const INACTIVE = "text-sidebar-text/60 hover:text-sidebar-text hover:bg-sidebar-text/10 rounded-xl";
+const INACTIVE = "text-sidebar-text hover:bg-sidebar-text/10 rounded-xl";
 
 // ── Main component ─────────────────────────────────────────────────────────
 export function BottomNav() {
@@ -174,7 +175,7 @@ export function BottomNav() {
               mainActive ? ACTIVE : INACTIVE
             }`}
           >
-            <Home className={`w-5 h-5 ${mainActive ? "fill-sidebar-text/15" : ""}`} />
+            <LinugArtMark className="h-6 w-6" />
             Inicio
           </Link>
 
@@ -185,7 +186,7 @@ export function BottomNav() {
               espacioActive ? ACTIVE : INACTIVE
             }`}
           >
-            <LayoutDashboard className={`w-5 h-5 ${espacioActive ? "fill-sidebar-text/15" : ""}`} />
+            <LayoutDashboard className="w-5 h-5" />
             Espacio
             {propuestas > 0 && <Badge count={propuestas} />}
           </button>
@@ -197,7 +198,7 @@ export function BottomNav() {
               correosActive ? ACTIVE : INACTIVE
             }`}
           >
-            <Mail className={`w-5 h-5 ${correosActive ? "fill-sidebar-text/15" : ""}`} />
+            <Mail className="w-5 h-5" />
             Correos
             {correos > 0 && <Badge count={correos} />}
           </button>
@@ -209,7 +210,7 @@ export function BottomNav() {
               configActive ? ACTIVE : INACTIVE
             }`}
           >
-            <Settings className={`w-5 h-5 ${configActive ? "fill-sidebar-text/15" : ""}`} />
+            <Settings className="w-5 h-5" />
             Config.
             {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
           </button>
@@ -250,7 +251,7 @@ export function BottomNav() {
         <div className="border-t border-sidebar-text/20 mt-2 pt-2">
           <button
             onClick={() => { setConfigOpen(false); clearThemeCookies(); localStorage.removeItem("theme"); signOut(); }}
-            className="flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium text-sidebar-text/60 hover:bg-sidebar-text/10 hover:text-sidebar-text transition-colors"
+            className="flex items-center gap-3.5 w-full px-4 py-3 rounded-xl text-base font-medium text-sidebar-text hover:bg-sidebar-text/10 transition-colors"
           >
             <LogOut className="w-5 h-5 shrink-0" />
             Cerrar sesión

@@ -85,7 +85,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
       isActive(href)
         ? "bg-sidebar-text/15 text-sidebar-text shadow-sm ring-1 ring-inset ring-sidebar-text/10"
-        : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
+        : "text-sidebar-text hover:bg-sidebar-text/10"
     }`;
 
   const NAV_ITEMS: { href: string; icon: React.ElementType; label: string; badge?: number }[] = [
@@ -153,7 +153,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               triggerClass={`flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all ${
                 isActive("/notificaciones")
                   ? "bg-sidebar-text/15 text-sidebar-text shadow-sm ring-1 ring-inset ring-sidebar-text/10"
-                  : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
+                  : "text-sidebar-text hover:bg-sidebar-text/10"
               }`}
               label="Notificaciones"
             />
@@ -174,7 +174,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 username && pathname === `/${username}`
                   ? "bg-sidebar-text/15 text-sidebar-text"
-                  : "text-sidebar-text/70 hover:bg-sidebar-text/10 hover:text-sidebar-text"
+                  : "text-sidebar-text hover:bg-sidebar-text/10"
               }`}
               onClick={onClose}
             >
@@ -191,7 +191,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             {/* Cerrar sesión */}
             <button
               onClick={() => { clearThemeCookies(); localStorage.removeItem("theme"); signOut(); }}
-              className="flex items-center gap-3.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-sidebar-text/60 hover:bg-sidebar-text/10 hover:text-sidebar-text transition-all"
+              className="flex items-center gap-3.5 w-full px-4 py-2.5 rounded-xl text-sm font-medium text-sidebar-text hover:bg-sidebar-text/10 transition-all"
             >
               <LogOut className="w-5 h-5 shrink-0" />
               Cerrar sesión

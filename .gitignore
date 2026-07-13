@@ -8,3 +8,7 @@ build/
 .DS_Store
 .vercel
 tsconfig.tsbuildinfo
+
+# Unrelated local audio-generation tooling
+.audio-deps/
+generate_mystery_interview.py
