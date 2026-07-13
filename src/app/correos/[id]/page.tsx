@@ -18,8 +18,8 @@ export default async function CorreoDetallePage({
 
   const { id } = await params;
 
-  const message = await prisma.message.findUnique({
-    where: { id },
+  const message = await prisma.message.findFirst({
+    where: { id, parentId: null },
     include: {
       sender:    { select: USER_BASIC_SELECT },
       recipient: { select: USER_BASIC_SELECT },

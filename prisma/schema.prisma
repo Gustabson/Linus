@@ -592,9 +592,13 @@ model Message {
 
   deletedBySender    Boolean @default(false)
   deletedByRecipient Boolean @default(false)
+  purgedBySender     Boolean @default(false)
+  purgedByRecipient  Boolean @default(false)
 
   @@index([recipientId, isRead])
   @@index([senderId])
+  @@index([senderId, deletedBySender, purgedBySender])
+  @@index([recipientId, deletedByRecipient, purgedByRecipient])
   @@index([parentId])
   @@index([createdAt])
 }

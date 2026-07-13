@@ -13,8 +13,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const { id } = await params;
 
-  const message = await prisma.message.findUnique({
-    where: { id },
+  const message = await prisma.message.findFirst({
+    where: { id, parentId: null },
     include: {
       sender:    { select: USER_BASIC_SELECT },
       recipient: { select: USER_BASIC_SELECT },
@@ -113,15 +113,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 // ── DELETE /api/correos/[id] — soft delete (per side) ────────────────────────
-export async function DELETE(_req: NextRequest, { params }: Params) {
+export async function DELETE(req: NextRequest, { params }: Params) {
   const session = await getSession();
   if (!session) return unauthorized();
 
   const { id } = await params;
+  const permanent = new URL(req.url).searchParams.get("permanent") === "true";
 
   const message = await prisma.message.findUnique({
     where:  { id },
-    select: { senderId: true, recipientId: true },
+    select: {
+      senderId: true,
+      recipientId: true,
+      deletedBySender: true,
+      deletedByRecipient: true,
+    },
   });
 
   if (!message) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
@@ -132,13 +138,28 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!isRecipient && !isSender)
     return NextResponse.json({ error: "Sin acceso" }, { status: 403 });
 
-  await prisma.message.update({
-    where: { id },
-    data: {
-      ...(isSender    ? { deletedBySender:    true } : {}),
-      ...(isRecipient ? { deletedByRecipient: true } : {}),
-    },
-  });
+  if (permanent) {
+    const canPurgeAsSender = isSender && message.deletedBySender;
+    const canPurgeAsRecipient = isRecipient && message.deletedByRecipient;
+    if (!canPurgeAsSender && !canPurgeAsRecipient) {
+      return NextResponse.json({ error: "El mensaje debe estar en la papelera" }, { status: 400 });
+    }
+    await prisma.message.update({
+      where: { id },
+      data: {
+        ...(canPurgeAsSender ? { purgedBySender: true } : {}),
+        ...(canPurgeAsRecipient ? { purgedByRecipient: true } : {}),
+      },
+    });
+  } else {
+    await prisma.message.update({
+      where: { id },
+      data: {
+        ...(isSender ? { deletedBySender: true, purgedBySender: false } : {}),
+        ...(isRecipient ? { deletedByRecipient: true, purgedByRecipient: false } : {}),
+      },
+    });
+  }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, permanent });
 }

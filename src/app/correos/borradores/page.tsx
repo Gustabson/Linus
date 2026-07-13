@@ -12,6 +12,7 @@ export default async function BorradoresPage() {
 
   const messages = await prisma.message.findMany({
     where: {
+      parentId:        null,
       senderId:        session.user.id,
       isDraft:         true,
       deletedBySender: false,

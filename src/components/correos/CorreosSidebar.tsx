@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, Mail, Send, FileText, Pencil } from "lucide-react";
+import { Inbox, Mail, Send, FileText, Pencil, Trash2 } from "lucide-react";
 
 interface Props {
   unreadCount: number;
@@ -12,6 +12,7 @@ const FOLDERS = [
   { href: "/correos",            icon: Inbox,    label: "Bandeja",    short: "Bandeja" },
   { href: "/correos/enviados",   icon: Send,     label: "Enviados",   short: "Enviados" },
   { href: "/correos/borradores", icon: FileText, label: "Borradores", short: "Borrad." },
+  { href: "/correos/papelera",   icon: Trash2,  label: "Papelera",   short: "Papelera" },
 ];
 
 export function CorreosSidebar({ unreadCount }: Props) {

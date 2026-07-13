@@ -12,6 +12,7 @@ export default async function EnviadosPage() {
 
   const messages = await prisma.message.findMany({
     where: {
+      parentId:        null,
       senderId:        session.user.id,
       isDraft:         false,
       deletedBySender: false,

@@ -13,6 +13,7 @@ export default async function BandejaPage() {
 
   const messages = await prisma.message.findMany({
     where: {
+      parentId:           null,
       recipientId:        session.user.id,
       isDraft:            false,
       deletedByRecipient: false,

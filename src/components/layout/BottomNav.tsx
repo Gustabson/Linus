@@ -6,7 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useCallback } from "react";
 import {
   Home, LayoutDashboard, Mail, Search, Compass, GitPullRequest,
-  Settings, User, Bell, X, Inbox, Send, FileText, Pencil, LogOut,
+  Settings, User, Bell, X, Inbox, Send, FileText, Pencil, LogOut, Trash2,
 } from "lucide-react";
 
 // ── BottomNav: visible only on mobile (<768px) ────────────────────────────
@@ -227,6 +227,7 @@ export function BottomNav() {
         <ModalLink href="/correos"          icon={Inbox}    label="Bandeja"     badge={correos} onClose={() => setCorreosOpen(false)} />
         <ModalLink href="/correos/enviados" icon={Send}     label="Enviados"    onClose={() => setCorreosOpen(false)} />
         <ModalLink href="/correos/borradores" icon={FileText} label="Borradores" onClose={() => setCorreosOpen(false)} />
+        <ModalLink href="/correos/papelera" icon={Trash2} label="Papelera" onClose={() => setCorreosOpen(false)} />
       </BottomModal>
 
       {/* ── Configuración modal ──────────────────────────────────────────── */}

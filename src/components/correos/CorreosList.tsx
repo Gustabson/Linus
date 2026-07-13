@@ -3,10 +3,10 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FileText, Inbox, Loader2, Search, Send, X } from "lucide-react";
+import { FileText, Inbox, Loader2, RotateCcw, Search, Send, Trash2, X } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
-type MailFolder = "bandeja" | "enviados" | "borradores";
+type MailFolder = "bandeja" | "enviados" | "borradores" | "papelera";
 
 interface CorreoRow {
   id: string;
@@ -14,6 +14,7 @@ interface CorreoRow {
   isRead: boolean;
   createdAt: string;
   body: string;
+  origin?: "bandeja" | "enviados" | "borradores";
   sender: {
     id: string;
     name: string | null;
@@ -37,6 +38,11 @@ const FOLDER_META: Record<MailFolder, { label: string; description: string; empt
     label: "Borradores",
     description: "Mensajes guardados para continuar después",
     empty: "Los borradores guardados aparecerán acá.",
+  },
+  papelera: {
+    label: "Papelera",
+    description: "Mensajes eliminados solamente de tu cuenta",
+    empty: "Los mensajes que elimines aparecerán acá.",
   },
 };
 
@@ -72,6 +78,8 @@ export function CorreosList({
   const [query, setQuery] = useState("");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [busyMessageId, setBusyMessageId] = useState<string | null>(null);
+  const [emptyingTrash, setEmptyingTrash] = useState(false);
   const [error, setError] = useState("");
   const meta = FOLDER_META[folder];
 
@@ -116,7 +124,48 @@ export function CorreosList({
     }
   }
 
-  const FolderIcon = folder === "bandeja" ? Inbox : folder === "enviados" ? Send : FileText;
+  async function runMessageAction(id: string, action: "trash" | "restore" | "purge") {
+    if (busyMessageId) return;
+    if (action === "purge" && !window.confirm("¿Eliminar este mensaje definitivamente de tu cuenta?")) return;
+    setBusyMessageId(id);
+    setError("");
+    try {
+      const response = action === "restore"
+        ? await fetch(`/api/correos/${id}/restore`, { method: "POST" })
+        : await fetch(`/api/correos/${id}${action === "purge" ? "?permanent=true" : ""}`, { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "No se pudo actualizar el mensaje");
+      const removedMessage = messages.find((message) => message.id === id);
+      setMessages((current) => current.filter((message) => message.id !== id));
+      if (action === "trash" && folder === "bandeja" && removedMessage && !removedMessage.isRead) {
+        window.dispatchEvent(new CustomEvent("correos:read"));
+      }
+    } catch (actionError) {
+      setError(actionError instanceof Error ? actionError.message : "No se pudo actualizar el mensaje");
+    } finally {
+      setBusyMessageId(null);
+    }
+  }
+
+  async function emptyTrash() {
+    if (emptyingTrash || messages.length === 0) return;
+    if (!window.confirm("¿Vaciar la papelera? Los mensajes dejarán de estar disponibles en tu cuenta.")) return;
+    setEmptyingTrash(true);
+    setError("");
+    try {
+      const response = await fetch("/api/correos/papelera", { method: "DELETE" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error ?? "No se pudo vaciar la papelera");
+      setMessages([]);
+      setCursor(null);
+    } catch (emptyError) {
+      setError(emptyError instanceof Error ? emptyError.message : "No se pudo vaciar la papelera");
+    } finally {
+      setEmptyingTrash(false);
+    }
+  }
+
+  const FolderIcon = folder === "bandeja" ? Inbox : folder === "enviados" ? Send : folder === "borradores" ? FileText : Trash2;
   const hasFilters = !!query.trim() || unreadOnly;
 
   return (
@@ -139,7 +188,20 @@ export function CorreosList({
               <p className="mt-0.5 hidden text-xs text-text-subtle sm:block">{meta.description}</p>
             </div>
           </div>
-          <span className="pt-1 text-xs font-medium text-text-subtle">{messages.length} cargado{messages.length === 1 ? "" : "s"}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-text-subtle">{messages.length} cargado{messages.length === 1 ? "" : "s"}</span>
+            {folder === "papelera" && messages.length > 0 && (
+              <button
+                type="button"
+                onClick={() => void emptyTrash()}
+                disabled={emptyingTrash}
+                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
+              >
+                {emptyingTrash ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                Vaciar papelera
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -201,7 +263,15 @@ export function CorreosList({
       ) : (
         <ul className="divide-y divide-border-subtle" aria-label={meta.label}>
           {visibleMessages.map((message) => (
-            <MessageRow key={message.id} message={message} folder={folder} />
+            <MessageRow
+              key={message.id}
+              message={message}
+              folder={folder}
+              busy={busyMessageId === message.id}
+              onTrash={() => void runMessageAction(message.id, "trash")}
+              onRestore={() => void runMessageAction(message.id, "restore")}
+              onPurge={() => void runMessageAction(message.id, "purge")}
+            />
           ))}
         </ul>
       )}
@@ -226,48 +296,115 @@ export function CorreosList({
   );
 }
 
-function MessageRow({ message, folder }: { message: CorreoRow; folder: MailFolder }) {
+function MessageRow({
+  message,
+  folder,
+  busy,
+  onTrash,
+  onRestore,
+  onPurge,
+}: {
+  message: CorreoRow;
+  folder: MailFolder;
+  busy: boolean;
+  onTrash: () => void;
+  onRestore: () => void;
+  onPurge: () => void;
+}) {
   const unread = folder === "bandeja" && !message.isRead;
   const preview = stripHtml(message.body) || "Sin contenido";
   const avatarLetter = (message.sender.name ?? message.sender.username ?? "?")[0].toUpperCase();
   const href = folder === "borradores" ? `/correos/redactar?id=${message.id}` : `/correos/${message.id}`;
-  const personLabel = folder === "bandeja"
+  const displayFolder = folder === "papelera" ? message.origin : folder;
+  const personLabel = displayFolder === "bandeja"
     ? (message.sender.name ?? message.sender.username ?? "Usuario")
-    : folder === "borradores"
+    : displayFolder === "borradores"
       ? (message.sender.name && message.sender.name !== "Sin destinatario" ? `Para: ${message.sender.name}` : "Sin destinatario")
       : `Para: ${message.sender.name ?? message.sender.username ?? "Usuario"}`;
 
-  return (
-    <li className="relative">
-      {unread && <span className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-primary" />}
-      <Link
-        href={href}
-        className={`group grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 px-4 py-3.5 transition-colors sm:px-6 ${unread ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-bg"}`}
-      >
-        <div className="relative shrink-0">
-          {message.sender.image ? (
-            <Image src={message.sender.image} alt="" width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
-          ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">{avatarLetter}</div>
-          )}
-          {unread && <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-surface bg-primary" />}
-        </div>
+  const rowContent = (
+    <>
+      <div className="relative shrink-0">
+        {message.sender.image ? (
+          <Image src={message.sender.image} alt="" width={40} height={40} className="h-10 w-10 rounded-full object-cover" />
+        ) : (
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">{avatarLetter}</div>
+        )}
+        {unread && <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-surface bg-primary" />}
+      </div>
 
-        <div className="min-w-0 lg:grid lg:grid-cols-[minmax(8rem,0.35fr)_minmax(0,1fr)] lg:gap-5">
-          <div className="min-w-0">
+      <div className="min-w-0 lg:grid lg:grid-cols-[minmax(8rem,0.35fr)_minmax(0,1fr)] lg:gap-5">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-1.5">
             <p className={`truncate text-sm ${unread ? "font-bold text-text" : "font-semibold text-text"}`}>{personLabel}</p>
-            {message.sender.username && <p className="mt-0.5 hidden truncate text-[11px] text-text-subtle lg:block">@{message.sender.username}</p>}
+            {folder === "papelera" && message.origin && (
+              <span className="shrink-0 rounded-full bg-border-subtle px-1.5 py-0.5 text-[9px] font-semibold text-text-subtle">
+                {message.origin === "bandeja" ? "Recibido" : message.origin === "enviados" ? "Enviado" : "Borrador"}
+              </span>
+            )}
           </div>
-          <div className="min-w-0">
-            <p className={`mt-0.5 truncate text-sm lg:mt-0 ${unread ? "font-bold text-text" : "font-medium text-text"}`}>{message.subject || "Sin asunto"}</p>
-            <p className="mt-0.5 truncate text-xs text-text-subtle">{preview}</p>
-          </div>
+          {message.sender.username && <p className="mt-0.5 hidden truncate text-[11px] text-text-subtle lg:block">@{message.sender.username}</p>}
         </div>
+        <div className="min-w-0">
+          <p className={`mt-0.5 truncate text-sm lg:mt-0 ${unread ? "font-bold text-text" : "font-medium text-text"}`}>{message.subject || "Sin asunto"}</p>
+          <p className="mt-0.5 truncate text-xs text-text-subtle">{preview}</p>
+        </div>
+      </div>
 
-        <time dateTime={message.createdAt} className={`shrink-0 pt-0.5 text-[11px] ${unread ? "font-bold text-primary" : "text-text-subtle"}`}>
-          {formatMailDate(message.createdAt)}
-        </time>
-      </Link>
+      <time dateTime={message.createdAt} className={`shrink-0 pt-0.5 text-[11px] ${folder === "papelera" ? "hidden sm:block" : ""} ${unread ? "font-bold text-primary" : "text-text-subtle"}`}>
+        {formatMailDate(message.createdAt)}
+      </time>
+    </>
+  );
+
+  return (
+    <li className={`group relative flex items-stretch ${unread ? "bg-primary/5" : ""}`}>
+      {unread && <span className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-primary" />}
+      {folder === "papelera" ? (
+        <div className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 px-4 py-3.5 sm:px-6">{rowContent}</div>
+      ) : (
+        <Link href={href} className="grid min-w-0 flex-1 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 px-4 py-3.5 transition-colors hover:bg-bg sm:px-6">
+          {rowContent}
+        </Link>
+      )}
+
+      <div className="flex shrink-0 items-center gap-0.5 pr-2">
+        {folder === "papelera" ? (
+          <>
+            <button
+              type="button"
+              onClick={onRestore}
+              disabled={busy}
+              title="Restaurar"
+              aria-label={`Restaurar ${message.subject}`}
+              className="grid h-9 w-9 place-items-center rounded-xl text-text-subtle transition-colors hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+            </button>
+            <button
+              type="button"
+              onClick={onPurge}
+              disabled={busy}
+              title="Eliminar definitivamente"
+              aria-label={`Eliminar definitivamente ${message.subject}`}
+              className="grid h-9 w-9 place-items-center rounded-xl text-text-subtle transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={onTrash}
+            disabled={busy}
+            title="Mover a la papelera"
+            aria-label={`Mover ${message.subject} a la papelera`}
+            className="grid h-9 w-9 place-items-center rounded-xl text-text-subtle opacity-70 transition-colors hover:bg-danger/10 hover:text-danger group-hover:opacity-100 disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+          </button>
+        )}
+      </div>
     </li>
   );
 }

@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const cursor = searchParams.get("cursor");
   const folder = searchParams.get("folder") ?? "bandeja";
 
-  if (!["bandeja", "enviados", "borradores"].includes(folder)) {
+  if (!["bandeja", "enviados", "borradores", "papelera"].includes(folder)) {
     return NextResponse.json({ error: "Carpeta inválida" }, { status: 400 });
   }
 
@@ -29,9 +29,45 @@ export async function GET(req: NextRequest) {
   const cursorFilter = cursorDate ? { createdAt: { lt: cursorDate } } : {};
   let messages;
 
-  if (folder === "bandeja") {
+  if (folder === "papelera") {
+    const rows = await prisma.message.findMany({
+      where: {
+        parentId: null,
+        OR: [
+          { senderId: session.user.id, deletedBySender: true, purgedBySender: false },
+          { recipientId: session.user.id, deletedByRecipient: true, purgedByRecipient: false },
+        ],
+        ...cursorFilter,
+      },
+      orderBy: { createdAt: "desc" },
+      take: PAGE_SIZE + 1,
+      select: {
+        id: true,
+        subject: true,
+        isRead: true,
+        isDraft: true,
+        createdAt: true,
+        body: true,
+        senderId: true,
+        sender: { select: USER_BASIC_SELECT },
+        recipient: { select: USER_BASIC_SELECT },
+      },
+    });
+    messages = rows.map(({ senderId, sender, recipient, isDraft, ...message }) => {
+      const sentByCurrentUser = senderId === session.user.id;
+      return {
+        ...message,
+        isRead: true,
+        origin: isDraft ? "borradores" : sentByCurrentUser ? "enviados" : "bandeja",
+        sender: sentByCurrentUser
+          ? (recipient ?? { id: "", name: "Sin destinatario", username: null, image: null })
+          : sender,
+      };
+    });
+  } else if (folder === "bandeja") {
     messages = await prisma.message.findMany({
       where: {
+        parentId: null,
         recipientId: session.user.id,
         isDraft: false,
         deletedByRecipient: false,
@@ -51,6 +87,7 @@ export async function GET(req: NextRequest) {
   } else {
     const rows = await prisma.message.findMany({
       where: {
+        parentId: null,
         senderId: session.user.id,
         isDraft: folder === "borradores",
         deletedBySender: false,
