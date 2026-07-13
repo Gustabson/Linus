@@ -4,6 +4,7 @@ import { USER_BASIC_SELECT } from "@/lib/data";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { sendCorreoEmail } from "@/lib/notifications";
+import { getTrashPresentation } from "@/lib/mail-trash";
 
 const SUBJECT_MAX = 200;
 const BODY_MAX    = 5000;
@@ -49,17 +50,44 @@ export async function GET(req: NextRequest) {
         createdAt: true,
         body: true,
         senderId: true,
+        recipientId: true,
+        deletedBySender: true,
+        deletedByRecipient: true,
+        purgedBySender: true,
+        purgedByRecipient: true,
         sender: { select: USER_BASIC_SELECT },
         recipient: { select: USER_BASIC_SELECT },
       },
     });
-    messages = rows.map(({ senderId, sender, recipient, isDraft, ...message }) => {
-      const sentByCurrentUser = senderId === session.user.id;
+    messages = rows.flatMap(({
+      sender,
+      recipient,
+      senderId,
+      recipientId,
+      isDraft,
+      deletedBySender,
+      deletedByRecipient,
+      purgedBySender,
+      purgedByRecipient,
+      ...message
+    }) => {
+      const presentation = getTrashPresentation({
+        senderId,
+        recipientId,
+        isDraft,
+        deletedBySender,
+        deletedByRecipient,
+        purgedBySender,
+        purgedByRecipient,
+      }, session.user.id);
+      if (!presentation) return [];
+      const showRecipient = presentation.origin !== "bandeja";
       return {
         ...message,
         isRead: true,
-        origin: isDraft ? "borradores" : sentByCurrentUser ? "enviados" : "bandeja",
-        sender: sentByCurrentUser
+        origin: presentation.origin,
+        trashScope: presentation.scope,
+        sender: showRecipient
           ? (recipient ?? { id: "", name: "Sin destinatario", username: null, image: null })
           : sender,
       };

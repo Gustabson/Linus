@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { USER_BASIC_SELECT } from "@/lib/data";
 import { CorreosList } from "@/components/correos/CorreosList";
 import { LoginRequired } from "@/components/shared/LoginRequired";
+import { getTrashPresentation } from "@/lib/mail-trash";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,11 @@ export default async function PapeleraPage() {
       createdAt: true,
       body: true,
       senderId: true,
+      recipientId: true,
+      deletedBySender: true,
+      deletedByRecipient: true,
+      purgedBySender: true,
+      purgedByRecipient: true,
       sender: { select: USER_BASIC_SELECT },
       recipient: { select: USER_BASIC_SELECT },
     },
@@ -39,14 +45,36 @@ export default async function PapeleraPage() {
     ? messages[messages.length - 1].createdAt.toISOString()
     : null;
 
-  const normalized = messages.map(({ senderId, sender, recipient, isDraft, ...message }) => {
-    const sentByCurrentUser = senderId === session.user.id;
+  const normalized = messages.flatMap(({
+    sender,
+    recipient,
+    senderId,
+    recipientId,
+    isDraft,
+    deletedBySender,
+    deletedByRecipient,
+    purgedBySender,
+    purgedByRecipient,
+    ...message
+  }) => {
+    const presentation = getTrashPresentation({
+      senderId,
+      recipientId,
+      isDraft,
+      deletedBySender,
+      deletedByRecipient,
+      purgedBySender,
+      purgedByRecipient,
+    }, session.user.id);
+    if (!presentation) return [];
+    const showRecipient = presentation.origin !== "bandeja";
     return {
       ...message,
       createdAt: message.createdAt.toISOString(),
       isRead: true,
-      origin: (isDraft ? "borradores" : sentByCurrentUser ? "enviados" : "bandeja") as "bandeja" | "enviados" | "borradores",
-      sender: sentByCurrentUser
+      origin: presentation.origin,
+      trashScope: presentation.scope,
+      sender: showRecipient
         ? (recipient ?? { id: "", name: "Sin destinatario", username: null, image: null })
         : sender,
     };

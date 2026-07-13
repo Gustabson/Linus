@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { USER_BASIC_SELECT } from "@/lib/data";
 import { getSession, unauthorized } from "@/lib/api-helpers";
 import { sanitizeHtml } from "@/lib/sanitize";
+import { revalidatePath } from "next/cache";
+import { resolveMailScope, type MailDeletionScope } from "@/lib/mail-trash";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -118,7 +120,12 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (!session) return unauthorized();
 
   const { id } = await params;
-  const permanent = new URL(req.url).searchParams.get("permanent") === "true";
+  const searchParams = new URL(req.url).searchParams;
+  const permanent = searchParams.get("permanent") === "true";
+  const requestedScope = searchParams.get("scope");
+  if (requestedScope && !["sender", "recipient", "both"].includes(requestedScope)) {
+    return NextResponse.json({ error: "Alcance de eliminación inválido" }, { status: 400 });
+  }
 
   const message = await prisma.message.findUnique({
     where:  { id },
@@ -138,9 +145,15 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (!isRecipient && !isSender)
     return NextResponse.json({ error: "Sin acceso" }, { status: 403 });
 
+  const resolvedScope = resolveMailScope(requestedScope as MailDeletionScope | null, isSender, isRecipient);
+  if (!resolvedScope) {
+    return NextResponse.json({ error: "Ese correo no pertenece a esa carpeta" }, { status: 403 });
+  }
+  const { affectSender, affectRecipient } = resolvedScope;
+
   if (permanent) {
-    const canPurgeAsSender = isSender && message.deletedBySender;
-    const canPurgeAsRecipient = isRecipient && message.deletedByRecipient;
+    const canPurgeAsSender = affectSender && message.deletedBySender;
+    const canPurgeAsRecipient = affectRecipient && message.deletedByRecipient;
     if (!canPurgeAsSender && !canPurgeAsRecipient) {
       return NextResponse.json({ error: "El mensaje debe estar en la papelera" }, { status: 400 });
     }
@@ -155,11 +168,13 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     await prisma.message.update({
       where: { id },
       data: {
-        ...(isSender ? { deletedBySender: true, purgedBySender: false } : {}),
-        ...(isRecipient ? { deletedByRecipient: true, purgedByRecipient: false } : {}),
+        ...(affectSender ? { deletedBySender: true, purgedBySender: false } : {}),
+        ...(affectRecipient ? { deletedByRecipient: true, purgedByRecipient: false } : {}),
       },
     });
   }
 
-  return NextResponse.json({ ok: true, permanent });
+  revalidatePath("/correos", "layout");
+  revalidatePath("/linus-2/correos", "layout");
+  return NextResponse.json({ ok: true, permanent, scope: requestedScope });
 }

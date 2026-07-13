@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized } from "@/lib/api-helpers";
+import { revalidatePath } from "next/cache";
 
 export async function DELETE() {
   const session = await getSession();
@@ -27,5 +28,7 @@ export async function DELETE() {
     }),
   ]);
 
+  revalidatePath("/correos", "layout");
+  revalidatePath("/linus-2/correos", "layout");
   return NextResponse.json({ ok: true, count: sent.count + received.count });
 }

@@ -1,10 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FileText, Inbox, Loader2, RotateCcw, Search, Send, Trash2, X } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { useRouter } from "@/hooks/useAppRouter";
+import type { MailDeletionScope } from "@/lib/mail-trash";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 type MailFolder = "bandeja" | "enviados" | "borradores" | "papelera";
 
@@ -15,6 +18,7 @@ interface CorreoRow {
   createdAt: string;
   body: string;
   origin?: "bandeja" | "enviados" | "borradores";
+  trashScope?: MailDeletionScope;
   sender: {
     id: string;
     name: string | null;
@@ -22,6 +26,10 @@ interface CorreoRow {
     image: string | null;
   };
 }
+
+type MailConfirmation =
+  | { kind: "purge"; message: CorreoRow }
+  | { kind: "empty" };
 
 const FOLDER_META: Record<MailFolder, { label: string; description: string; empty: string }> = {
   bandeja: {
@@ -73,6 +81,7 @@ export function CorreosList({
   folder: MailFolder;
   initialCursor: string | null;
 }) {
+  const router = useRouter();
   const [messages, setMessages] = useState(initialMessages);
   const [cursor, setCursor] = useState(initialCursor);
   const [query, setQuery] = useState("");
@@ -80,8 +89,14 @@ export function CorreosList({
   const [loading, setLoading] = useState(false);
   const [busyMessageId, setBusyMessageId] = useState<string | null>(null);
   const [emptyingTrash, setEmptyingTrash] = useState(false);
+  const [confirmation, setConfirmation] = useState<MailConfirmation | null>(null);
   const [error, setError] = useState("");
   const meta = FOLDER_META[folder];
+
+  useEffect(() => {
+    setMessages(initialMessages);
+    setCursor(initialCursor);
+  }, [folder, initialCursor, initialMessages]);
 
   const unreadCount = folder === "bandeja"
     ? messages.filter((message) => !message.isRead).length
@@ -124,24 +139,34 @@ export function CorreosList({
     }
   }
 
-  async function runMessageAction(id: string, action: "trash" | "restore" | "purge") {
+  function getMessageScope(message: CorreoRow): MailDeletionScope {
+    if (folder === "bandeja") return "recipient";
+    if (folder !== "papelera") return "sender";
+    return message.trashScope ?? (message.origin === "bandeja" ? "recipient" : "sender");
+  }
+
+  async function runMessageAction(message: CorreoRow, action: "trash" | "restore" | "purge") {
     if (busyMessageId) return;
-    if (action === "purge" && !window.confirm("¿Eliminar este mensaje definitivamente de tu cuenta?")) return;
-    setBusyMessageId(id);
+    const scope = getMessageScope(message);
+    const params = new URLSearchParams({ scope });
+    if (action === "purge") params.set("permanent", "true");
+    setBusyMessageId(message.id);
     setError("");
     try {
       const response = action === "restore"
-        ? await fetch(`/api/correos/${id}/restore`, { method: "POST" })
-        : await fetch(`/api/correos/${id}${action === "purge" ? "?permanent=true" : ""}`, { method: "DELETE" });
+        ? await fetch(`/api/correos/${message.id}/restore?${params}`, { method: "POST" })
+        : await fetch(`/api/correos/${message.id}?${params}`, { method: "DELETE" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error ?? "No se pudo actualizar el mensaje");
-      const removedMessage = messages.find((message) => message.id === id);
-      setMessages((current) => current.filter((message) => message.id !== id));
-      if (action === "trash" && folder === "bandeja" && removedMessage && !removedMessage.isRead) {
+      setMessages((current) => current.filter((currentMessage) => currentMessage.id !== message.id));
+      if (action === "trash" && folder === "bandeja" && !message.isRead) {
         window.dispatchEvent(new CustomEvent("correos:read"));
       }
+      router.refresh();
+      return true;
     } catch (actionError) {
       setError(actionError instanceof Error ? actionError.message : "No se pudo actualizar el mensaje");
+      return false;
     } finally {
       setBusyMessageId(null);
     }
@@ -149,7 +174,6 @@ export function CorreosList({
 
   async function emptyTrash() {
     if (emptyingTrash || messages.length === 0) return;
-    if (!window.confirm("¿Vaciar la papelera? Los mensajes dejarán de estar disponibles en tu cuenta.")) return;
     setEmptyingTrash(true);
     setError("");
     try {
@@ -158,18 +182,30 @@ export function CorreosList({
       if (!response.ok) throw new Error(data.error ?? "No se pudo vaciar la papelera");
       setMessages([]);
       setCursor(null);
+      router.refresh();
+      return true;
     } catch (emptyError) {
       setError(emptyError instanceof Error ? emptyError.message : "No se pudo vaciar la papelera");
+      return false;
     } finally {
       setEmptyingTrash(false);
     }
+  }
+
+  async function confirmDestructiveAction() {
+    if (!confirmation) return;
+    const succeeded = confirmation.kind === "empty"
+      ? await emptyTrash()
+      : await runMessageAction(confirmation.message, "purge");
+    if (succeeded) setConfirmation(null);
   }
 
   const FolderIcon = folder === "bandeja" ? Inbox : folder === "enviados" ? Send : folder === "borradores" ? FileText : Trash2;
   const hasFilters = !!query.trim() || unreadOnly;
 
   return (
-    <div className="flex min-h-full flex-col bg-surface">
+    <>
+      <div className="flex min-h-full flex-col bg-surface">
       <header className="sticky top-0 z-10 border-b border-border bg-surface/95 px-4 py-4 backdrop-blur sm:px-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
@@ -193,7 +229,7 @@ export function CorreosList({
             {folder === "papelera" && messages.length > 0 && (
               <button
                 type="button"
-                onClick={() => void emptyTrash()}
+                onClick={() => setConfirmation({ kind: "empty" })}
                 disabled={emptyingTrash}
                 className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-danger transition-colors hover:bg-danger/10 disabled:opacity-50"
               >
@@ -268,9 +304,9 @@ export function CorreosList({
               message={message}
               folder={folder}
               busy={busyMessageId === message.id}
-              onTrash={() => void runMessageAction(message.id, "trash")}
-              onRestore={() => void runMessageAction(message.id, "restore")}
-              onPurge={() => void runMessageAction(message.id, "purge")}
+              onTrash={() => void runMessageAction(message, "trash")}
+              onRestore={() => void runMessageAction(message, "restore")}
+              onPurge={() => setConfirmation({ kind: "purge", message })}
             />
           ))}
         </ul>
@@ -292,7 +328,20 @@ export function CorreosList({
           )}
         </div>
       )}
-    </div>
+      </div>
+      {confirmation && (
+        <ConfirmDialog
+          title={confirmation.kind === "empty" ? "¿Vaciar la papelera?" : "¿Eliminar definitivamente?"}
+          description={confirmation.kind === "empty"
+            ? "Todos los correos de la papelera dejarán de estar disponibles en tu cuenta."
+            : <>El correo <strong className="font-semibold text-text">“{confirmation.message.subject || "Sin asunto"}”</strong> no se podrá restaurar.</>}
+          confirmLabel={confirmation.kind === "empty" ? "Vaciar papelera" : "Eliminar definitivamente"}
+          busy={confirmation.kind === "empty" ? emptyingTrash : busyMessageId === confirmation.message.id}
+          onCancel={() => setConfirmation(null)}
+          onConfirm={() => void confirmDestructiveAction()}
+        />
+      )}
+    </>
   );
 }
 

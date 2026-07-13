@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2, Reply, Send, Trash2 } from "lucide-react";
 import { RichEditor } from "@/components/editor/RichEditor";
 import { useRouter } from "@/hooks/useAppRouter";
 import { formatDate } from "@/lib/utils";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface UserMini {
   id: string;
@@ -146,6 +147,7 @@ export function CorreosDetalle({
 }) {
   const router = useRouter();
   const [showReply, setShowReply] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [replies, setReplies] = useState<CorreoRespuesta[]>(message.replies);
   const [deleting, startDelete] = useTransition();
   const [sending, startSend] = useTransition();
@@ -156,11 +158,17 @@ export function CorreosDetalle({
   }, [isRecipient]);
 
   function handleDelete() {
-    if (!window.confirm("¿Eliminar este mensaje? Se quitará solamente de tu cuenta.")) return;
     startDelete(async () => {
-      const response = await fetch(`/api/correos/${message.id}`, { method: "DELETE" });
-      if (response.ok) router.push(backHref);
-      else setError("No se pudo eliminar el mensaje.");
+      const scope = isRecipient ? "recipient" : "sender";
+      const response = await fetch(`/api/correos/${message.id}?scope=${scope}`, { method: "DELETE" });
+      if (response.ok) {
+        setShowDeleteConfirm(false);
+        router.push(backHref);
+        router.refresh();
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error ?? "No se pudo eliminar el mensaje.");
+      }
     });
   }
 
@@ -184,7 +192,8 @@ export function CorreosDetalle({
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 pb-8 sm:px-6">
+    <>
+      <div className="mx-auto w-full max-w-4xl px-4 pb-8 sm:px-6">
       <div className="sticky top-0 z-20 -mx-4 flex items-center justify-between gap-3 border-b border-border bg-surface/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
         <Link href={backHref} className="inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-text-muted transition-colors hover:text-primary">
           <ArrowLeft className="h-4 w-4 shrink-0" />
@@ -200,7 +209,7 @@ export function CorreosDetalle({
           </button>
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteConfirm(true)}
             disabled={deleting}
             aria-label="Eliminar mensaje"
             className="grid h-9 w-9 place-items-center rounded-xl text-text-subtle transition-colors hover:bg-danger/10 hover:text-danger disabled:opacity-50"
@@ -255,6 +264,18 @@ export function CorreosDetalle({
       </div>
 
       {error && <p role="alert" className="mt-4 rounded-xl bg-danger/10 px-4 py-3 text-sm font-medium text-danger">{error}</p>}
-    </div>
+      </div>
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          title="¿Mover a la papelera?"
+          description={<>El correo <strong className="font-semibold text-text">“{message.subject || "Sin asunto"}”</strong> se quitará solamente de esta carpeta y podrás restaurarlo después.</>}
+          confirmLabel="Mover a la papelera"
+          busyLabel="Moviendo…"
+          busy={deleting}
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+        />
+      )}
+    </>
   );
 }
