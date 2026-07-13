@@ -10,41 +10,54 @@ export function LikeButton({
   initialLiked,
   initialCount,
   isAuthenticated,
+  compact = false,
 }: {
   treeSlug: string;
   initialLiked: boolean;
   initialCount: number;
   isAuthenticated: boolean;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
   const [loading, setLoading] = useState(false);
 
-  async function toggle() {
+  async function toggle(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
     if (!isAuthenticated) { router.push("/login"); return; }
     setLoading(true);
-    const res = await fetch(`/api/trees/${treeSlug}/like`, { method: "POST" });
-    if (res.ok) {
-      const data = await res.json();
-      setLiked(data.liked);
-      setCount(data.count);
+    try {
+      const res = await fetch(`/api/trees/${treeSlug}/like`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setLiked(data.liked);
+        setCount(data.count);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (
     <button
+      type="button"
       onClick={toggle}
       disabled={loading}
+      aria-pressed={liked}
+      aria-label={liked ? `Quitar Me gusta. ${count} Me gusta` : `Dar Me gusta. ${count} Me gusta`}
       className={cn(
-        "flex items-center gap-2 border text-sm px-4 py-2 rounded-lg transition-all disabled:opacity-50",
+        "relative z-20 flex items-center border text-sm transition-all disabled:opacity-50",
+        compact ? "gap-1.5 rounded-lg border-transparent px-2 py-1.5" : "gap-2 rounded-lg px-4 py-2",
         liked
-          ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
-          : "border-border text-text-muted hover:bg-bg"
+          ? "border-danger/20 bg-danger/10 text-danger hover:bg-danger/15"
+          : compact
+            ? "text-text-subtle hover:bg-bg hover:text-danger"
+            : "border-border text-text-muted hover:bg-bg"
       )}
     >
-      <Heart className={cn("w-4 h-4", liked && "fill-red-500 text-red-500")} />
+      <Heart className={cn("h-4 w-4", liked && "fill-current")} />
       <span>{count}</span>
     </button>
   );

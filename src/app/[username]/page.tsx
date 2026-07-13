@@ -1,31 +1,40 @@
-import { prisma }       from "@/lib/prisma";
+import Image from "next/image";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import {
+  Calendar,
+  FileText,
+  GitFork,
+  Globe,
+  Heart,
+  LayoutGrid,
+  MapPin,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { EditProfileButton } from "@/components/profile/EditProfileButton";
+import { FollowButton } from "@/components/profile/FollowButton";
+import { ProfileContentGrid, type ProfileTree } from "@/components/profile/ProfileContentGrid";
+import { ProfileFeed } from "@/components/profile/ProfileFeed";
+import type { PostData } from "@/components/social/PostCard";
+import { auth } from "@/lib/auth";
 import { USER_BASIC_SELECT } from "@/lib/data";
-import { auth }         from "@/lib/auth";
-import { notFound }     from "next/navigation";
-import { formatDate }   from "@/lib/utils";
-import { GitFork, Heart, MapPin, Globe, Calendar, FileText, LayoutGrid } from "lucide-react";
-import Link             from "next/link";
-import Image            from "next/image";
-import { EditProfileButton }  from "@/components/profile/EditProfileButton";
-import { FollowButton }       from "@/components/profile/FollowButton";
-import { ProfileFeed }        from "@/components/profile/ProfileFeed";
-import { CONTENT_TYPE_STYLE } from "@/lib/constants";
-import { safeUrl }            from "@/lib/utils";
-import type { PostData }      from "@/components/social/PostCard";
+import { prisma } from "@/lib/prisma";
+import { formatDate, safeUrl } from "@/lib/utils";
 
 export const revalidate = 60;
 
 export async function generateMetadata({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
   const user = await prisma.user.findUnique({
-    where:  { username },
+    where: { username },
     select: { name: true, bio: true },
   });
   if (!user) return {};
   return {
-    title:       user.name ?? username,
+    title: user.name ?? username,
     description: user.bio ?? `Perfil de ${user.name ?? username} en EduHub`,
-    openGraph:   { title: user.name ?? username, description: user.bio ?? undefined },
+    openGraph: { title: user.name ?? username, description: user.bio ?? undefined },
   };
 }
 
@@ -33,19 +42,24 @@ export default async function UserProfilePage({
   params,
   searchParams,
 }: {
-  params:       Promise<{ username: string }>;
+  params: Promise<{ username: string }>;
   searchParams: Promise<{ tab?: string }>;
 }) {
-  const { username }              = await params;
-  const { tab = "publicaciones" } = await searchParams;
-  const session                   = await auth();
+  const { username } = await params;
+  const { tab } = await searchParams;
+  const activeTab = tab === "contenido" ? "contenido" : "publicaciones";
+  const session = await auth();
+  const currentUserId = session?.user?.id ?? "__anonymous__";
 
   const user = await prisma.user.findUnique({
     where: { username },
     include: {
       ownedTrees: {
-        where:   { visibility: "PUBLIC" },
-        include: { _count: { select: { forks: true, likes: true } } },
+        where: { visibility: "PUBLIC" },
+        include: {
+          _count: { select: { forks: true, likes: true } },
+          likes: { where: { userId: currentUserId }, select: { id: true } },
+        },
         orderBy: { updatedAt: "desc" },
       },
       _count: {
@@ -57,34 +71,36 @@ export default async function UserProfilePage({
   if (!user) notFound();
 
   const isOwn = session?.user?.id === user.id;
-
   const isFollowing = session?.user?.id && !isOwn
     ? !!(await prisma.userFollow.findUnique({
         where: { followerId_followingId: { followerId: session.user.id, followingId: user.id } },
       }))
     : false;
 
-  const totalForks = user.ownedTrees.reduce((acc, t) => acc + t._count.forks, 0);
-  const totalLikes = user.ownedTrees.reduce((acc, t) => acc + t._count.likes, 0);
+  const totalForks = user.ownedTrees.reduce((total, tree) => total + tree._count.forks, 0);
+  const totalLikes = user.ownedTrees.reduce((total, tree) => total + tree._count.likes, 0);
 
-  // ── Initial posts (server-side for no layout shift) ──────────────────────
   const LIMIT = 20;
   const rawPosts = await prisma.post.findMany({
-    where:   { authorId: user.id },
+    where: { authorId: user.id },
     orderBy: { createdAt: "desc" },
-    take:    LIMIT + 1,
+    take: LIMIT + 1,
     include: {
       author: { select: USER_BASIC_SELECT },
       tree: {
         select: {
-          id: true, slug: true, title: true, description: true,
-          contentType: true, forkDepth: true,
+          id: true,
+          slug: true,
+          title: true,
+          description: true,
+          contentType: true,
+          forkDepth: true,
           owner: { select: { username: true, name: true } },
           _count: { select: { likes: true, forks: true } },
         },
       },
       _count: { select: { likes: true, comments: true } },
-      likes:  session?.user?.id
+      likes: session?.user?.id
         ? { where: { userId: session.user.id }, select: { id: true } }
         : false,
     },
@@ -92,145 +108,147 @@ export default async function UserProfilePage({
 
   const hasMorePosts = rawPosts.length > LIMIT;
   if (hasMorePosts) rawPosts.pop();
-  const initialPosts  = rawPosts as unknown as PostData[];
+  const initialPosts = rawPosts as unknown as PostData[];
   const initialCursor = hasMorePosts
     ? rawPosts[rawPosts.length - 1].createdAt.toISOString()
     : null;
 
   const currentUser = session?.user?.id
     ? {
-        id:       session.user.id,
-        name:     session.user.name     ?? null,
+        id: session.user.id,
+        name: session.user.name ?? null,
         username: session.user.username ?? null,
-        // Use fresh DB image when viewing own profile — session can be stale
-        image:    isOwn ? (user.image ?? null) : (session.user.image ?? null),
+        image: isOwn ? (user.image ?? null) : (session.user.image ?? null),
       }
     : null;
 
+  const profileTrees: ProfileTree[] = user.ownedTrees.map(({ likes, ...tree }) => ({
+    ...tree,
+    updatedAt: tree.updatedAt.toISOString(),
+    initialLiked: likes.length > 0,
+  }));
+
+  const profileStats = [
+    { label: "Seguidores", value: user._count.followers, icon: Users },
+    { label: "Siguiendo", value: user._count.following, icon: UserPlus },
+    { label: "Forks recibidos", value: totalForks, icon: GitFork },
+    { label: "Likes recibidos", value: totalLikes, icon: Heart },
+  ];
+
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="mx-auto w-full max-w-5xl space-y-5">
+      <section className="relative overflow-hidden rounded-3xl border border-border bg-surface shadow-sm">
+        <div className="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
 
-      {/* ── Profile header ─────────────────────────────────────────── */}
-      <div className="bg-surface rounded-2xl border border-border p-6 md:p-8">
-        <div className="flex flex-col md:flex-row items-start gap-6">
-          {/* Avatar */}
-          <div className="shrink-0">
-            {user.image ? (
-              <Image src={user.image} alt={user.name ?? ""} width={96} height={96}
-                className="rounded-full ring-4 ring-bg" />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-primary text-3xl font-bold">
-                {(user.name ?? "?")[0].toUpperCase()}
-              </div>
-            )}
-          </div>
-
-          {/* Info */}
-          <div className="flex-1 space-y-3">
-            <div className="flex items-start justify-between flex-wrap gap-3">
-              <div>
-                <h1 className="text-2xl font-bold text-text">{user.name}</h1>
-                {user.username && (
-                  <p className="text-text-subtle text-sm">@{user.username}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {isOwn && (
-                  <EditProfileButton user={{
-                    id: user.id, name: user.name, username: user.username,
-                    bio: user.bio, website: user.website, location: user.location,
-                    image: user.image,
-                  }} />
-                )}
-                {!isOwn && (
-                  <FollowButton
-                    userId={user.id}
-                    initialFollowing={!!isFollowing}
-                    initialCount={user._count.followers}
-                    isAuthenticated={!!session}
-                  />
-                )}
-              </div>
+        <div className="relative p-5 sm:p-7 lg:p-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+            <div className="shrink-0">
+              {user.image ? (
+                <Image
+                  src={user.image}
+                  alt={user.name ?? `@${username}`}
+                  width={104}
+                  height={104}
+                  className="h-[104px] w-[104px] rounded-full object-cover ring-4 ring-bg shadow-sm"
+                />
+              ) : (
+                <div className="flex h-[104px] w-[104px] items-center justify-center rounded-full bg-primary/10 text-3xl font-bold text-primary ring-4 ring-bg">
+                  {(user.name ?? username)[0].toUpperCase()}
+                </div>
+              )}
             </div>
 
-            {user.bio && (
-              <p className="text-text-muted leading-relaxed">{user.bio}</p>
-            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <h1 className="truncate text-2xl font-bold tracking-tight text-text sm:text-3xl">{user.name ?? username}</h1>
+                  <p className="mt-0.5 text-sm font-medium text-text-subtle">@{username}</p>
+                </div>
+                <div className="shrink-0">
+                  {isOwn ? (
+                    <EditProfileButton user={{
+                      id: user.id,
+                      name: user.name,
+                      username: user.username,
+                      bio: user.bio,
+                      website: user.website,
+                      location: user.location,
+                      image: user.image,
+                    }} />
+                  ) : (
+                    <FollowButton
+                      userId={user.id}
+                      initialFollowing={!!isFollowing}
+                      initialCount={user._count.followers}
+                      isAuthenticated={!!session}
+                    />
+                  )}
+                </div>
+              </div>
 
-            <div className="flex flex-wrap gap-4 text-sm text-text-muted">
-              {user.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />{user.location}
+              {user.bio ? (
+                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-text-muted sm:text-base">{user.bio}</p>
+              ) : isOwn ? (
+                <p className="mt-4 text-sm italic text-text-subtle">Agregá una presentación para que la comunidad te conozca mejor.</p>
+              ) : null}
+
+              <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-text-muted">
+                {user.location && (
+                  <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4 text-text-subtle" />{user.location}</span>
+                )}
+                {user.website && (
+                  <a
+                    href={safeUrl(user.website)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex min-w-0 items-center gap-1.5 font-medium text-primary hover:underline"
+                  >
+                    <Globe className="h-4 w-4 shrink-0" />
+                    <span className="max-w-56 truncate">{user.website.replace(/^https?:\/\//, "")}</span>
+                  </a>
+                )}
+                <span className="flex items-center gap-1.5"><Calendar className="h-4 w-4 text-text-subtle" />Se unió {formatDate(user.createdAt)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-7 grid grid-cols-2 gap-2.5 border-t border-border-subtle pt-5 lg:grid-cols-4">
+            {profileStats.map(({ label, value, icon: Icon }) => (
+              <div key={label} className="flex items-center gap-3 rounded-2xl bg-bg/70 px-3.5 py-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span>
+                <span className="min-w-0">
+                  <strong className="block text-xl leading-none text-text">{value}</strong>
+                  <span className="mt-1 block truncate text-[11px] font-medium text-text-subtle">{label}</span>
                 </span>
-              )}
-              {user.website && (
-                <a href={safeUrl(user.website)} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-primary hover:underline">
-                  <Globe className="w-4 h-4" />
-                  {user.website.replace(/^https?:\/\//, "")}
-                </a>
-              )}
-              <span className="flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                Se unió {formatDate(user.createdAt)}
-              </span>
-            </div>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border-subtle">
-          {[
-            { label: "Seguidores",      value: user._count.followers },
-            { label: "Siguiendo",       value: user._count.following  },
-            { label: "Forks recibidos", value: totalForks },
-            { label: "Likes recibidos", value: totalLikes },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-xs text-text-subtle mb-1">{stat.label}</div>
-              <div className="text-2xl font-bold text-text">{stat.value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Tab nav ─────────────────────────────────────────────────── */}
-      <div className="flex items-center border-b border-border bg-surface sticky top-0 z-10">
-        {(
-          [
-            { key: "publicaciones", label: "Publicaciones", icon: FileText,  count: null },
-            { key: "contenido",     label: "Contenido",     icon: LayoutGrid, count: user.ownedTrees.length },
-          ] as const
-        ).map(({ key, label, icon: Icon, count }) => {
-          const active = tab === key;
-          const href   = key === "publicaciones" ? `/${username}` : `/${username}?tab=${key}`;
+      <nav aria-label="Secciones del perfil" className="sticky top-2 z-20 flex rounded-2xl border border-border bg-surface p-1.5 shadow-sm">
+        {([
+          { key: "publicaciones", label: "Publicaciones", icon: FileText, count: null },
+          { key: "contenido", label: "Contenido", icon: LayoutGrid, count: user.ownedTrees.length },
+        ] as const).map(({ key, label, icon: Icon, count }) => {
+          const active = activeTab === key;
+          const href = key === "publicaciones" ? `/${username}` : `/${username}?tab=${key}`;
           return (
-            <Link key={key} href={href}
-              className={`flex items-center gap-2 px-5 py-4 text-sm font-medium border-b-2 transition-colors ${
-                active
-                  ? "border-primary text-primary"
-                  : "border-transparent text-text-muted hover:text-text hover:border-border"
-              }`}
+            <Link
+              key={key}
+              href={href}
+              aria-current={active ? "page" : undefined}
+              className={`flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors sm:flex-none ${active ? "bg-primary/10 text-primary" : "text-text-muted hover:bg-bg hover:text-text"}`}
             >
-              <Icon className="w-4 h-4" />
-              {label}
-              {count !== null && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
-                  active ? "bg-primary/10 text-primary" : "bg-border-subtle text-text-subtle"
-                }`}>
-                  {count}
-                </span>
-              )}
+              <Icon className="h-4 w-4" /> {label}
+              {count !== null && <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${active ? "bg-primary/10 text-primary" : "bg-border-subtle text-text-subtle"}`}>{count}</span>}
             </Link>
           );
         })}
-      </div>
+      </nav>
 
-      {/* ── Tab content ──────────────────────────────────────────────── */}
-      <div className="pt-5 space-y-4">
-
-        {/* Publicaciones — social feed */}
-        {tab === "publicaciones" && (
+      <div>
+        {activeTab === "publicaciones" && (
           <ProfileFeed
             username={username}
             initialPosts={initialPosts}
@@ -240,48 +258,12 @@ export default async function UserProfilePage({
           />
         )}
 
-        {/* Contenido — kernels, módulos, recursos */}
-        {tab === "contenido" && (
-          user.ownedTrees.length === 0 ? (
-            <div className="bg-surface rounded-2xl border border-dashed border-border p-10 text-center text-text-subtle text-sm">
-              Este usuario todavía no tiene contenido público.
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {user.ownedTrees.map((tree) => {
-                const ts = CONTENT_TYPE_STYLE[tree.contentType];
-                return (
-                  <Link key={tree.id} href={`/${user.username}/${tree.slug}`}
-                    className={`bg-surface rounded-2xl border ${ts.borderCls} p-6 ${ts.hoverBorderCls} hover:shadow-md transition-all group block`}>
-                    <div className="flex items-center gap-2 mb-3 flex-wrap">
-                      {tree.forkDepth > 0 && (
-                        <span className="bg-border-subtle text-text-muted text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <GitFork className="w-3 h-3" /> Fork
-                        </span>
-                      )}
-                    </div>
-                    <h3 className={`text-base font-bold ${ts.textCls} transition-colors mb-2 line-clamp-2`}>
-                      {tree.title}
-                    </h3>
-                    {tree.description && (
-                      <p className="text-text-muted text-sm line-clamp-2 mb-4 leading-relaxed">
-                        {tree.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-sm text-text-subtle pt-3 border-t border-border-subtle">
-                      <span className="flex items-center gap-1">
-                        <Heart className="w-4 h-4" /> {tree._count.likes}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <GitFork className="w-4 h-4" /> {tree._count.forks}
-                      </span>
-                      <span className="ml-auto text-xs">{formatDate(tree.updatedAt)}</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          )
+        {activeTab === "contenido" && (
+          <ProfileContentGrid
+            trees={profileTrees}
+            ownerPath={username}
+            isAuthenticated={!!session?.user?.id}
+          />
         )}
       </div>
     </div>
