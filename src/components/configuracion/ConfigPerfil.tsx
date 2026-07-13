@@ -67,8 +67,8 @@ export function ConfigPerfil({ initial }: Props) {
 
       <Field label="Biografía">
         <Textarea value={bio} onChange={e => setBio(e.target.value)}
-          placeholder="Contá algo sobre vos..." maxLength={300} rows={3} />
-        <p className="text-xs text-text-subtle text-right mt-1">{bio.length}/300</p>
+          placeholder="Contá algo sobre vos..." maxLength={280} rows={3} />
+        <p className="text-xs text-text-subtle text-right mt-1">{bio.length}/280</p>
       </Field>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

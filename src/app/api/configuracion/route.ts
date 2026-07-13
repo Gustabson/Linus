@@ -58,7 +58,8 @@ export async function PATCH(req: NextRequest) {
   if (!session) return unauthorized();
 
   const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
+  if (!body || typeof body !== "object" || Array.isArray(body))
+    return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
 
   const {
     name, username, bio, website, location,
@@ -71,6 +72,9 @@ export async function PATCH(req: NextRequest) {
     themeMode, themeBg, themeSurface, themeBorder, themeText, themePrimary,
     themeSidebarBg, themeSidebarText, themeKernel, themeModule, themeResource,
   ].some((value) => value !== undefined);
+
+  if (themeMode !== undefined && !["light", "dark", "custom"].includes(String(themeMode)))
+    return NextResponse.json({ error: "Modo de tema inválido" }, { status: 400 });
 
   // Validate username
   if (username !== undefined && username !== null && String(username).trim() !== "") {
@@ -110,20 +114,21 @@ export async function PATCH(req: NextRequest) {
   if (website !== undefined && website !== null && String(website).trim() !== "" && !URL_RE.test(String(website).trim()))
     return NextResponse.json({ error: "El sitio web debe empezar con http:// o https://" }, { status: 400 });
 
-  // Validate sidebar + content type hex colors (always, not just in custom mode)
-  const ctHexFields = { themeSidebarBg, themeSidebarText, themeKernel, themeModule, themeResource };
-  for (const [key, val] of Object.entries(ctHexFields)) {
+  // Validate every supplied theme value on the server. A client can patch
+  // custom colors without sending themeMode, so validation cannot depend on it.
+  const hexFields = {
+    themeBg, themeSurface, themeBorder, themeText, themePrimary,
+    themeSidebarBg, themeSidebarText, themeKernel, themeModule, themeResource,
+  };
+  for (const [key, val] of Object.entries(hexFields)) {
     if (val !== undefined && val !== null && !isValidHex(String(val)))
       return NextResponse.json({ error: `Color inválido en ${key}` }, { status: 400 });
   }
 
-  // Validate custom theme hex values (no contrast enforcement — user can reset via /reset)
-  if (themeMode === "custom") {
-    const hexFields = { themeBg, themeSurface, themeBorder, themeText, themePrimary };
-    for (const [key, val] of Object.entries(hexFields)) {
-      if (val !== undefined && val !== null && !isValidHex(String(val)))
-        return NextResponse.json({ error: `Color inválido en ${key}` }, { status: 400 });
-    }
+  const notificationFields = { notifCorreos, notifComentarios, notifLikes, notifSeguidores, notifPropuestas };
+  for (const [key, val] of Object.entries(notificationFields)) {
+    if (val !== undefined && typeof val !== "boolean")
+      return NextResponse.json({ error: `Valor inválido en ${key}` }, { status: 400 });
   }
 
   const data: Record<string, unknown> = {};
