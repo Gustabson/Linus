@@ -12,6 +12,7 @@ describe("upload security", () => {
     expect(hasExpectedFileSignature("pdf", bytes("MZ executable"))).toBe(false);
     expect(hasExpectedFileSignature("pdf", bytes("%PDF-1.7"))).toBe(true);
     expect(hasExpectedFileSignature("exe", bytes("MZ executable"))).toBe(false);
+    expect(hasExpectedFileSignature("zip", bytes("PK\u0003\u0004 archive"))).toBe(false);
   });
 
   it("requires the expected Office archive structure", () => {

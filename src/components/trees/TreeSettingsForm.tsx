@@ -127,7 +127,7 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
         <div className="bg-surface rounded-2xl border border-red-100 p-6 space-y-3">
           <h2 className="font-semibold text-red-700">Zona de peligro</h2>
           <p className="text-sm text-text-muted">
-            Archivar el currículo lo ocultará de búsquedas pero los forks existentes seguirán funcionando.
+            Archivar este contenido lo ocultará de búsquedas, pero los forks existentes seguirán funcionando.
           </p>
           <button
             type="button"
@@ -143,7 +143,7 @@ export function TreeSettingsForm({ tree, ownerUsername }: { tree: TreeData; owne
             }}
           >
             <Trash2 className="w-4 h-4" />
-            Archivar currículo
+            Archivar contenido
           </button>
         </div>
       )}

@@ -44,6 +44,20 @@ export default async function DocumentPage({
       visibility: true, contentType: true,
       owner: { select: { username: true } },
       documents: { orderBy: { createdAt: "asc" }, select: { id: true } },
+      attachments: {
+        where: { content: { contentType: "RESOURCE" } },
+        orderBy: { addedAt: "asc" },
+        include: {
+          content: {
+            select: {
+              id: true, slug: true, title: true, description: true, contentType: true,
+              resourceKind: true, resourceUrl: true, visibility: true,
+              owner: { select: { name: true, username: true } },
+              _count: { select: { likes: true, forks: true } },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -85,6 +99,7 @@ export default async function DocumentPage({
   return (
     <DocumentWorkspace
       treeSlug={tree.slug}
+      treeId={tree.id}
       treeTitle={tree.title}
       contentType={tree.contentType}
       docSlug={docSlug}
@@ -102,6 +117,9 @@ export default async function DocumentPage({
       currentUserId={session?.user?.id}
       initialPublicId={latestPublication?.publicId ?? null}
       hasChanges={hasChanges}
+      initialResources={tree.attachments
+        .filter((attachment) => isOwner || attachment.content.visibility !== "PRIVATE")
+        .map((attachment) => ({ id: attachment.id, content: attachment.content }))}
     />
   );
 }

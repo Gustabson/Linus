@@ -23,12 +23,14 @@ import { TreePublishButton } from "@/components/trees/TreePublishButton";
 import styles from "./DocumentWorkspace.module.css";
 import { useRouter } from "@/hooks/useAppRouter";
 import { EmbeddedPdf } from "./EmbeddedPdf";
+import { ResourcesPanel, type AttachedResource } from "@/components/trees/ResourcesPanel";
 
 type SaveState = "saved" | "saving" | "error";
 type SectionIdMap = Record<string, string>;
 
 interface DocumentWorkspaceProps {
   treeSlug: string;
+  treeId: string;
   treeTitle: string;
   contentType: ContentType;
   docSlug: string;
@@ -46,6 +48,7 @@ interface DocumentWorkspaceProps {
   currentUserId?: string;
   initialPublicId: string | null;
   hasChanges: boolean;
+  initialResources: AttachedResource[];
 }
 
 function applySectionIdMap(sections: DocumentSection[], map: SectionIdMap) {
@@ -88,6 +91,7 @@ function workspaceContent(value: object, title: string): object {
 
 export function DocumentWorkspace({
   treeSlug,
+  treeId,
   treeTitle,
   contentType,
   docSlug,
@@ -105,6 +109,7 @@ export function DocumentWorkspace({
   currentUserId,
   initialPublicId,
   hasChanges,
+  initialResources,
 }: DocumentWorkspaceProps) {
   const router = useRouter();
   const [sections, setSections] = useState(initialSections);
@@ -587,6 +592,11 @@ export function DocumentWorkspace({
           </section>
           <section className={styles.inspectorSection}><p>Contenido</p><strong>{wordCount.toLocaleString("es-AR")} palabras · {editorPageCount} {editorPageCount === 1 ? "página" : "páginas"}</strong></section>
           <section className={styles.inspectorSection}><p>Estado</p><strong className={styles.statusLine}><CheckCircle2 size={16} /> {!isPublished || visibility === "PRIVATE" ? "Borrador privado" : "Publicado"}</strong></section>
+          {contentType !== "RESOURCE" && (
+            <section className={styles.inspectorSection}>
+              <ResourcesPanel containerSlug={treeSlug} containerId={treeId} initialItems={initialResources} isOwner={isOwner} defaultVisibility={visibility} compact />
+            </section>
+          )}
           <section className={`${styles.inspectorSection} ${styles.commentsInspector}`}>
             <DocumentComments docId={docId} isAuthenticated={isAuthenticated} currentUserId={currentUserId} isOwner={isOwner} inspector />
           </section>

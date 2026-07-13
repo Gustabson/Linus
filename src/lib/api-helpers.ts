@@ -14,22 +14,11 @@ export async function getSession() {
 export async function getOwnedTree(slug: string, userId: string) {
   const tree = await prisma.documentTree.findUnique({
     where: { slug },
-    select: { id: true, ownerId: true, visibility: true },
+    select: { id: true, ownerId: true, visibility: true, contentType: true },
   });
   if (!tree) return null;
   if (tree.visibility === "PRIVATE" && tree.ownerId !== userId) return null;
   return tree.ownerId === userId ? tree : null;
-}
-
-/** Returns the tree if it's a KERNEL owned by userId, otherwise null. */
-export async function getOwnedKernel(slug: string, userId: string) {
-  const tree = await prisma.documentTree.findUnique({
-    where: { slug },
-    select: { id: true, ownerId: true, contentType: true, visibility: true },
-  });
-  if (!tree) return null;
-  if (tree.visibility === "PRIVATE" && tree.ownerId !== userId) return null;
-  return tree?.ownerId === userId && tree.contentType === "KERNEL" ? tree : null;
 }
 
 /**

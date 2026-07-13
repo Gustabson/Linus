@@ -3,14 +3,13 @@ import { USER_BASIC_SELECT } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { GitFork, BookOpen, ChevronRight, Settings, Eye, MessageSquare } from "lucide-react";
+import { GitFork, BookOpen, ChevronRight, Settings, Eye, MessageSquare, ExternalLink } from "lucide-react";
 import { CONTENT_TYPE_STYLE, KERNEL_NEW_DOC_LABEL } from "@/lib/constants";
 import { TreePublishButton } from "@/components/trees/TreePublishButton";
 import Link from "next/link";
 import Image from "next/image";
 import { ForkButton } from "@/components/trees/ForkButton";
 import { LikeButton } from "@/components/trees/LikeButton";
-import { ExtensionsPanel } from "@/components/trees/ExtensionsPanel";
 import { ForkTree } from "@/components/trees/ForkTree";
 import { AttachmentsPanel } from "@/components/trees/AttachmentsPanel";
 import { QuickAddDocument } from "@/components/trees/QuickAddDocument";
@@ -100,17 +99,14 @@ export default async function TreePage({
           },
         },
       },
-      extensions: {
-        orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
-        include: { author: { select: { name: true, image: true } } },
-      },
       attachments: {
         where: isOwner ? undefined : { content: { visibility: { not: "PRIVATE" } } },
         orderBy: { addedAt: "asc" },
         include: {
           content: {
             select: {
-              id: true, slug: true, title: true, contentType: true,
+              id: true, slug: true, title: true, description: true, contentType: true,
+              resourceKind: true, resourceUrl: true,
               owner: { select: { name: true, username: true } },
               _count: { select: { likes: true, forks: true } },
             },
@@ -140,6 +136,7 @@ export default async function TreePage({
   }
 
   const style = CONTENT_TYPE_STYLE[tree.contentType];
+  const isExternalResource = tree.contentType === "RESOURCE" && tree.resourceKind !== "EDITOR";
 
   const userLiked = session?.user?.id
     ? await prisma.treeLike.findUnique({
@@ -261,7 +258,7 @@ export default async function TreePage({
 
           <div className="flex items-center gap-2 flex-wrap">
             <LikeButton treeSlug={tree.slug} initialLiked={userLiked} initialCount={tree._count.likes} isAuthenticated={!!session} />
-            {!isOwner && session && (
+            {!isOwner && session && !isExternalResource && (
               <ForkButton treeId={tree.id} treeTitle={tree.title} contentType={tree.contentType} />
             )}
             {!isOwner && session && tree.documents[0] && (
@@ -271,12 +268,17 @@ export default async function TreePage({
                 Comentar o proponer
               </Link>
             )}
-            {/* Preview — always visible for kernels (shows full read-only view) */}
-            <Link href={`/${username}/${slug}/preview`}
-              className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-lg hover:bg-bg transition-colors">
-              <Eye className="w-4 h-4" />
-              Preview
-            </Link>
+            {isExternalResource ? (tree.resourceUrl ? (
+              <a href={tree.resourceUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-lg bg-resource px-3 py-2 text-sm font-semibold text-white hover:bg-resource-h">
+                <ExternalLink className="h-4 w-4" /> Abrir recurso
+              </a>
+            ) : null) : (
+              <Link href={`/${username}/${slug}/preview`}
+                className="flex items-center gap-1.5 text-sm text-text-muted border border-border px-3 py-2 rounded-lg hover:bg-bg transition-colors">
+                <Eye className="w-4 h-4" />
+                Preview
+              </Link>
+            )}
             {isOwner && (
               <>
                 <Link href={`/${username}/${slug}/configuracion`}
@@ -295,13 +297,17 @@ export default async function TreePage({
             <GitFork className="w-4 h-4" />
             {tree._count.forks} forks
           </span>
-          <span className="flex items-center gap-1">
-            <BookOpen className="w-4 h-4" />
-            {tree.documents.length} unidad{tree.documents.length !== 1 ? "es" : ""}
-          </span>
+          {isExternalResource ? (
+            <span className="flex items-center gap-1"><ExternalLink className="h-4 w-4" /> Recurso externo</span>
+          ) : (
+            <span className="flex items-center gap-1">
+              <BookOpen className="w-4 h-4" />
+              {tree.documents.length} unidad{tree.documents.length !== 1 ? "es" : ""}
+            </span>
+          )}
           <span>{formatDate(tree.createdAt)}</span>
           {/* Publish button (owner only) — lives here next to the stats so hash + publish action feel attached to the entity */}
-          {isOwner && (
+          {isOwner && !isExternalResource && (
             <div className="ml-auto">
               <TreePublishButton
                 treeSlug={tree.slug}
@@ -314,7 +320,7 @@ export default async function TreePage({
         </div>
 
         {/* ── Documents (inside the card — kernel + docs = one visual unit) ── */}
-        <div className="flex items-center justify-between pt-2">
+        {!isExternalResource && <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-widest text-text-subtle">Documentos</p>
             {tree.documents.length > 0 && (
@@ -323,8 +329,8 @@ export default async function TreePage({
               </span>
             )}
           </div>
-        </div>
-        <QuickAddDocument
+        </div>}
+        {!isExternalResource && <QuickAddDocument
           treeSlug={tree.slug}
           ownerUsername={tree.owner.username ?? ""}
           isOwner={isOwner}
@@ -342,22 +348,22 @@ export default async function TreePage({
               sections: lv?.sections ?? [],
             };
           })}
-        />
+        />}
 
       </div>
 
-      {/* Attachments panel — full for kernels, detach-only for modules/resources with legacy data */}
-      {(tree.contentType === "KERNEL" || tree.attachments.length > 0) && (
+      {/* Kernels contain modules/resources; modules contain resources. */}
+      {(tree.contentType === "KERNEL" || tree.contentType === "MODULE") && (
         <AttachmentsPanel
           kernelSlug={tree.slug}
           kernelId={tree.id}
-          ownerUsername={tree.owner.username ?? ""}
           initialAttachments={tree.attachments.map((a) => ({
             id: a.id,
             content: a.content,
           }))}
           isOwner={isOwner}
-          isKernel={tree.contentType === "KERNEL"}
+          containerType={tree.contentType}
+          containerVisibility={tree.visibility}
         />
       )}
 
@@ -376,16 +382,6 @@ export default async function TreePage({
           }))}
         />
       )}
-
-      {/* Extensions */}
-      <ExtensionsPanel
-        treeSlug={tree.slug}
-        initialExtensions={tree.extensions.map((e) => ({
-          id: e.id, type: e.type, title: e.title, description: e.description,
-          url: e.url, imageUrl: e.imageUrl, author: e.author,
-        }))}
-        isOwner={isOwner}
-      />
 
     </div>
   );

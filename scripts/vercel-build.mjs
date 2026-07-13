@@ -21,13 +21,14 @@ if (deployment.status !== 0) {
   const output = `${deployment.stdout ?? ""}\n${deployment.stderr ?? ""}`;
   if (!output.includes("P3005")) process.exit(deployment.status ?? 1);
 
-  // One-time transition for the existing production database, which predates
-  // Prisma Migrate. Synchronize it without destructive flags, then record the
-  // full initial migration as the baseline. Future deploys use migrations only.
-  const synchronized = run(["prisma", "db", "push"]);
-  if (synchronized.status !== 0) process.exit(synchronized.status ?? 1);
+  // One-time transition for a database that predates Prisma Migrate. The
+  // initial migration describes that existing schema, so record it without
+  // replaying it. Then run deploy again so every migration after the baseline
+  // executes normally (including data-preserving transformations).
   const resolved = run(["prisma", "migrate", "resolve", "--applied", baseline]);
   if (resolved.status !== 0) process.exit(resolved.status ?? 1);
+  const retry = run(["prisma", "migrate", "deploy"]);
+  if (retry.status !== 0) process.exit(retry.status ?? 1);
 }
 
 for (const args of [["prisma", "generate"], ["next", "build"]]) {

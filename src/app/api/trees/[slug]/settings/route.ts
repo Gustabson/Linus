@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, uniqueSlug, parseBody, safeString } from "@/lib/api-helpers";
-import type { TreeVisibility, ContentType } from "@prisma/client";
+import { getSession, unauthorized, uniqueSlug, parseBody, rejectCrossOrigin, safeString } from "@/lib/api-helpers";
+import type { TreeVisibility } from "@prisma/client";
 
-const VALID_TYPES:        ContentType[]    = ["KERNEL", "MODULE", "RESOURCE"];
 const VALID_VISIBILITIES: TreeVisibility[] = ["PUBLIC", "UNLISTED", "PRIVATE"];
 
 const TITLE_MAX       = 120;
@@ -11,9 +10,11 @@ const DESCRIPTION_MAX = 1000;
 
 // ── DELETE — permanently removes a tree ──────────────────────────────────────
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 
@@ -44,6 +45,8 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 
@@ -62,7 +65,6 @@ export async function PATCH(
       ? null
       : safeString(body.description, DESCRIPTION_MAX);
   const visibility = body.visibility as TreeVisibility | undefined;
-  const contentType = body.contentType as ContentType | undefined;
 
   if (body.title !== undefined && !title)
     return NextResponse.json({ error: `Título inválido (máximo ${TITLE_MAX})` }, { status: 400 });
@@ -70,8 +72,8 @@ export async function PATCH(
     return NextResponse.json({ error: `Descripción inválida (máximo ${DESCRIPTION_MAX})` }, { status: 400 });
   if (visibility != null && !VALID_VISIBILITIES.includes(visibility))
     return NextResponse.json({ error: "Visibilidad inválida" }, { status: 400 });
-  if (contentType != null && !VALID_TYPES.includes(contentType))
-    return NextResponse.json({ error: "Tipo de contenido inválido" }, { status: 400 });
+  if (body.contentType !== undefined)
+    return NextResponse.json({ error: "No se puede cambiar el tipo de contenido" }, { status: 400 });
   if (body.archived !== undefined && typeof body.archived !== "boolean")
     return NextResponse.json({ error: "Valor de archivo inválido" }, { status: 400 });
 
@@ -98,7 +100,6 @@ export async function PATCH(
       title:       title ?? tree.title,
       description: description !== undefined ? description : tree.description,
       visibility:  visibility  ?? tree.visibility,
-      contentType: contentType ?? tree.contentType,
       slug:        newSlug,
     },
   });

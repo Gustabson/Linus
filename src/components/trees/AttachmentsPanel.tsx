@@ -5,17 +5,19 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "@/hooks/useAppRouter";
 import { FileText, GitFork, Heart, Loader2, Plus, Search, X } from "lucide-react";
-import type { ContentType } from "@prisma/client";
+import type { ContentType, ResourceKind, TreeVisibility } from "@prisma/client";
 import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 import { TreePickerModal, type TreePickerResult } from "@/components/shared/TreePickerModal";
-
-type AttachType = "MODULE" | "RESOURCE";
+import { ResourcesPanel, type AttachedResource } from "./ResourcesPanel";
 
 interface AttachedTree {
   id: string;
   slug: string;
   title: string;
+  description: string | null;
   contentType: string;
+  resourceKind: ResourceKind | null;
+  resourceUrl: string | null;
   owner: { name: string | null; username: string | null; id?: string };
   _count: { likes: number; forks: number };
 }
@@ -25,44 +27,35 @@ interface Attachment {
   content: AttachedTree;
 }
 
-const META: Record<AttachType, {
+const MODULE_META: {
   label: string;
   plural: string;
   emptyText: string;
   hint: string;
   placeholder: string;
-}> = {
-  MODULE: {
-    label: "Módulo",
-    plural: "Módulos",
-    emptyText: "No hay módulos adjuntos.",
-    hint: "Creá una unidad didáctica o adjuntá una existente.",
-    placeholder: "Ej: Unidad de Fracciones — 4to grado",
-  },
-  RESOURCE: {
-    label: "Recurso",
-    plural: "Recursos",
-    emptyText: "No hay recursos adjuntos.",
-    hint: "Creá un material complementario o adjuntá uno existente.",
-    placeholder: "Ej: Guía de ejercicios de fracciones",
-  },
+} = {
+  label: "Módulo",
+  plural: "Módulos",
+  emptyText: "No hay módulos adjuntos.",
+  hint: "Creá una unidad didáctica o adjuntá una existente.",
+  placeholder: "Ej: Unidad de Fracciones — 4to grado",
 };
 
 function AttachSection({
-  type,
   kernelSlug,
   kernelId,
   initialItems,
   canAdd,
+  defaultVisibility,
 }: {
-  type: AttachType;
   kernelSlug: string;
   kernelId: string;
   initialItems: Attachment[];
   canAdd: boolean;
+  defaultVisibility: TreeVisibility;
 }) {
-  const meta = META[type];
-  const style = CONTENT_TYPE_STYLE[type];
+  const meta = MODULE_META;
+  const style = CONTENT_TYPE_STYLE.MODULE;
   const router = useRouter();
   const { data: session } = useSession();
   const [items, setItems] = useState(initialItems);
@@ -82,7 +75,7 @@ function AttachSection({
     const treeResponse = await fetch("/api/trees", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: createTitle.trim(), contentType: type, visibility: "PUBLIC" }),
+      body: JSON.stringify({ title: createTitle.trim(), contentType: "MODULE", visibility: defaultVisibility }),
     });
     const tree = await treeResponse.json().catch(() => ({}));
     if (!treeResponse.ok) {
@@ -219,7 +212,7 @@ function AttachSection({
         open={showPicker}
         onClose={() => setShowPicker(false)}
         onSelect={(tree) => void attach(tree)}
-        allowedTypes={[type]}
+        allowedTypes={["MODULE"]}
         excludeTreeId={kernelId}
         allowPrivate
         title={`Adjuntar ${meta.label.toLowerCase()}`}
@@ -234,23 +227,25 @@ export function AttachmentsPanel({
   kernelId,
   initialAttachments,
   isOwner,
-  isKernel,
+  containerType,
+  containerVisibility,
 }: {
   kernelSlug: string;
   kernelId: string;
-  ownerUsername: string;
   initialAttachments: Attachment[];
   isOwner: boolean;
-  isKernel: boolean;
+  containerType: "KERNEL" | "MODULE";
+  containerVisibility: TreeVisibility;
 }) {
   const modules = initialAttachments.filter((item) => item.content.contentType === "MODULE");
-  const resources = initialAttachments.filter((item) => item.content.contentType === "RESOURCE");
-  const canAdd = isKernel && isOwner;
+  const resources = initialAttachments.filter((item) => item.content.contentType === "RESOURCE") as AttachedResource[];
 
   return (
     <div className="space-y-8">
-      <AttachSection type="MODULE" kernelSlug={kernelSlug} kernelId={kernelId} initialItems={modules} canAdd={canAdd} />
-      <AttachSection type="RESOURCE" kernelSlug={kernelSlug} kernelId={kernelId} initialItems={resources} canAdd={canAdd} />
+      {containerType === "KERNEL" && (
+        <AttachSection kernelSlug={kernelSlug} kernelId={kernelId} initialItems={modules} canAdd={isOwner} defaultVisibility={containerVisibility} />
+      )}
+      <ResourcesPanel containerSlug={kernelSlug} containerId={kernelId} initialItems={resources} isOwner={isOwner} defaultVisibility={containerVisibility} />
     </div>
   );
 }

@@ -23,7 +23,6 @@ export function hasExpectedFileSignature(ext: string, bytes: Uint8Array) {
       const archiveText = new TextDecoder("latin1").decode(bytes);
       return archiveText.includes("[Content_Types].xml") && archiveText.includes("ppt/");
     }
-    case "zip": return bytes[0] === 0x50 && bytes[1] === 0x4b;
     case "txt":
     case "csv": return true;
     default: return false;

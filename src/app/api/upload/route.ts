@@ -15,7 +15,7 @@ const MAX_SIZE_MB = 10;
 
 const ALLOWED_EXTENSIONS = new Set([
   "jpg", "jpeg", "png", "gif", "webp",
-  "pdf", "mp4", "webm", "zip", "txt", "csv", "docx", "pptx",
+  "pdf", "mp4", "webm", "txt", "csv", "docx", "pptx",
 ]);
 
 const COMMENT_EXTENSIONS = new Set([
@@ -27,7 +27,6 @@ const EXT_TO_MIME: Record<string, string> = {
   gif: "image/gif", webp: "image/webp",
   pdf: "application/pdf",
   mp4: "video/mp4", webm: "video/webm",
-  zip: "application/zip",
   txt: "text/plain", csv: "text/csv",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",

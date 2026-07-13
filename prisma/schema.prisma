@@ -99,7 +99,6 @@ model User {
   proposalMessages      ProposalMessage[]
   publications          TreePublication[]
   likes                 TreeLike[]
-  extensions            TreeExtension[]
   comments              DocumentComment[]
   addedAttachments      TreeAttachment[]  @relation("AttachmentAddedBy")
   followers             UserFollow[]      @relation("Following")
@@ -129,17 +128,29 @@ enum ContentType {
   RESOURCE
 }
 
+enum ResourceKind {
+  EDITOR
+  LINK
+  APP
+  IMAGE
+  VIDEO
+  FILE
+  REFERENCE
+}
+
 model DocumentTree {
-  id          String         @id @default(cuid())
-  slug        String         @unique
-  title       String
-  description String?
-  language    String         @default("es")
-  visibility  TreeVisibility @default(PUBLIC)
-  contentType ContentType    @default(KERNEL)
-  forkDepth   Int            @default(0)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id           String         @id @default(cuid())
+  slug         String         @unique
+  title        String
+  description  String?
+  language     String         @default("es")
+  visibility   TreeVisibility @default(PUBLIC)
+  contentType  ContentType    @default(KERNEL)
+  resourceKind ResourceKind?
+  resourceUrl  String?
+  forkDepth    Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   publishedAt DateTime?
 
@@ -155,12 +166,12 @@ model DocumentTree {
   proposalsFrom ChangeProposal[]  @relation("SourceTree")
   proposalsTo   ChangeProposal[]  @relation("TargetTree")
   likes         TreeLike[]
-  extensions    TreeExtension[]
   publications  TreePublication[]
 
-  // Modules/Resources attached to this kernel
+  // Child modules/resources attached to this kernel or module.
+  // The legacy field name kernelId is kept in TreeAttachment for compatibility.
   attachments  TreeAttachment[] @relation("KernelAttachments")
-  // Kernels this module/resource is attached to
+  // Kernels/modules this module or resource is attached to.
   attachedTo   TreeAttachment[] @relation("AttachedContent")
   // Social posts that share/reference this tree
   posts        Post[]
@@ -170,6 +181,7 @@ model DocumentTree {
   @@index([ownerId])
   @@index([parentTreeId])
   @@index([contentType])
+  @@index([contentType, resourceKind])
   @@index([visibility])
   @@index([visibility, contentType])
   @@index([ownerId, updatedAt])
@@ -322,15 +334,15 @@ enum ProposalStatus {
 }
 
 model ChangeProposal {
-  id                  String         @id @default(cuid())
-  title               String
-  description         String?
-  status              ProposalStatus @default(OPEN)
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @default(now())
-  reviewedAt          DateTime?
-  authorUnread    Boolean @default(false)
-  recipientUnread Boolean @default(true)
+  id              String         @id @default(cuid())
+  title           String
+  description     String?
+  status          ProposalStatus @default(OPEN)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @default(now())
+  reviewedAt      DateTime?
+  authorUnread    Boolean        @default(false)
+  recipientUnread Boolean        @default(true)
 
   // Kept nullable so historical pull-request proposals remain readable.
   sourceTreeId String?
@@ -452,37 +464,6 @@ model Notification {
 
   @@index([recipientId, read])
   @@index([recipientId, createdAt])
-}
-
-// ─── EXTENSIONS (links, apps, images attached to a tree) ─────────────────────
-
-enum ExtensionType {
-  LINK
-  APP
-  IMAGE
-  VIDEO
-  FILE
-  TOOL
-}
-
-model TreeExtension {
-  id          String        @id @default(cuid())
-  type        ExtensionType
-  title       String
-  description String?
-  url         String?
-  imageUrl    String?
-  isPinned    Boolean       @default(false)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  treeId String
-  tree   DocumentTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
-
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id])
-
-  @@index([treeId])
 }
 
 // ─── SOCIAL POSTS ─────────────────────────────────────────────────────────────

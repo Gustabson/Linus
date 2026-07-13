@@ -37,12 +37,6 @@ export default function TreeLoading() {
         <div className="h-5 w-40 bg-border-subtle rounded" />
         <div className="h-16 bg-bg rounded-xl border border-border-subtle" />
       </div>
-
-      {/* Extensions skeleton */}
-      <div className="bg-surface rounded-2xl border border-border p-6 space-y-3">
-        <div className="h-5 w-32 bg-border-subtle rounded" />
-        <div className="h-20 bg-bg rounded-xl border border-border-subtle" />
-      </div>
     </div>
   );
 }

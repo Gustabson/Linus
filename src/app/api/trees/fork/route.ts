@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSession, unauthorized, uniqueSlug, isUniqueViolation } from "@/lib/api-helpers";
+import { getSession, unauthorized, uniqueSlug, isUniqueViolation, parseBody, rejectCrossOrigin, safeString } from "@/lib/api-helpers";
 import { copySectionFields } from "@/lib/sections";
 import { createNotification } from "@/lib/notifications";
+import { canAttachTree } from "@/lib/tree-hierarchy";
 
 export async function POST(req: NextRequest) {
+  const crossOrigin = rejectCrossOrigin(req);
+  if (crossOrigin) return crossOrigin;
   const session = await getSession();
   if (!session) return unauthorized();
 
-  const body = await req.json().catch(() => null);
+  const body = await parseBody(req, 4_000);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
 
-  const { treeId, targetKernelId } = body;
+  const treeId = safeString(body.treeId, 100);
+  const targetKernelId = body.targetKernelId == null ? null : safeString(body.targetKernelId, 100);
   if (!treeId) return NextResponse.json({ error: "treeId requerido" }, { status: 400 });
+  if (body.targetKernelId != null && !targetKernelId)
+    return NextResponse.json({ error: "Destino inválido" }, { status: 400 });
 
   const source = await prisma.documentTree.findUnique({
     where: { id: treeId },
@@ -34,6 +40,13 @@ export async function POST(req: NextRequest) {
   if (!source || source.visibility === "PRIVATE")
     return NextResponse.json({ error: "Contenido no encontrado" }, { status: 404 });
 
+  if (source.contentType === "RESOURCE" && source.resourceKind !== "EDITOR") {
+    return NextResponse.json(
+      { error: "Los recursos externos se adjuntan directamente y no se pueden forkear." },
+      { status: 400 }
+    );
+  }
+
   // Forks are only 1 level deep: originals can be forked, forks cannot.
   // This keeps the graph flat and queries simple.
   if (source.forkDepth > 0)
@@ -43,12 +56,13 @@ export async function POST(req: NextRequest) {
     );
 
   if (targetKernelId) {
-    const targetKernel = await prisma.documentTree.findUnique({
+    const targetContainer = await prisma.documentTree.findUnique({
       where:  { id: targetKernelId },
       select: { ownerId: true, contentType: true },
     });
-    if (!targetKernel || targetKernel.ownerId !== session.user.id || targetKernel.contentType !== "KERNEL")
-      return NextResponse.json({ error: "Kernel destino inválido" }, { status: 400 });
+    if (!targetContainer || targetContainer.ownerId !== session.user.id ||
+        !canAttachTree(targetContainer.contentType, source.contentType))
+      return NextResponse.json({ error: "Destino inválido para este contenido" }, { status: 400 });
   }
 
   const forkTitle = `${source.title} fork ${session.user.name ?? "user"}`;
@@ -68,6 +82,8 @@ export async function POST(req: NextRequest) {
             language:     source.language,
             visibility:   "PUBLIC",
             contentType:  source.contentType,
+            resourceKind: source.resourceKind,
+            resourceUrl:  source.resourceUrl,
             forkDepth:    source.forkDepth + 1,
             ownerId:      session.user.id,
             parentTreeId: source.id,
@@ -117,7 +133,7 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Auto-attach if forking a MODULE/RESOURCE into a chosen kernel
+        // Auto-attach into a valid kernel/module chosen above.
         if (targetKernelId && source.contentType !== "KERNEL") {
           await tx.treeAttachment.upsert({
             where:  { kernelId_contentId: { kernelId: targetKernelId, contentId: tree.id } },

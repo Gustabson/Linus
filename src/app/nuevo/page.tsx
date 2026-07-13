@@ -28,7 +28,7 @@ export default async function NuevoPage({
           {defaultType === "MODULE"
             ? "Un módulo es una unidad didáctica completa con secciones, igual que un kernel."
             : defaultType === "RESOURCE"
-            ? "Un recurso es material de apoyo educativo con su propio editor."
+            ? "Un recurso puede ser editable o enlazar una app, video, archivo, sitio o referencia."
             : "Tu propio espacio educativo. Podés llenarlo poco a poco."}
         </p>
       </div>
