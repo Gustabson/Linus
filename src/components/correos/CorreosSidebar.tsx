@@ -26,8 +26,8 @@ export function CorreosSidebar({ unreadCount }: Props) {
   return (
     <>
       {/* ── Desktop: vertical sidebar ───────────────────────────────────── */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-surface md:flex">
-        <div className="flex items-center gap-2 px-5 pb-1 pt-5">
+      <aside className="hidden w-48 shrink-0 flex-col border-r border-border bg-surface md:flex">
+        <div className="flex items-center gap-2 px-4 pb-1 pt-4">
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary"><Mail className="h-4 w-4" /></span>
           <div>
             <p className="text-sm font-bold text-text">Correos</p>
@@ -36,7 +36,7 @@ export function CorreosSidebar({ unreadCount }: Props) {
         </div>
 
         {/* Redactar */}
-        <div className="p-4">
+        <div className="p-3.5">
           <Link
             href="/correos/redactar"
             className={`w-full flex items-center justify-center gap-2 font-semibold text-sm px-4 py-2.5 rounded-2xl shadow-sm transition-colors ${
@@ -73,9 +73,6 @@ export function CorreosSidebar({ unreadCount }: Props) {
           ))}
         </nav>
 
-        <p className="mx-4 mb-4 border-t border-border-subtle pt-4 text-[11px] leading-relaxed text-text-subtle">
-          Solo vos y la otra persona pueden ver estos mensajes.
-        </p>
       </aside>
 
       {/* Mobile: no bar — navigation handled by BottomNav modal */}
