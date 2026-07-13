@@ -1,183 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized, parseBody } from "@/lib/api-helpers";
-import { createNotification } from "@/lib/notifications";
-import { copySectionFields } from "@/lib/sections";
 
 type Params = { params: Promise<{ id: string }> };
-class ProposalConflict extends Error {}
 
-// GET /api/proposals/[id] — full detail with docs from both trees
-export async function GET(_req: NextRequest, { params }: Params) {
-  const session = await getSession();
-  if (!session) return unauthorized();
-
-  const { id } = await params;
+async function getParticipant(id: string, userId: string) {
   const proposal = await prisma.changeProposal.findUnique({
-    where:   { id },
-    include: {
-      sourceTree: {
-        select: { slug: true, title: true, ownerId: true },
-      },
-      targetTree: {
-        select: { slug: true, title: true, ownerId: true },
-      },
-      author:   { select: { name: true, username: true, image: true } },
-      reviewer: { select: { name: true, username: true } },
-    },
+    where: { id },
+    select: { authorId: true, targetTree: { select: { ownerId: true } } },
   });
-
-  if (!proposal) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
-
-  const userId = session.user.id;
-  const isAuthor   = proposal.authorId === userId;
-  const isReviewer = proposal.targetTree.ownerId === userId;
-  if (!isAuthor && !isReviewer)
-    return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
-
-  // Fetch documents from both trees (latest version + sections)
-  const docSelect = {
-    select: {
-      id: true, slug: true, title: true,
-      versions: {
-        orderBy: { createdAt: "desc" as const },
-        take: 1,
-        include: { sections: { orderBy: { sectionOrder: "asc" as const } } },
-      },
-    },
-  };
-
-  const [sourceDocs, targetDocs] = await Promise.all([
-    prisma.document.findMany({ where: { treeId: proposal.sourceTreeId }, ...docSelect }),
-    prisma.document.findMany({ where: { treeId: proposal.targetTreeId }, ...docSelect }),
-  ]);
-
-  return NextResponse.json({ proposal, sourceDocs, targetDocs });
+  if (!proposal) return null;
+  if (proposal.authorId !== userId && proposal.targetTree.ownerId !== userId) return null;
+  return proposal;
 }
 
-// PATCH /api/proposals/[id] — accept | reject | withdraw
+// PATCH /api/proposals/[id] — mark a private conversation as read.
 export async function PATCH(req: NextRequest, { params }: Params) {
   const session = await getSession();
   if (!session) return unauthorized();
-
   const { id } = await params;
   const body = await parseBody(req);
-  if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
-  const action = body.action;
-  if (action !== "accept" && action !== "reject" && action !== "withdraw")
+  if (!body || body.action !== "read") {
     return NextResponse.json({ error: "Acción inválida" }, { status: 400 });
+  }
 
-  const proposal = await prisma.changeProposal.findUnique({
-    where:   { id },
-    include: {
-      targetTree: { select: { ownerId: true, slug: true } },
-      sourceTree: { select: { ownerId: true, slug: true } },
-    },
-  });
+  const proposal = await getParticipant(id, session.user.id);
   if (!proposal) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
-  if (proposal.status !== "OPEN")
-    return NextResponse.json({ error: "La propuesta ya fue resuelta" }, { status: 409 });
 
-  const userId      = session.user.id;
-  const isAuthor    = proposal.authorId === userId;
-  const isTargetOwner = proposal.targetTree.ownerId === userId;
+  await prisma.changeProposal.update({
+    where: { id },
+    data: proposal.authorId === session.user.id
+      ? { authorUnread: false }
+      : { recipientUnread: false },
+  });
 
-  if (action === "withdraw") {
-    if (!isAuthor) return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
-    const updated = await prisma.changeProposal.updateMany({
-      where: { id, status: "OPEN" },
-      data:  { status: "WITHDRAWN", reviewedAt: new Date(), reviewerId: userId },
-    });
-    if (updated.count !== 1) return NextResponse.json({ error: "La propuesta ya fue resuelta" }, { status: 409 });
-    return NextResponse.json({ ok: true, status: "WITHDRAWN" });
-  }
-
-  if (action === "reject") {
-    if (!isTargetOwner) return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
-    const updated = await prisma.changeProposal.updateMany({
-      where: { id, status: "OPEN" },
-      data:  { status: "REJECTED", reviewedAt: new Date(), reviewerId: userId },
-    });
-    if (updated.count !== 1) return NextResponse.json({ error: "La propuesta ya fue resuelta" }, { status: 409 });
-    try {
-      await createNotification({
-        type: "PROPOSAL_REVIEWED", recipientId: proposal.authorId,
-        actorId: userId, link: `/propuestas/${id}`,
-      });
-    } catch (error) {
-      console.error("Failed to create proposal review notification", error);
-    }
-    return NextResponse.json({ ok: true, status: "REJECTED" });
-  }
-
-  if (action === "accept") {
-    if (!isTargetOwner) return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
-
-    // Fetch source + target docs for merge
-    const docSelect = {
-      include: {
-        versions: {
-          orderBy: { createdAt: "desc" as const },
-          take: 1,
-          include: { sections: { orderBy: { sectionOrder: "asc" as const } } },
-        },
-      },
-    };
-    const [sourceDocs, targetDocs] = await Promise.all([
-      prisma.document.findMany({ where: { treeId: proposal.sourceTreeId }, ...docSelect }),
-      prisma.document.findMany({ where: { treeId: proposal.targetTreeId }, ...docSelect }),
-    ]);
-
-    // Merge: for each source doc, find matching target doc by slug and commit new version
-    try {
-      await prisma.$transaction(async (tx) => {
-      const claimed = await tx.changeProposal.updateMany({
-        where: { id, status: "OPEN" },
-        data: { status: "ACCEPTED", reviewedAt: new Date(), reviewerId: userId },
-      });
-      if (claimed.count !== 1) throw new ProposalConflict();
-      for (const sourceDoc of sourceDocs) {
-        const sourceVersion = sourceDoc.versions[0];
-        if (!sourceVersion) continue;
-
-        const targetDoc = targetDocs.find((d) => d.slug === sourceDoc.slug);
-        if (!targetDoc) continue; // doc doesn't exist in target, skip
-
-        const targetVersion = targetDoc.versions[0];
-        const newVersion = await tx.documentVersion.create({
-          data: {
-            documentId:    targetDoc.id,
-            authorId:      userId,
-            commitMessage: `Merge de propuesta: ${proposal.title}`,
-            parentVersionId: targetVersion?.id ?? null,
-            sections: {
-              create: sourceVersion.sections.map(copySectionFields),
-            },
-          },
-        });
-        await tx.document.update({
-          where: { id: targetDoc.id },
-          data:  { currentVersionId: newVersion.id },
-        });
-      }
-
-      });
-    } catch (error) {
-      if (error instanceof ProposalConflict)
-        return NextResponse.json({ error: "La propuesta ya fue resuelta" }, { status: 409 });
-      throw error;
-    }
-
-    try {
-      await createNotification({
-        type: "PROPOSAL_REVIEWED", recipientId: proposal.authorId,
-        actorId: userId, link: `/propuestas/${id}`,
-      });
-    } catch (error) {
-      console.error("Failed to create proposal review notification", error);
-    }
-    return NextResponse.json({ ok: true, status: "ACCEPTED" });
-  }
-
-  return NextResponse.json({ error: "Acción inválida" }, { status: 400 });
+  return NextResponse.json({ ok: true });
 }

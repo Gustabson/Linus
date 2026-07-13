@@ -588,7 +588,7 @@ export function DocumentWorkspace({
           <section className={styles.inspectorSection}><p>Contenido</p><strong>{wordCount.toLocaleString("es-AR")} palabras · {editorPageCount} {editorPageCount === 1 ? "página" : "páginas"}</strong></section>
           <section className={styles.inspectorSection}><p>Estado</p><strong className={styles.statusLine}><CheckCircle2 size={16} /> {!isPublished || visibility === "PRIVATE" ? "Borrador privado" : "Publicado"}</strong></section>
           <section className={`${styles.inspectorSection} ${styles.commentsInspector}`}>
-            <DocumentComments docId={docId} isAuthenticated={isAuthenticated} currentUserId={currentUserId} inspector />
+            <DocumentComments docId={docId} isAuthenticated={isAuthenticated} currentUserId={currentUserId} isOwner={isOwner} inspector />
           </section>
         </aside>
       </div>

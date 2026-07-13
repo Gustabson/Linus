@@ -14,15 +14,26 @@ const TYPE_FILTERS: Array<{ value: "ALL" | ContentType; label: string }> = [
   { value: "MODULE", label: "Módulos" },
   { value: "RESOURCE", label: "Recursos" },
 ];
+const ALL_CONTENT_TYPES: ContentType[] = ["KERNEL", "MODULE", "RESOURCE"];
 
 export function TreePickerModal({
   open,
   onClose,
   onSelect,
+  allowedTypes = ALL_CONTENT_TYPES,
+  excludeTreeId,
+  allowPrivate = false,
+  title = "Adjuntar contenido educativo",
+  description = "Elegí un kernel, módulo o recurso para mostrarlo como tarjeta.",
 }: {
   open: boolean;
   onClose: () => void;
   onSelect: (tree: TreePickerResult) => void;
+  allowedTypes?: ContentType[];
+  excludeTreeId?: string;
+  allowPrivate?: boolean;
+  title?: string;
+  description?: string;
 }) {
   const [scope, setScope] = useState<"mine" | "global">("mine");
   const [type, setType] = useState<"ALL" | ContentType>("ALL");
@@ -30,6 +41,15 @@ export function TreePickerModal({
   const [results, setResults] = useState<TreePickerResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const allowedTypesKey = allowedTypes.join(",");
+  const availableFilters = TYPE_FILTERS.filter((filter) =>
+    filter.value === "ALL" || allowedTypes.includes(filter.value)
+  );
+
+  useEffect(() => {
+    if (allowedTypes.length === 1) setType(allowedTypes[0]);
+    else if (type !== "ALL" && !allowedTypes.includes(type)) setType("ALL");
+  }, [allowedTypesKey, type]);
 
   useEffect(() => {
     if (!open) return;
@@ -39,9 +59,10 @@ export function TreePickerModal({
       setError("");
       const params = new URLSearchParams({
         scope,
-        types: type === "ALL" ? "KERNEL,MODULE,RESOURCE" : type,
+        types: type === "ALL" ? allowedTypes.join(",") : type,
         limit: "20",
       });
+      if (excludeTreeId) params.set("exclude", excludeTreeId);
       if (query.trim()) params.set("q", query.trim());
 
       try {
@@ -66,7 +87,7 @@ export function TreePickerModal({
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [open, query, scope, type]);
+  }, [allowedTypesKey, excludeTreeId, open, query, scope, type]);
 
   useEffect(() => {
     if (!open) return;
@@ -95,8 +116,8 @@ export function TreePickerModal({
       >
         <header className="flex items-start justify-between gap-4 border-b border-border-subtle px-5 py-4">
           <div>
-            <h2 id="tree-picker-title" className="text-base font-bold text-text">Adjuntar contenido educativo</h2>
-            <p className="mt-0.5 text-xs text-text-muted">Elegí un kernel, módulo o recurso para mostrarlo como tarjeta.</p>
+            <h2 id="tree-picker-title" className="text-base font-bold text-text">{title}</h2>
+            <p className="mt-0.5 text-xs text-text-muted">{description}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Cerrar selector" className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-text-subtle hover:bg-bg hover:text-text">
             <X className="h-4 w-4" />
@@ -123,8 +144,8 @@ export function TreePickerModal({
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-1.5" aria-label="Filtrar por tipo">
-            {TYPE_FILTERS.map((filter) => (
+          {allowedTypes.length > 1 && <div className="flex flex-wrap gap-1.5" aria-label="Filtrar por tipo">
+            {availableFilters.map((filter) => (
               <button
                 key={filter.value}
                 type="button"
@@ -135,7 +156,7 @@ export function TreePickerModal({
                 {filter.label}
               </button>
             ))}
-          </div>
+          </div>}
 
           <label className="flex items-center gap-2 rounded-xl border border-border bg-bg px-3 focus-within:border-primary/40">
             <Search className="h-4 w-4 shrink-0 text-text-subtle" />
@@ -175,6 +196,7 @@ export function TreePickerModal({
               {results.map((tree) => {
                 const style = CONTENT_TYPE_STYLE[tree.contentType];
                 const isPrivate = tree.visibility === "PRIVATE";
+                const privateBlocked = isPrivate && !allowPrivate;
                 const ownerIdentity = [
                   tree.owner.name,
                   tree.owner.username ? `@${tree.owner.username}` : null,
@@ -183,7 +205,7 @@ export function TreePickerModal({
                   <button
                     key={tree.id}
                     type="button"
-                    disabled={isPrivate}
+                    disabled={privateBlocked}
                     onClick={() => onSelect(tree)}
                     className="group flex w-full items-start gap-3 rounded-xl border border-border-subtle p-3 text-left transition-colors hover:border-primary/25 hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-55"
                   >
@@ -195,7 +217,7 @@ export function TreePickerModal({
                       </span>
                       <span className="mt-1 block truncate text-sm font-bold text-text transition-colors group-hover:text-primary">{tree.title}</span>
                       <span className="mt-0.5 block truncate text-xs text-text-muted">
-                        {isPrivate ? "Cambiá la visibilidad para poder compartirlo" : ownerIdentity || "Usuario"}
+                        {privateBlocked ? "Cambiá la visibilidad para poder compartirlo" : ownerIdentity || "Usuario"}
                       </span>
                     </span>
                   </button>

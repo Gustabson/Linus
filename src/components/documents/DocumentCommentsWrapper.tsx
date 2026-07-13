@@ -53,6 +53,7 @@ export function DocumentCommentsWrapper({
           docId={docId}
           isAuthenticated={isAuthenticated}
           currentUserId={currentUserId}
+          isOwner={isOwner}
           prefilledQuote={pendingQuote}
           onQuoteUsed={() => setPendingQuote(null)}
         />

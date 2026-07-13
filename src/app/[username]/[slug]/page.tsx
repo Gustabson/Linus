@@ -3,7 +3,7 @@ import { USER_BASIC_SELECT } from "@/lib/data";
 import { auth } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
 import { formatDate } from "@/lib/utils";
-import { GitFork, BookOpen, ChevronRight, Settings, GitPullRequest, Eye } from "lucide-react";
+import { GitFork, BookOpen, ChevronRight, Settings, Eye, MessageSquare } from "lucide-react";
 import { CONTENT_TYPE_STYLE, KERNEL_NEW_DOC_LABEL } from "@/lib/constants";
 import { TreePublishButton } from "@/components/trees/TreePublishButton";
 import Link from "next/link";
@@ -13,7 +13,6 @@ import { LikeButton } from "@/components/trees/LikeButton";
 import { ExtensionsPanel } from "@/components/trees/ExtensionsPanel";
 import { ForkTree } from "@/components/trees/ForkTree";
 import { AttachmentsPanel } from "@/components/trees/AttachmentsPanel";
-import { CreateProposalButton } from "@/components/proposals/CreateProposalButton";
 import { QuickAddDocument } from "@/components/trees/QuickAddDocument";
 
 import { BackButton } from "@/components/shared/BackButton";
@@ -106,6 +105,7 @@ export default async function TreePage({
         include: { author: { select: { name: true, image: true } } },
       },
       attachments: {
+        where: isOwner ? undefined : { content: { visibility: { not: "PRIVATE" } } },
         orderBy: { addedAt: "asc" },
         include: {
           content: {
@@ -141,24 +141,11 @@ export default async function TreePage({
 
   const style = CONTENT_TYPE_STYLE[tree.contentType];
 
-  const [userLiked, openProposalsCount, userHasOpenProposal] = await Promise.all([
-    session?.user?.id
-      ? prisma.treeLike.findUnique({
-          where: { treeId_userId: { treeId: tree.id, userId: session.user.id } },
-        }).then(Boolean)
-      : Promise.resolve(false),
-    isOwner
-      ? prisma.changeProposal.count({ where: { targetTreeId: tree.id, status: "OPEN" } })
-      : Promise.resolve(0),
-    // Does this user already have an open proposal for this tree (from their fork)?
-    session?.user?.id && !isOwner && tree.parentTree === null
-      ? Promise.resolve(false) // not a fork page visitor case
-      : session?.user?.id && tree.parentTreeId
-        ? prisma.changeProposal.findFirst({
-            where: { sourceTreeId: tree.id, authorId: session.user.id, status: "OPEN" },
-          }).then(Boolean)
-        : Promise.resolve(false),
-  ]);
+  const userLiked = session?.user?.id
+    ? await prisma.treeLike.findUnique({
+        where: { treeId_userId: { treeId: tree.id, userId: session.user.id } },
+      }).then(Boolean)
+    : false;
 
   // Build ancestor chain — collect all ancestor IDs first, then batch query.
   // (was sequential N+1 — each ancestor blocked on the previous)
@@ -277,25 +264,11 @@ export default async function TreePage({
             {!isOwner && session && (
               <ForkButton treeId={tree.id} treeTitle={tree.title} contentType={tree.contentType} />
             )}
-            {/* "Proponer cambios" — only on owned forks, only if no open proposal exists */}
-            {isOwner && tree.parentTreeId && !userHasOpenProposal && (
-              <CreateProposalButton
-                sourceTreeId={tree.id}
-                parentTreeTitle={tree.parentTree?.title ?? "el original"}
-              />
-            )}
-            {isOwner && tree.parentTreeId && userHasOpenProposal && (
-              <Link href="/propuestas?tab=enviadas"
-                className="flex items-center gap-1.5 text-sm text-primary border border-primary/20 bg-primary/5 px-3 py-2 rounded-xl hover:bg-primary/10 transition-colors">
-                <GitPullRequest className="w-4 h-4" />
-                Propuesta abierta
-              </Link>
-            )}
-            {isOwner && !tree.parentTreeId && openProposalsCount > 0 && (
-              <Link href="/propuestas"
-                className="flex items-center gap-2 text-sm text-primary border border-primary/20 bg-primary/5 px-3 py-2 rounded-xl hover:bg-primary/10 transition-colors">
-                <GitPullRequest className="w-4 h-4" />
-                {openProposalsCount} propuesta{openProposalsCount !== 1 ? "s" : ""}
+            {!isOwner && session && tree.documents[0] && (
+              <Link href={`/${username}/${slug}/${tree.documents[0].slug}`}
+                className="flex items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10">
+                <MessageSquare className="h-4 w-4" />
+                Comentar o proponer
               </Link>
             )}
             {/* Preview — always visible for kernels (shows full read-only view) */}

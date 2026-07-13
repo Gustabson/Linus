@@ -1,21 +1,26 @@
 import { auth } from "@/lib/auth";
 import { LoginRequired } from "@/components/shared/LoginRequired";
 import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { GitPullRequest, Send, Clock, CheckCircle, XCircle, MinusCircle } from "lucide-react";
+import { Inbox, Send, LockKeyhole, MessageSquareText } from "lucide-react";
 import { formatDate } from "@/lib/utils";
-import type { ProposalStatus } from "@prisma/client";
+import { CONTENT_TYPE_STYLE } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_META: Record<ProposalStatus, { label: string; cls: string; icon: React.ReactNode }> = {
-  OPEN:      { label: "Abierta",  cls: "bg-blue-50 text-blue-700",   icon: <Clock       className="w-3.5 h-3.5" /> },
-  ACCEPTED:  { label: "Aceptada", cls: "bg-primary/5 text-primary", icon: <CheckCircle className="w-3.5 h-3.5" /> },
-  REJECTED:  { label: "Rechazada",cls: "bg-red-50 text-red-600",     icon: <XCircle     className="w-3.5 h-3.5" /> },
-  WITHDRAWN: { label: "Retirada", cls: "bg-border-subtle text-text-muted",  icon: <MinusCircle className="w-3.5 h-3.5" /> },
-};
+const includeConversation = {
+  targetTree: {
+    select: {
+      title: true,
+      contentType: true,
+      owner: { select: { id: true, name: true, username: true, image: true } },
+    },
+  },
+  targetDocument: { select: { title: true } },
+  author: { select: { id: true, name: true, username: true, image: true } },
+  _count: { select: { messages: true } },
+} as const;
 
 export default async function PropuestasPage({
   searchParams,
@@ -27,108 +32,95 @@ export default async function PropuestasPage({
 
   const { tab = "recibidas" } = await searchParams;
   const userId = session.user.id;
-
   const [received, sent] = await Promise.all([
     prisma.changeProposal.findMany({
-      where:   { targetTree: { ownerId: userId } },
-      include: {
-        sourceTree: { select: { slug: true, title: true, contentType: true } },
-        targetTree: { select: { slug: true, title: true } },
-        author:     { select: { name: true, username: true, image: true } },
-      },
-      orderBy: { createdAt: "desc" },
+      where: { targetTree: { ownerId: userId }, authorId: { not: userId } },
+      include: includeConversation,
+      orderBy: { updatedAt: "desc" },
     }),
     prisma.changeProposal.findMany({
-      where:   { authorId: userId },
-      include: {
-        sourceTree: { select: { slug: true, title: true } },
-        targetTree: { select: { slug: true, title: true } },
-        reviewer:   { select: { name: true, username: true } },
-      },
-      orderBy: { createdAt: "desc" },
+      where: { authorId: userId },
+      include: includeConversation,
+      orderBy: { updatedAt: "desc" },
     }),
   ]);
 
-  const active = tab === "enviadas" ? sent : received;
-  const openCount = received.filter((p) => p.status === "OPEN").length;
+  const isSent = tab === "enviadas";
+  const active = isSent ? sent : received;
+  const unreadCount = received.filter((item) => item.recipientUnread).length;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text flex items-center gap-2">
-          <GitPullRequest className="w-6 h-6 text-primary" />
-          Propuestas
-        </h1>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <header className="space-y-1">
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">
+          <LockKeyhole className="h-4 w-4" /> Conversaciones privadas
+        </div>
+        <h1 className="text-2xl font-bold text-text">Propuestas</h1>
+        <p className="text-sm text-text-muted">Consultas y sugerencias privadas vinculadas al contenido educativo.</p>
+      </header>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-border">
+      <nav className="grid grid-cols-2 rounded-xl border border-border bg-surface p-1" aria-label="Bandejas de propuestas">
         {[
-          { key: "recibidas", label: "Recibidas", count: received.length, badge: openCount },
-          { key: "enviadas",  label: "Enviadas",  count: sent.length,     badge: 0 },
-        ].map((t) => (
-          <Link key={t.key} href={`/propuestas?tab=${t.key}`}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              tab === t.key
-                ? "border-primary text-primary"
-                : "border-transparent text-text-muted hover:text-text"
-            }`}>
-            {t.key === "recibidas" ? <GitPullRequest className="w-4 h-4" /> : <Send className="w-4 h-4" />}
-            {t.label}
-            <span className={`text-xs px-1.5 py-0.5 rounded-full ${tab === t.key ? "bg-primary/10 text-primary" : "bg-border-subtle text-text-muted"}`}>
-              {t.count}
-            </span>
-            {t.badge > 0 && (
-              <span className="text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-full">
-                {t.badge}
-              </span>
-            )}
-          </Link>
-        ))}
-      </div>
+          { key: "recibidas", label: "Recibidas", count: received.length, icon: Inbox },
+          { key: "enviadas", label: "Enviadas", count: sent.length, icon: Send },
+        ].map((item) => {
+          const Icon = item.icon;
+          const selected = (isSent ? "enviadas" : "recibidas") === item.key;
+          return (
+            <Link
+              key={item.key}
+              href={`/propuestas?tab=${item.key}`}
+              className={`flex min-h-11 items-center justify-center gap-2 rounded-lg text-sm font-semibold transition-colors ${selected ? "bg-primary text-primary-fg shadow-sm" : "text-text-muted hover:bg-bg hover:text-text"}`}
+            >
+              <Icon className="h-4 w-4" /> {item.label}
+              <span className={`rounded-full px-1.5 py-0.5 text-[11px] ${selected ? "bg-white/15" : "bg-bg"}`}>{item.count}</span>
+              {item.key === "recibidas" && unreadCount > 0 && (
+                <span className="h-2 w-2 rounded-full bg-danger" aria-label={`${unreadCount} sin leer`} />
+              )}
+            </Link>
+          );
+        })}
+      </nav>
 
-      {/* List */}
       {active.length === 0 ? (
-        <div className="bg-surface rounded-2xl border border-dashed border-border p-12 text-center text-text-subtle">
-          <GitPullRequest className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No hay propuestas {tab === "enviadas" ? "enviadas" : "recibidas"} todavía</p>
+        <div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center">
+          <MessageSquareText className="mx-auto mb-3 h-9 w-9 text-text-subtle" />
+          <p className="font-semibold text-text">No hay propuestas {isSent ? "enviadas" : "recibidas"}</p>
+          <p className="mt-1 text-sm text-text-muted">Las conversaciones aparecerán acá cuando se inicien desde un documento.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {active.map((p) => {
-            const meta = STATUS_META[p.status];
-            const isReceived = tab === "recibidas";
-            // @ts-expect-error union type — author present on received, reviewer on sent
-            const person = isReceived ? p.author : p.reviewer;
+        <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+          {active.map((proposal, index) => {
+            const person = isSent ? proposal.targetTree.owner : proposal.author;
+            const unread = isSent ? proposal.authorUnread : proposal.recipientUnread;
+            const style = CONTENT_TYPE_STYLE[proposal.targetTree.contentType];
             return (
-              <Link key={p.id} href={`/propuestas/${p.id}`}
-                className="block bg-surface rounded-2xl border border-border hover:border-primary/30 hover:shadow-sm transition-all p-4">
-                <div className="flex items-start gap-3">
-                  {/* Avatar */}
-                  {isReceived && person?.image ? (
-                    <Image src={person.image} alt="" width={36} height={36} className="rounded-full shrink-0 mt-0.5" />
-                  ) : (
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0 mt-0.5">
-                      {(person?.name ?? "?")[0]}
-                    </div>
-                  )}
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-text truncate">{p.title}</p>
-                      <span className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium ${meta.cls}`}>
-                        {meta.icon} {meta.label}
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-text-subtle mt-1">
-                      {isReceived
-                        ? <><span className="text-primary">@{person?.username ?? person?.name}</span> quiere fusionar cambios en <span className="font-medium text-text">{p.targetTree?.title}</span></>
-                        : <>Hacia <span className="font-medium text-text">{p.targetTree?.title}</span></>
-                      }
-                    </p>
-
-                    <p className="text-xs text-text-subtle mt-0.5">{formatDate(p.createdAt)}</p>
+              <Link
+                key={proposal.id}
+                href={`/propuestas/${proposal.id}`}
+                className={`group flex gap-3 p-4 transition-colors hover:bg-bg ${index > 0 ? "border-t border-border-subtle" : ""}`}
+              >
+                {person.image ? (
+                  <Image src={person.image} alt="" width={42} height={42} className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                ) : (
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                    {(person.name ?? person.username ?? "?")[0].toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className={`truncate text-sm ${unread ? "font-extrabold text-text" : "font-semibold text-text"}`}>{proposal.title}</p>
+                    <time className="shrink-0 text-[11px] text-text-subtle">{formatDate(proposal.updatedAt)}</time>
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-text-muted">
+                    {isSent ? "Para" : "De"} {person.name ?? `@${person.username ?? "usuario"}`}
+                    {person.username ? ` · @${person.username}` : ""}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-text-subtle">
+                    <span className={`rounded-full px-2 py-0.5 font-semibold ${style.badgeCls}`}>{style.label}</span>
+                    <span className="truncate">{proposal.targetTree.title}{proposal.targetDocument ? ` · ${proposal.targetDocument.title}` : ""}</span>
+                    <span>{proposal._count.messages + 1} mensaje{proposal._count.messages === 0 ? "" : "s"}</span>
+                    {unread && <span className="rounded-full bg-primary/10 px-2 py-0.5 font-bold text-primary">Nuevo</span>}
                   </div>
                 </div>
               </Link>

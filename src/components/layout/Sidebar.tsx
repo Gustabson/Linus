@@ -6,7 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useEffect, useCallback, useState } from "react";
 import {
   BookOpen, Home, LayoutDashboard, Search, Compass,
-  Mail, Settings, LogOut, AlertCircle, GitPullRequest,
+  Mail, Settings, LogOut, AlertCircle, MessageSquareText,
 } from "lucide-react";
 import Image from "next/image";
 import { NotificationBell } from "@/components/layout/NotificationBell";
@@ -38,10 +38,12 @@ function useSidebarCounts() {
     function onCorreoRead() { fetchCounts(); }
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("correos:read", onCorreoRead);
+    window.addEventListener("proposals:read", onCorreoRead);
     return () => {
       clearInterval(id);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("correos:read", onCorreoRead);
+      window.removeEventListener("proposals:read", onCorreoRead);
     };
   }, [fetchCounts]);
 
@@ -89,7 +91,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     { href: "/dashboard",  icon: LayoutDashboard, label: "Mi espacio" },
     { href: "/explorar",   icon: Compass,         label: "Explorar"   },
     { href: "/buscar",     icon: Search,          label: "Buscar"     },
-    { href: "/propuestas", icon: GitPullRequest,  label: "Propuestas", badge: propuestas },
+    { href: "/propuestas", icon: MessageSquareText, label: "Propuestas", badge: propuestas },
     { href: "/correos",    icon: Mail,            label: "Correos",    badge: correos    },
   ];
 

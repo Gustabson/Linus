@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useCallback } from "react";
 import {
-  Home, LayoutDashboard, Mail, Search, Compass, GitPullRequest,
+  Home, LayoutDashboard, Mail, Search, Compass, MessageSquareText,
   Settings, User, Bell, X, Inbox, Send, FileText, Pencil, LogOut, Trash2,
 } from "lucide-react";
 
@@ -41,8 +41,14 @@ function useBottomBadges() {
     fetchBadges();
     const id = setInterval(fetchBadges, POLL_MS);
     function onVisible() { if (document.visibilityState === "visible") fetchBadges(); }
+    function onRead() { fetchBadges(); }
     document.addEventListener("visibilitychange", onVisible);
-    return () => { clearInterval(id); document.removeEventListener("visibilitychange", onVisible); };
+    window.addEventListener("proposals:read", onRead);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("proposals:read", onRead);
+    };
   }, [fetchBadges]);
 
   return { correos, propuestas, unreadNotifications };
@@ -218,7 +224,7 @@ export function BottomNav() {
         <ModalLink href="/dashboard"  icon={LayoutDashboard} label="Mi espacio"  onClose={() => setMiEspacioOpen(false)} />
         <ModalLink href="/explorar"   icon={Compass}         label="Explorar"    onClose={() => setMiEspacioOpen(false)} />
         <ModalLink href="/buscar"     icon={Search}          label="Buscar"      onClose={() => setMiEspacioOpen(false)} />
-        <ModalLink href="/propuestas" icon={GitPullRequest}  label="Propuestas"  badge={propuestas} onClose={() => setMiEspacioOpen(false)} />
+        <ModalLink href="/propuestas" icon={MessageSquareText} label="Propuestas" badge={propuestas} onClose={() => setMiEspacioOpen(false)} />
       </BottomModal>
 
       {/* ── Correos modal ────────────────────────────────────────────────── */}

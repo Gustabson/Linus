@@ -93,7 +93,8 @@ export async function POST(
       content,
       quotedText,
       sectionType,
-      isPrivate:   body.isPrivate === true,
+      // Private feedback is handled by proposal conversations.
+      isPrivate:   false,
     },
     include: {
       author: { select: USER_BASIC_SELECT },
@@ -101,7 +102,7 @@ export async function POST(
   });
 
   // Notify tree owner of public comments (not for own comments)
-  if (!comment.isPrivate && doc.tree.visibility === "PUBLIC" && doc.tree.ownerId !== session.user.id) {
+  if (!comment.isPrivate && doc.tree.visibility !== "PRIVATE" && doc.tree.ownerId !== session.user.id) {
     try {
       await createNotification({
         type:        "NEW_COMMENT",

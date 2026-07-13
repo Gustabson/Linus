@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { MessageSquare, Lock, X, Send, Loader2, Quote } from "lucide-react";
 import { CommentCard, type Comment } from "./CommentCard";
+import { useRouter } from "@/hooks/useAppRouter";
 
 interface DocumentCommentsProps {
   docId: string;
   isAuthenticated: boolean;
   currentUserId?: string;
+  isOwner?: boolean;
   prefilledQuote?: { text: string; sectionType: string } | null;
   onQuoteUsed?: () => void;
   inspector?: boolean;
@@ -45,14 +47,17 @@ export function DocumentComments({
   docId,
   isAuthenticated,
   currentUserId,
+  isOwner = false,
   prefilledQuote,
   onQuoteUsed,
   inspector = false,
 }: DocumentCommentsProps) {
+  const router = useRouter();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
+  const [subject, setSubject] = useState("");
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
@@ -86,22 +91,33 @@ export function DocumentComments({
     setSaving(true);
     setError("");
 
-    const res = await fetch(`/api/documents/${docId}/comments`, {
+    const privateMessage = activeQuote?.text
+      ? `Cita de ${activeQuote.sectionType || "documento"}:\n“${activeQuote.text}”\n\n${content.trim()}`
+      : content.trim();
+    const res = await fetch(isPrivate ? "/api/proposals" : `/api/documents/${docId}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content,
-        isPrivate,
-        quotedText: activeQuote?.text ?? null,
-        sectionType: activeQuote?.sectionType ?? null,
-      }),
+      body: JSON.stringify(isPrivate
+        ? { targetDocumentId: docId, title: subject, description: privateMessage }
+        : {
+            content,
+            quotedText: activeQuote?.text ?? null,
+            sectionType: activeQuote?.sectionType ?? null,
+          }),
     });
 
     if (res.ok) {
-      const newComment = await res.json();
+      const result = await res.json();
+      if (isPrivate) {
+        setSaving(false);
+        router.push(`/propuestas/${result.id}`);
+        return;
+      }
+      const newComment = result;
       setComments((prev) => [...prev, newComment]);
       setContent("");
       setIsPrivate(false);
+      setSubject("");
       setShowForm(false);
       onQuoteUsed?.();
     } else {
@@ -177,30 +193,40 @@ export function DocumentComments({
             </div>
           )}
 
+          {isPrivate && (
+            <div>
+              <label htmlFor={`proposal-subject-${docId}`} className="mb-1 block text-xs font-semibold text-text-muted">Asunto de la propuesta *</label>
+              <input
+                id={`proposal-subject-${docId}`}
+                value={subject}
+                onChange={(event) => setSubject(event.target.value)}
+                maxLength={160}
+                placeholder="Ej: Duda sobre los objetivos de aprendizaje"
+                className="w-full rounded-xl border border-border bg-bg px-3 py-2 text-sm text-text placeholder:text-text-subtle focus:border-primary/40 focus:outline-none"
+              />
+            </div>
+          )}
+
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Dejá tu corrección o comentario..."
+            placeholder={isPrivate ? "Explicá tu consulta o propuesta al autor…" : "Dejá tu corrección o comentario…"}
             rows={inspector ? 2 : 3}
             maxLength={5000}
             className={inspector ? "w-full resize-none border border-border px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary" : "w-full border border-border rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"}
           />
 
-          <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => setIsPrivate(!isPrivate)}
-              className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all ${
-                isPrivate
-                  ? "bg-gray-800 text-white border-gray-800"
-                  : "border-border text-text-muted hover:border-gray-300"
-              }`}
-            >
-              <Lock className="w-3 h-3" />
-              {isPrivate ? "Nota privada" : "Público"}
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {!isOwner ? (
+              <div className="flex rounded-lg border border-border bg-bg p-1">
+                <button type="button" onClick={() => setIsPrivate(false)} className={`rounded-md px-2.5 py-1 text-xs font-semibold ${!isPrivate ? "bg-surface text-primary shadow-sm" : "text-text-muted"}`}>Público</button>
+                <button type="button" onClick={() => setIsPrivate(true)} className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold ${isPrivate ? "bg-surface text-primary shadow-sm" : "text-text-muted"}`}>
+                  <Lock className="h-3 w-3" /> Propuesta privada
+                </button>
+              </div>
+            ) : <span className="text-xs text-text-subtle">Comentario público</span>}
 
-            <div className="flex gap-2">
+            <div className="ml-auto flex gap-2">
               <button
                 type="button"
                 onClick={() => { setShowForm(false); onQuoteUsed?.(); }}
@@ -210,11 +236,11 @@ export function DocumentComments({
               </button>
               <button
                 type="submit"
-                disabled={saving || !content.trim()}
+                disabled={saving || !content.trim() || (isPrivate && !subject.trim())}
                 className="flex items-center gap-1.5 text-sm bg-primary text-white px-4 py-1.5 rounded-lg hover:bg-primary-h disabled:opacity-50"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                Enviar
+                {isPrivate ? "Enviar propuesta" : "Publicar"}
               </button>
             </div>
           </div>
@@ -223,11 +249,11 @@ export function DocumentComments({
 
       {error && <p className="text-xs text-red-600" role="alert">{error}</p>}
 
-      {/* Private notes section */}
+      {/* Historical private notes created before private conversations existed. */}
       {privateComments.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs text-text-subtle flex items-center gap-1">
-            <Lock className="w-3 h-3" /> Tus notas privadas
+            <Lock className="w-3 h-3" /> Notas privadas anteriores
           </p>
           {privateComments.map((c) => inspector
             ? <InspectorComment key={c.id} comment={c} canDelete={c.author.id === currentUserId} onDelete={deleteComment} />

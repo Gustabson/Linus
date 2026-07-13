@@ -66,52 +66,53 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Custom theme
-  themeMode     String  @default("light") // "light" | "dark" | "custom"
-  themeBg       String?  // --bg
-  themeSurface  String?  // --surface
-  themeBorder   String?  // --border
-  themeText     String?  // --text
-  themePrimary  String?  // --primary
+  themeMode    String  @default("light") // "light" | "dark" | "custom"
+  themeBg      String? // --bg
+  themeSurface String? // --surface
+  themeBorder  String? // --border
+  themeText    String? // --text
+  themePrimary String? // --primary
 
   // Sidebar colors
-  themeSidebarBg   String?  // --sidebar-bg
-  themeSidebarText String?  // --sidebar-text
+  themeSidebarBg   String? // --sidebar-bg
+  themeSidebarText String? // --sidebar-text
 
   // Content type accent colors
-  themeKernel   String?  // --kernel
-  themeModule   String?  // --module
-  themeResource String?  // --resource
+  themeKernel   String? // --kernel
+  themeModule   String? // --module
+  themeResource String? // --resource
 
   // Notification email preferences
-  notifCorreos      Boolean @default(true)
-  notifComentarios  Boolean @default(true)
-  notifLikes        Boolean @default(false)
-  notifSeguidores   Boolean @default(true)
-  notifPropuestas   Boolean @default(true)
+  notifCorreos     Boolean @default(true)
+  notifComentarios Boolean @default(true)
+  notifLikes       Boolean @default(false)
+  notifSeguidores  Boolean @default(true)
+  notifPropuestas  Boolean @default(true)
 
-  accounts            Account[]
-  sessions            Session[]
-  ownedTrees          DocumentTree[]    @relation("TreeOwner")
-  memberships         TreeMembership[]
-  committedVersions   DocumentVersion[]
-  proposals           ChangeProposal[]  @relation("ProposalAuthor")
-  reviewedProposals   ChangeProposal[]  @relation("ProposalReviewer")
-  publications        TreePublication[]
-  likes               TreeLike[]
-  extensions          TreeExtension[]
-  comments            DocumentComment[]
-  addedAttachments    TreeAttachment[]  @relation("AttachmentAddedBy")
-  followers               UserFollow[]         @relation("Following")
-  following               UserFollow[]         @relation("Follower")
-  notificationsReceived   Notification[]       @relation("NotificationRecipient")
-  notificationsGiven      Notification[]       @relation("NotificationActor")
-  posts               Post[]
-  postLikes           PostLike[]
-  postComments        PostComment[]
-  postCommentLikes    PostCommentLike[]
-  postReports         PostReport[]
-  sentMessages        Message[] @relation("MessageSender")
-  receivedMessages    Message[] @relation("MessageRecipient")
+  accounts              Account[]
+  sessions              Session[]
+  ownedTrees            DocumentTree[]    @relation("TreeOwner")
+  memberships           TreeMembership[]
+  committedVersions     DocumentVersion[]
+  proposals             ChangeProposal[]  @relation("ProposalAuthor")
+  reviewedProposals     ChangeProposal[]  @relation("ProposalReviewer")
+  proposalMessages      ProposalMessage[]
+  publications          TreePublication[]
+  likes                 TreeLike[]
+  extensions            TreeExtension[]
+  comments              DocumentComment[]
+  addedAttachments      TreeAttachment[]  @relation("AttachmentAddedBy")
+  followers             UserFollow[]      @relation("Following")
+  following             UserFollow[]      @relation("Follower")
+  notificationsReceived Notification[]    @relation("NotificationRecipient")
+  notificationsGiven    Notification[]    @relation("NotificationActor")
+  posts                 Post[]
+  postLikes             PostLike[]
+  postComments          PostComment[]
+  postCommentLikes      PostCommentLike[]
+  postReports           PostReport[]
+  sentMessages          Message[]         @relation("MessageSender")
+  receivedMessages      Message[]         @relation("MessageRecipient")
 }
 
 // ─── DOCUMENT TREES (kernels, modules, resources) ────────────────────────────
@@ -129,33 +130,33 @@ enum ContentType {
 }
 
 model DocumentTree {
-  id           String         @id @default(cuid())
-  slug         String         @unique
-  title        String
-  description  String?
-  language     String         @default("es")
-  visibility   TreeVisibility @default(PUBLIC)
-  contentType  ContentType    @default(KERNEL)
-  forkDepth    Int            @default(0)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id          String         @id @default(cuid())
+  slug        String         @unique
+  title       String
+  description String?
+  language    String         @default("es")
+  visibility  TreeVisibility @default(PUBLIC)
+  contentType ContentType    @default(KERNEL)
+  forkDepth   Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
-  publishedAt  DateTime?
+  publishedAt DateTime?
 
-  ownerId      String
-  owner        User           @relation("TreeOwner", fields: [ownerId], references: [id])
+  ownerId String
+  owner   User   @relation("TreeOwner", fields: [ownerId], references: [id])
 
   parentTreeId String?
   parentTree   DocumentTree?  @relation("ForkTree", fields: [parentTreeId], references: [id])
   forks        DocumentTree[] @relation("ForkTree")
 
-  documents    Document[]
-  memberships  TreeMembership[]
-  proposalsFrom ChangeProposal[] @relation("SourceTree")
-  proposalsTo   ChangeProposal[] @relation("TargetTree")
-  likes        TreeLike[]
-  extensions   TreeExtension[]
-  publications TreePublication[]
+  documents     Document[]
+  memberships   TreeMembership[]
+  proposalsFrom ChangeProposal[]  @relation("SourceTree")
+  proposalsTo   ChangeProposal[]  @relation("TargetTree")
+  likes         TreeLike[]
+  extensions    TreeExtension[]
+  publications  TreePublication[]
 
   // Modules/Resources attached to this kernel
   attachments  TreeAttachment[] @relation("KernelAttachments")
@@ -164,7 +165,7 @@ model DocumentTree {
   // Social posts that share/reference this tree
   posts        Post[]
   // Rich previews created when a tree link is shared in a comment
-  commentLinks PostComment[] @relation("CommentTreeLinks")
+  commentLinks PostComment[]    @relation("CommentTreeLinks")
 
   @@index([ownerId])
   @@index([parentTreeId])
@@ -175,17 +176,17 @@ model DocumentTree {
 }
 
 model TreeAttachment {
-  id        String   @id @default(cuid())
-  addedAt   DateTime @default(now())
+  id      String   @id @default(cuid())
+  addedAt DateTime @default(now())
 
-  kernelId  String
-  kernel    DocumentTree @relation("KernelAttachments", fields: [kernelId], references: [id], onDelete: Cascade)
+  kernelId String
+  kernel   DocumentTree @relation("KernelAttachments", fields: [kernelId], references: [id], onDelete: Cascade)
 
   contentId String
   content   DocumentTree @relation("AttachedContent", fields: [contentId], references: [id], onDelete: Cascade)
 
   addedById String
-  addedBy   User @relation("AttachmentAddedBy", fields: [addedById], references: [id])
+  addedBy   User   @relation("AttachmentAddedBy", fields: [addedById], references: [id])
 
   @@unique([kernelId, contentId])
   @@index([kernelId])
@@ -203,11 +204,11 @@ model TreeMembership {
   role      MemberRole
   createdAt DateTime   @default(now())
 
-  treeId    String
-  tree      DocumentTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  treeId String
+  tree   DocumentTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
 
-  userId    String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([treeId, userId])
 }
@@ -221,12 +222,13 @@ model Document {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  treeId    String
-  tree      DocumentTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  treeId String
+  tree   DocumentTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
 
   currentVersionId String?
   versions         DocumentVersion[]
   comments         DocumentComment[]
+  proposals        ChangeProposal[]
 
   @@unique([treeId, slug])
   @@index([treeId])
@@ -243,17 +245,17 @@ model DocumentVersion {
   status        VersionStatus @default(PUBLISHED) // PUBLISHED default preserves existing records
   createdAt     DateTime      @default(now())
 
-  documentId      String
-  document        Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
-  authorId        String
-  author          User     @relation(fields: [authorId], references: [id])
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
 
   parentVersionId String?
   parentVersion   DocumentVersion?  @relation("VersionHistory", fields: [parentVersionId], references: [id])
   childVersions   DocumentVersion[] @relation("VersionHistory")
 
-  sections        DocumentSection[]
+  sections DocumentSection[]
 
   @@index([documentId])
   @@index([authorId])
@@ -270,17 +272,17 @@ enum DifficultyLevel {
 }
 
 model DocumentSection {
-  id               String          @id @default(cuid())
-  sectionType      String          // free-form user-defined section title
-  sectionOrder     Int
-  difficultyLevel  DifficultyLevel @default(BEGINNER)
-  ageRangeMin      Int?
-  ageRangeMax      Int?
-  gradeLevel       String?
-  durationMinutes  Int?
-  isComplete       Boolean         @default(false)
-  richTextContent  Json
-  createdAt        DateTime        @default(now())
+  id              String          @id @default(cuid())
+  sectionType     String // free-form user-defined section title
+  sectionOrder    Int
+  difficultyLevel DifficultyLevel @default(BEGINNER)
+  ageRangeMin     Int?
+  ageRangeMax     Int?
+  gradeLevel      String?
+  durationMinutes Int?
+  isComplete      Boolean         @default(false)
+  richTextContent Json
+  createdAt       DateTime        @default(now())
 
   versionId String
   version   DocumentVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
@@ -310,7 +312,7 @@ model DocumentComment {
   @@index([authorId])
 }
 
-// ─── CHANGE PROPOSALS (pull requests) ─────────────────────────────────────────
+// ─── PRIVATE PROPOSAL CONVERSATIONS ───────────────────────────────────────────
 
 enum ProposalStatus {
   OPEN
@@ -320,28 +322,56 @@ enum ProposalStatus {
 }
 
 model ChangeProposal {
-  id          String         @id @default(cuid())
-  title       String
-  description String?
-  status      ProposalStatus @default(OPEN)
-  createdAt   DateTime       @default(now())
-  reviewedAt  DateTime?
+  id                  String         @id @default(cuid())
+  title               String
+  description         String?
+  status              ProposalStatus @default(OPEN)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @default(now())
+  reviewedAt          DateTime?
+  authorUnread    Boolean @default(false)
+  recipientUnread Boolean @default(true)
 
-  sourceTreeId String
-  sourceTree   DocumentTree @relation("SourceTree", fields: [sourceTreeId], references: [id])
+  // Kept nullable so historical pull-request proposals remain readable.
+  sourceTreeId String?
+  sourceTree   DocumentTree? @relation("SourceTree", fields: [sourceTreeId], references: [id], onDelete: SetNull)
 
   targetTreeId String
-  targetTree   DocumentTree @relation("TargetTree", fields: [targetTreeId], references: [id])
+  targetTree   DocumentTree @relation("TargetTree", fields: [targetTreeId], references: [id], onDelete: Cascade)
 
-  authorId   String
-  author     User   @relation("ProposalAuthor", fields: [authorId], references: [id])
+  targetDocumentId String?
+  targetDocument   Document? @relation(fields: [targetDocumentId], references: [id], onDelete: SetNull)
+
+  authorId String
+  author   User   @relation("ProposalAuthor", fields: [authorId], references: [id])
 
   reviewerId String?
-  reviewer   User?  @relation("ProposalReviewer", fields: [reviewerId], references: [id])
+  reviewer   User?   @relation("ProposalReviewer", fields: [reviewerId], references: [id])
+
+  messages ProposalMessage[]
 
   @@index([sourceTreeId])
   @@index([targetTreeId])
+  @@index([targetDocumentId])
   @@index([status])
+  @@index([targetTreeId, updatedAt])
+  @@index([authorId, updatedAt])
+  @@index([targetTreeId, recipientUnread])
+}
+
+model ProposalMessage {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  proposalId String
+  proposal   ChangeProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId, createdAt])
+  @@index([senderId])
 }
 
 // ─── PUBLICATIONS (Git-like publish records) ──────────────────────────────────
@@ -352,11 +382,11 @@ model TreePublication {
   commitMessage String   @default("Publicación")
   publishedAt   DateTime @default(now())
 
-  treeId   String
-  tree     DocumentTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
+  treeId String
+  tree   DocumentTree @relation(fields: [treeId], references: [id], onDelete: Cascade)
 
   authorId String
-  author   User @relation(fields: [authorId], references: [id])
+  author   User   @relation(fields: [authorId], references: [id])
 
   @@index([treeId])
   @@index([publicId])
@@ -365,14 +395,14 @@ model TreePublication {
 // ─── FOLLOWS ──────────────────────────────────────────────────────────────────
 
 model UserFollow {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
 
-  followerId  String
-  follower    User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId String
+  follower   User   @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
 
   followingId String
-  following   User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  following   User   @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
   @@index([followerId])
@@ -408,17 +438,17 @@ enum NotificationType {
 }
 
 model Notification {
-  id          String           @id @default(cuid())
-  type        NotificationType
-  read        Boolean          @default(false)
-  link        String           // pre-computed URL to navigate to
-  createdAt   DateTime         @default(now())
+  id        String           @id @default(cuid())
+  type      NotificationType
+  read      Boolean          @default(false)
+  link      String // pre-computed URL to navigate to
+  createdAt DateTime         @default(now())
 
   recipientId String
   recipient   User   @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
 
-  actorId     String
-  actor       User   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  actorId String
+  actor   User   @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
 
   @@index([recipientId, read])
   @@index([recipientId, createdAt])
@@ -496,9 +526,9 @@ model PostLike {
 }
 
 model PostComment {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   content   String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   deletedAt DateTime?
 
   attachmentUrl  String?
@@ -516,8 +546,8 @@ model PostComment {
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   parentId String?
-  parent   PostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies  PostComment[] @relation("CommentReplies")
+  parent   PostComment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  PostComment[]     @relation("CommentReplies")
   likes    PostCommentLike[]
 
   @@index([postId])
@@ -535,7 +565,7 @@ model PostCommentLike {
   comment   PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   userId String
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([commentId, userId])
   @@index([commentId])
@@ -554,8 +584,8 @@ model ApiRateLimit {
 
 model PostReport {
   id        String   @id @default(cuid())
-  reason    String   // "spam" | "inappropriate" | "misinformation" | "other"
-  detail    String?  // optional extra detail from the reporter
+  reason    String // "spam" | "inappropriate" | "misinformation" | "other"
+  detail    String? // optional extra detail from the reporter
   createdAt DateTime @default(now())
   reviewed  Boolean  @default(false)
 
@@ -565,7 +595,7 @@ model PostReport {
   reporterId String
   reporter   User   @relation(fields: [reporterId], references: [id], onDelete: Cascade)
 
-  @@unique([postId, reporterId])  // one report per user per post
+  @@unique([postId, reporterId]) // one report per user per post
   @@index([postId])
   @@index([reviewed, createdAt]) // for future admin panel queries
 }
@@ -580,11 +610,11 @@ model Message {
   isDraft   Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  senderId    String
-  sender      User @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId String
+  sender   User   @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
 
   recipientId String?
-  recipient   User? @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipient   User?   @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
 
   parentId String?
   parent   Message?  @relation("MessageThread", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)

@@ -26,8 +26,8 @@ const TYPE_SUBJECT: Partial<Record<NotificationType, (actor: string) => string>>
   NEW_FOLLOWER:      (a) => `${a} empezó a seguirte en EduHub`,
   NEW_LIKE:          (a) => `A ${a} le gustó tu publicación`,
   NEW_COMMENT:       (a) => `${a} dejó un comentario`,
-  NEW_PROPOSAL:      (a) => `${a} envió una propuesta en tu kernel`,
-  PROPOSAL_REVIEWED: (a) => `Tu propuesta fue revisada`,
+  NEW_PROPOSAL:      (a) => `${a} inició una propuesta privada`,
+  PROPOSAL_REVIEWED: (a) => `${a} respondió tu propuesta`,
 };
 
 // ── Friendly body per type ────────────────────────────────────────────────────
@@ -35,8 +35,8 @@ const TYPE_BODY: Partial<Record<NotificationType, (actor: string) => string>> = 
   NEW_FOLLOWER:      (a) => `<strong>${a}</strong> ahora te sigue. Podés ver su perfil y seguirlo de vuelta.`,
   NEW_LIKE:          (a) => `<strong>${a}</strong> le dio me gusta a una de tus publicaciones.`,
   NEW_COMMENT:       (a) => `<strong>${a}</strong> dejó un comentario o una respuesta en una conversación. Entrá a responder.`,
-  NEW_PROPOSAL:      (a) => `<strong>${a}</strong> envió una propuesta de cambio en uno de tus kernels. Revisala y decidí si la aceptás.`,
-  PROPOSAL_REVIEWED: (a) => `La revisión de tu propuesta ya está lista. Entrá para ver el resultado.`,
+  NEW_PROPOSAL:      (a) => `<strong>${a}</strong> inició una conversación privada sobre uno de tus contenidos.`,
+  PROPOSAL_REVIEWED: (a) => `<strong>${a}</strong> respondió en una conversación privada.`,
 };
 
 interface CreateNotificationArgs {

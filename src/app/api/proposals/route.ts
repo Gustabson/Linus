@@ -3,38 +3,46 @@ import { prisma } from "@/lib/prisma";
 import { getSession, unauthorized, parseBody, safeString } from "@/lib/api-helpers";
 import { createNotification } from "@/lib/notifications";
 
-// GET /api/proposals — list received (owner of target) + sent (author)
+const SUBJECT_MAX = 160;
+const MESSAGE_MAX = 5_000;
+
+const conversationInclude = {
+  targetTree: {
+    select: {
+      slug: true,
+      title: true,
+      contentType: true,
+      owner: { select: { id: true, name: true, username: true, image: true } },
+    },
+  },
+  targetDocument: { select: { id: true, slug: true, title: true } },
+  author: { select: { id: true, name: true, username: true, image: true } },
+  _count: { select: { messages: true } },
+} as const;
+
+// GET /api/proposals — private conversations received and sent by the user.
 export async function GET() {
   const session = await getSession();
   if (!session) return unauthorized();
 
   const userId = session.user.id;
-
   const [received, sent] = await Promise.all([
     prisma.changeProposal.findMany({
-      where:   { targetTree: { ownerId: userId } },
-      include: {
-        sourceTree: { select: { slug: true, title: true, contentType: true } },
-        targetTree: { select: { slug: true, title: true } },
-        author:     { select: { name: true, username: true, image: true } },
-      },
-      orderBy: { createdAt: "desc" },
+      where: { targetTree: { ownerId: userId }, authorId: { not: userId } },
+      include: conversationInclude,
+      orderBy: { updatedAt: "desc" },
     }),
     prisma.changeProposal.findMany({
-      where:   { authorId: userId },
-      include: {
-        sourceTree: { select: { slug: true, title: true } },
-        targetTree: { select: { slug: true, title: true, contentType: true } },
-        reviewer:   { select: { name: true, username: true } },
-      },
-      orderBy: { createdAt: "desc" },
+      where: { authorId: userId },
+      include: conversationInclude,
+      orderBy: { updatedAt: "desc" },
     }),
   ]);
 
   return NextResponse.json({ received, sent });
 }
 
-// POST /api/proposals — create a proposal from a fork
+// POST /api/proposals — start a private conversation about a document.
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) return unauthorized();
@@ -42,58 +50,63 @@ export async function POST(req: NextRequest) {
   const body = await parseBody(req);
   if (!body) return NextResponse.json({ error: "Cuerpo inválido" }, { status: 400 });
 
-  const sourceTreeId = safeString(body.sourceTreeId, 100);
-  const title = safeString(body.title, 120);
-  const description = body.description == null || body.description === "" ? null : safeString(body.description, 2_000);
-  if (!sourceTreeId || !title)
-    return NextResponse.json({ error: "sourceTreeId y título son requeridos" }, { status: 400 });
-  if (body.description != null && body.description !== "" && !description)
-    return NextResponse.json({ error: "Descripción demasiado larga (máximo 2000)" }, { status: 400 });
+  const targetDocumentId = safeString(body.targetDocumentId, 100);
+  const title = safeString(body.title, SUBJECT_MAX);
+  const description = safeString(body.description, MESSAGE_MAX);
+  if (!targetDocumentId || !title || !description) {
+    return NextResponse.json(
+      { error: "Documento, asunto y mensaje son requeridos" },
+      { status: 400 },
+    );
+  }
 
-  // Source must be owned by current user and be a fork
-  const source = await prisma.documentTree.findUnique({
-    where:  { id: sourceTreeId },
-    select: { id: true, slug: true, title: true, ownerId: true, parentTreeId: true },
+  const document = await prisma.document.findUnique({
+    where: { id: targetDocumentId },
+    select: {
+      id: true,
+      treeId: true,
+      versions: { where: { status: "PUBLISHED" }, take: 1, select: { id: true } },
+      tree: {
+        select: {
+          ownerId: true,
+          visibility: true,
+        },
+      },
+    },
   });
-  if (!source || source.ownerId !== session.user.id)
-    return NextResponse.json({ error: "Sin permiso" }, { status: 403 });
-  if (!source.parentTreeId)
-    return NextResponse.json({ error: "Este árbol no es un fork" }, { status: 400 });
 
-  // No duplicate open proposals
-  const existing = await prisma.changeProposal.findFirst({
-    where: { sourceTreeId, targetTreeId: source.parentTreeId, status: "OPEN" },
-  });
-  if (existing)
-    return NextResponse.json({ error: "Ya existe una propuesta abierta para este fork" }, { status: 409 });
+  if (!document || (document.tree.ownerId !== session.user.id && document.versions.length === 0)) {
+    return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
+  }
+  if (document.tree.visibility === "PRIVATE" && document.tree.ownerId !== session.user.id) {
+    return NextResponse.json({ error: "Documento no encontrado" }, { status: 404 });
+  }
+  if (document.tree.ownerId === session.user.id) {
+    return NextResponse.json({ error: "No podés enviarte una propuesta a vos mismo" }, { status: 400 });
+  }
 
-  const target = await prisma.documentTree.findUnique({
-    where:  { id: source.parentTreeId },
-    select: { ownerId: true, slug: true },
-  });
-  if (!target)
-    return NextResponse.json({ error: "Árbol original no encontrado" }, { status: 404 });
-
+  const now = new Date();
   const proposal = await prisma.changeProposal.create({
     data: {
       title,
       description,
-      sourceTreeId: source.id,
-      targetTreeId: source.parentTreeId,
-      authorId:     session.user.id,
+      sourceTreeId: null,
+      targetTreeId: document.treeId,
+      targetDocumentId: document.id,
+      authorId: session.user.id,
+      updatedAt: now,
+      authorUnread: false,
+      recipientUnread: true,
     },
+    select: { id: true },
   });
 
-  try {
-    await createNotification({
-      type:        "NEW_PROPOSAL",
-      recipientId: target.ownerId,
-      actorId:     session.user.id,
-      link:        `/propuestas/${proposal.id}`,
-    });
-  } catch (error) {
-    console.error("Failed to create proposal notification", error);
-  }
+  await createNotification({
+    type: "NEW_PROPOSAL",
+    recipientId: document.tree.ownerId,
+    actorId: session.user.id,
+    link: `/propuestas/${proposal.id}`,
+  });
 
-  return NextResponse.json({ id: proposal.id });
+  return NextResponse.json({ id: proposal.id }, { status: 201 });
 }
